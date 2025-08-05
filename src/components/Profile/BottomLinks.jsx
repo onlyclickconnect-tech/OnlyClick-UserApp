@@ -80,7 +80,6 @@ const styles = StyleSheet.create({
   linksRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    flexWrap: 'wrap',
     justifyContent: 'center',
   },
   linkItem: {

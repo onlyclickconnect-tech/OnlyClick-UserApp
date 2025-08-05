@@ -1,10 +1,8 @@
-import { Stack } from "expo-router";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { Stack, useRouter } from "expo-router";
 import { TouchableOpacity, View } from "react-native";
 import CustomServiceModal from "../../../components/common/CustomServiceModal";
-import ServiceModal from "../../../components/common/ServiceModal";
 import EnterAmountModal from "../../../components/common/EnterAmountModal";
-import { useRouter } from "expo-router";
-import Ionicons from "@expo/vector-icons/Ionicons";
 
 export default function RootLayout() {
   const router = useRouter();
@@ -32,7 +30,6 @@ export default function RootLayout() {
           }}
         />
       </Stack>
-      <ServiceModal />
       <CustomServiceModal />
       <EnterAmountModal />
     </View>

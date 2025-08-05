@@ -50,7 +50,7 @@ export default function ProfileSetup() {
       <View style={styles.header}>
         <Text style={styles.title}>Complete Your Profile</Text>
         <Text style={styles.subtitle}>
-          Please fill in your details to get started with TaskMaster
+          Please fill in your details to get started
         </Text>
       </View>
 

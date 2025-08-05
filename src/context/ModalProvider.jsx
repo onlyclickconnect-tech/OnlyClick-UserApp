@@ -1,17 +1,14 @@
-import { useState, useMemo, createContext, useContext } from "react";
+import { createContext, useContext, useMemo, useState } from "react";
 
 const ModalContext = createContext();
 
 export default function ModalProvider({ children }) {
-  const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
-  const [isCustomModalOpen, setIsCustomModalOpen] = useState(true);
+  const [isCustomModalOpen, setIsCustomModalOpen] = useState(false);
   const [isAutoPayoutModalOpen, setIsAutoPayoutModalOpen] = useState(false);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
   const [isEnterAmountModalOpen, setIsEnterAmountModalOpen] = useState(false);
   const value = useMemo(
     () => ({
-      isServiceModalOpen,
-      setIsServiceModalOpen,
       isCustomModalOpen,
       setIsCustomModalOpen,
       isAutoPayoutModalOpen,
@@ -22,7 +19,6 @@ export default function ModalProvider({ children }) {
       setIsEnterAmountModalOpen,
     }),
     [
-      isServiceModalOpen,
       isCustomModalOpen,
       isAutoPayoutModalOpen,
       isWithdrawModalOpen,
