@@ -1,35 +1,54 @@
 import { router } from 'expo-router';
-import { useEffect } from 'react';
-import { StyleSheet, View } from 'react-native';
-import { useAppStates } from '../../../context/AppStates';
+import { useState } from 'react';
+import { ScrollView, StatusBar, StyleSheet, View } from 'react-native';
+import SuccessIndicator from '../../../components/common/SuccessIndicator';
 import SuccessHeader from '../../../components/SignUpSuccess/SuccessHeader';
 import SuccessIllustration from '../../../components/SignUpSuccess/SuccessIllustration';
 import SuccessMessage from '../../../components/SignUpSuccess/SuccessMessage';
 import SuccessWelcome from '../../../components/SignUpSuccess/SuccessWelcome';
+import { useAppStates } from '../../../context/AppStates';
 
 export default function SignupSuccess() {
-  const { isProfileCompleted } = useAppStates();
+  const { markProfileCompleted } = useAppStates();
+  const [currentStep, setCurrentStep] = useState('success'); // 'success', 'welcome'
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      // Check if profile is completed to decide where to navigate
-      if (isProfileCompleted) {
-        router.replace('/protected/');
-      } else {
-        // Navigate to profile setup (using the Profile tab for now)
-        router.replace('/(app)/protected/(tabs)/Profile');
-      }
-    }, 3000);
+  const handleContinue = () => {
+    setCurrentStep('welcome');
+  };
 
-    return () => clearTimeout(timer);
-  }, [isProfileCompleted]);
+  const handleComplete = async () => {
+    // Mark profile as completed
+    await markProfileCompleted();
+    // Navigate to home
+    router.replace('/(app)/protected/(tabs)/Home');
+  };
 
   return (
     <View style={styles.container}>
-      <SuccessHeader />
-      <SuccessMessage />
-      <SuccessIllustration />
-      <SuccessWelcome />
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <SuccessHeader />
+        <SuccessIllustration />
+        
+        {currentStep === 'success' && (
+          <>
+            <SuccessIndicator 
+              title="Account Created!"
+              subtitle="Welcome to our service platform"
+              message="Your account has been successfully created and verified"
+            />
+            <SuccessMessage onContinue={handleContinue} />
+          </>
+        )}
+        
+        {currentStep === 'welcome' && (
+          <SuccessWelcome onComplete={handleComplete} />
+        )}
+      </ScrollView>
     </View>
   );
 }
@@ -37,6 +56,10 @@ export default function SignupSuccess() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#ffffff',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 40,
   },
 });

@@ -1,42 +1,41 @@
-import { ScrollView, StyleSheet, Text, View } from "react-native";
-import React from "react";
+import { ScrollView, StyleSheet, View } from "react-native";
 import PlatformUpdateBox from "./PlatformUpdateBox";
 
 export default function PlatformUpdate() {
   const notifications = [
     {
-      title: "New Jobs Available",
+      title: "New Services Added! 🎉",
       description:
-        "We have new jobs available for you. Please check your notifications.",
+        "We've added Electrical Services and HVAC Repair to our platform. Book now with trusted professionals in your area.",
       date: "Today",
       image: "https://picsum.photos/200/300",
     },
     {
-      title: "New Jobs Available",
+      title: "Weekend Discounts Available 💰",
       description:
-        "We have new jobs available for you. Please check your notifications.We have new jobs available for you. Please check your notifications.",
-      date: "Tomorrow",
+        "Get 15% off on all home cleaning and gardening services booked for this weekend. Limited time offer!",
+      date: "Yesterday",
       image: "https://picsum.photos/201/301",
     },
     {
-      title: "New Jobs Available",
+      title: "App Update - Version 2.1 📱",
       description:
-        "We have new jobs available for you. Please check your notifications.",
-      date: "Yesterday",
+        "New features: Real-time booking tracking, instant messaging with service providers, and improved payment options.",
+      date: "2 days ago",
       image: "https://picsum.photos/202/302",
     },
     {
-      title: "New Jobs Available",
+      title: "Safety Guidelines Updated 🛡️",
       description:
-        "We have new jobs available for you. Please check your notifications.We have new jobs available for you. Please check your notifications.",
-      date: "Tomorrow",
+        "We've updated our safety protocols. All service providers are now required to follow enhanced safety measures for your protection.",
+      date: "1 week ago",
       image: "https://picsum.photos/201/301",
     },
     {
-      title: "New Jobs Available",
+      title: "Customer Referral Program 🎁",
       description:
-        "We have new jobs available for you. Please check your notifications.We have new jobs available for you. Please check your notifications.",
-      date: "Tomorrow",
+        "Refer friends and earn credits! Get ₹100 credit for every successful referral. Share your unique referral code now.",
+      date: "1 week ago",
       image: "https://picsum.photos/201/301",
     },
   ];

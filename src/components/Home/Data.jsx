@@ -1,13 +1,12 @@
-import { 
-  StyleSheet, 
-  Text, 
-  TouchableOpacity, 
-  View, 
-  Image, 
+import {
+  FlatList,
+  Image,
   ScrollView,
-  FlatList 
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from "react-native";
-import React from "react";
 import Icon from 'react-native-vector-icons/Ionicons';
 
 export default function Data() {
@@ -79,7 +78,7 @@ const bookAgainServices = [
 
   const renderCategoryItem = ({ item }) => (
     <TouchableOpacity style={styles.categoryItem} onPress={() => {}}>
-      <View style={[styles.categoryIcon, { backgroundColor: item.color + '20' }]}>
+      <View style={[styles.categoryIcon, { backgroundColor: item.color + '40' }]}>
         <Icon name={item.icon} size={24} color={item.color} />
       </View>
       <Text style={styles.categoryText}>{item.name}</Text>
@@ -150,10 +149,7 @@ const bookAgainServices = [
         />
         
         <TouchableOpacity style={styles.seeMoreContainer} onPress={() => {}}>
-          <Image
-            style={styles.seeMoreButton}
-            source={require("../../../assets/images/seeMoreButton.png")}
-          />
+          <Text style={styles.seeMoreText}>All Categories</Text>
         </TouchableOpacity>
       </View>
 
@@ -196,6 +192,7 @@ const bookAgainServices = [
           renderItem={renderBookAgainItem}
           keyExtractor={(item) => item.id.toString()}
           scrollEnabled={false}
+          contentContainerStyle={{ marginBottom: 140 }}
         />
       </View>
     </ScrollView>
@@ -237,16 +234,17 @@ const styles = StyleSheet.create({
   categoryItem: {
     flex: 1,
     alignItems: 'center',
-    marginHorizontal: 8,
-    marginBottom: 16,
+    marginHorizontal: 4,
+    marginBottom: 0,
   },
   categoryIcon: {
-    width: 60,
-    height: 60,
+    width: 50,
+    height: 50,
     borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 4,
+    
   },
   categoryText: {
     fontSize: 14,
@@ -256,12 +254,17 @@ const styles = StyleSheet.create({
   },
   seeMoreContainer: {
     alignItems: 'center',
-    marginTop: 16,
+    marginTop: 20,
   },
-  seeMoreButton: {
-    width: 120,
-    height: 40,
-    resizeMode: "contain",
+  seeMoreText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#3898B3',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: '#E6F5F8',
+    borderRadius: 20,
+    overflow: 'hidden',
   },
 
   // Popular Services Styles

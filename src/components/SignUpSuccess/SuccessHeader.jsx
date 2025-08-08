@@ -1,27 +1,30 @@
-import { Image, StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
-const SuccessHeader = () => {
+export default function SuccessHeader() {
   return (
-    <View style={styles.header}>
-      <Image 
-        source={require('../../../assets/images/logo.png')}
-        style={styles.logo}
-        resizeMode="contain"
-      />
+    <View style={styles.container}>
+      <Text style={styles.title}>Success!</Text>
+      <Text style={styles.subtitle}>Account Setup Complete</Text>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  header: {
+  container: {
     alignItems: 'center',
     paddingTop: 60,
+    paddingHorizontal: 20,
     paddingBottom: 20,
   },
-  logo: {
-    width: 200,
-    height: 70,
+  title: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#2E7D32',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 18,
+    color: '#666',
+    textAlign: 'center',
   },
 });
-
-export default SuccessHeader;

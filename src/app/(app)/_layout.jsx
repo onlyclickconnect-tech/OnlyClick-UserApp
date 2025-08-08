@@ -5,6 +5,14 @@ export default function RootLayout() {
     <Stack initialRouteName="protected">
       <Stack.Screen name="auth" options={{ headerShown: false }} />
       <Stack.Screen name="protected" options={{ headerShown: false }} />
+      <Stack.Screen 
+        name="(modal)" 
+        options={{ 
+          headerShown: false,
+          presentation: 'modal',
+          gestureEnabled: true
+        }} 
+      />
     </Stack>
   );
 }

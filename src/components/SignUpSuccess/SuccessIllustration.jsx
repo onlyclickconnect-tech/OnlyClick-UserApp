@@ -1,29 +1,63 @@
-import { Image, StyleSheet, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 
-const SuccessIllustration = () => {
+export default function SuccessIllustration() {
   return (
-    <View style={styles.illustrationContainer}>
-      <Image 
-        source={require('../../../assets/images/signinpass.png')}
-        style={styles.illustration}
-        resizeMode="contain"
-      />
+    <View style={styles.container}>
+      <View style={styles.iconContainer}>
+        <Image 
+          source={require('../../../assets/images/icon.png')} 
+          style={styles.icon}
+          resizeMode="contain"
+        />
+        <View style={styles.checkmark}>
+          <Text style={styles.checkmarkText}>✓</Text>
+        </View>
+      </View>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  illustrationContainer: {
-    flex: 1,
-    justifyContent: 'center',
+  container: {
     alignItems: 'center',
-    paddingHorizontal: 30,
-    marginTop: -40,
+    paddingVertical: 40,
   },
-  illustration: {
-    width: '85%',
-    height: 300,
+  iconContainer: {
+    position: 'relative',
+    width: 120,
+    height: 120,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  icon: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+  },
+  checkmark: {
+    position: 'absolute',
+    bottom: -5,
+    right: -5,
+    backgroundColor: '#4CAF50',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 3,
+    borderColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  checkmarkText: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: 'bold',
   },
 });
-
-export default SuccessIllustration;

@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "TaskMaster",
-    "slug": "TaskMaster",
+    "name": "Only Click - User",
+    "slug": "only-click-user",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
-    "scheme": "taskmaster",
+    "icon": "./assets/images/logo.png",
+    "scheme": "onlyclick",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -17,7 +17,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.vivekkedia22.TaskMaster"
+      "package": "com.onlyclick.userapp"
     },
     "web": {
       "bundler": "metro",
@@ -29,10 +29,23 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
+          "image": "./assets/images/logo.png",
+          "imageWidth": 250,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "This app needs access to your location to show nearby services and providers."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you share images of your service requests.",
+          "cameraPermission": "The app accesses your camera to let you take photos of your service requests."
         }
       ]
     ],

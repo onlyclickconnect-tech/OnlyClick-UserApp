@@ -1,49 +1,48 @@
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import React from "react";
 import JobAlertBox from "./JobAlertBox";
 
 export default function JobAlert() {
   const notifications = [
     {
       date: "Today",
-      customerName: "User1",
-      serviceName: "Service1",
-      location: "Very long and tedious location1",
+      customerName: "Plumbing Expert Pro",
+      serviceName: "Pipe Repair Confirmed",
+      location: "123 Main Street, Downtown",
       image: "https://picsum.photos/200/300",
     },
     {
-      date: "Tomorrow",
-      customerName: "User2",
-      serviceName: "Service2",
-      location: "Very long and tedious location2",
+      date: "Yesterday",
+      customerName: "CleanHome Services",
+      serviceName: "House Cleaning Completed",
+      location: "456 Oak Avenue, Suburb",
       image: "https://picsum.photos/201/301",
     },
     {
-      date: "Yesterday",
-      customerName: "User3",
-      serviceName: "Service3",
-      location: "Very long and tedious location3",
+      date: "2 days ago",
+      customerName: "ElectricFix Solutions",
+      serviceName: "Electrical Work Scheduled",
+      location: "789 Pine Street, City Center",
       image: "https://picsum.photos/202/302",
     },
     {
-      date: "Yesterday",
-      customerName: "User3",
-      serviceName: "Service3",
-      location: "Very long and tedious location3",
+      date: "3 days ago",
+      customerName: "GreenThumb Gardening",
+      serviceName: "Garden Maintenance Done",
+      location: "321 Rose Lane, Garden District",
       image: "https://picsum.photos/203/303",
     },
     {
-      date: "Yesterday",
-      customerName: "User3",
-      serviceName: "Service3",
-      location: "Very long and tedious location3",
+      date: "1 week ago",
+      customerName: "QuickFix Handyman",
+      serviceName: "Furniture Assembly Completed",
+      location: "654 Maple Drive, Residential Area",
       image: "https://picsum.photos/204/304",
     },
     {
-      date: "Yesterday",
-      customerName: "User3",
-      serviceName: "Service3",
-      location: "Very long and tedious location3",
+      date: "1 week ago",
+      customerName: "AirCool HVAC Services",
+      serviceName: "AC Repair Confirmed",
+      location: "987 Cedar Boulevard, Business District",
       image: "https://picsum.photos/205/305",
     },
   ];

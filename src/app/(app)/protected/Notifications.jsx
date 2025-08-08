@@ -1,5 +1,4 @@
-import { StyleSheet, Text, View } from "react-native";
-import React from "react";
+import { StyleSheet, View } from "react-native";
 import SinglePageSwitch from "../../../components/common/SinglePageSwitch";
 import JobAlert from "../../../components/Notification/JobAlert";
 import PlatformUpdates from "../../../components/Notification/PlatformUpdate";
@@ -7,8 +6,8 @@ export default function Notifications() {
   return (
     <View style={{ flex: 1, backgroundColor: "white" }}>
       <SinglePageSwitch
-        leftText={"Job Alert"}
-        rightText={"Platform Updates"}
+        leftText={"Booking Updates"}
+        rightText={"App Updates"}
         leftElement={<JobAlert />}
         rightElement={<PlatformUpdates />}
       />

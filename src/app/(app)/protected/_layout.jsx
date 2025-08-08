@@ -19,7 +19,7 @@ export default function RootLayout() {
               return (
                 <TouchableOpacity
                   onPress={() => {
-                    router.back();
+                    router.back("");
                   }}
                   style={{ left: 10, marginRight: 50 }}
                 >

@@ -1,12 +1,12 @@
-import { useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { createContext, useContext } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
 const AppStatesContext = createContext();
 
 export const AppStatesProvider = ({ children }) => {
   const [isAppOpenedFirstTime, setIsAppOpenedFirstTime] = useState(null);
   const [isProfileCompleted, setIsProfileCompleted] = useState(null);
+  const [selectedLocation, setSelectedLocation] = useState("Tap to set location");
 
   useEffect(() => {
     const getAppFirstOpenState = async () => {
@@ -25,6 +25,16 @@ export const AppStatesProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
+    const getSelectedLocation = async () => {
+      const savedLocation = await AsyncStorage.getItem("selectedLocation");
+      if (savedLocation) {
+        setSelectedLocation(savedLocation);
+      }
+    };
+    getSelectedLocation();
+  }, []);
+
+  useEffect(() => {
     if (isAppOpenedFirstTime === false) {
       const setAppFirstOpenState = async () => {
         await AsyncStorage.setItem("appFirstOpenState", "false");
@@ -38,6 +48,11 @@ export const AppStatesProvider = ({ children }) => {
     setIsProfileCompleted(true);
   };
 
+  const updateSelectedLocation = async (location) => {
+    setSelectedLocation(location);
+    await AsyncStorage.setItem("selectedLocation", location);
+  };
+
   return (
     <AppStatesContext.Provider
       value={{ 
@@ -45,7 +60,10 @@ export const AppStatesProvider = ({ children }) => {
         setIsAppOpenedFirstTime,
         isProfileCompleted,
         setIsProfileCompleted,
-        markProfileCompleted
+        markProfileCompleted,
+        selectedLocation,
+        setSelectedLocation,
+        updateSelectedLocation
       }}
     >
       {children}
