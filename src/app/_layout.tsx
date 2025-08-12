@@ -1,8 +1,8 @@
 import { Stack } from "expo-router";
 import { View } from "react-native";
+import { AppStatesProvider } from "../context/AppStates";
 import AuthProvider from "../context/AuthProvider";
 import ModalProvider from "../context/ModalProvider";
-import { AppStatesProvider } from "../context/AppStates";
 
 export default function RootLayout() {
   return (

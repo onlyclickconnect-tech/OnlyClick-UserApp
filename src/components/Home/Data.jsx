@@ -1,3 +1,4 @@
+import { useRouter } from "expo-router";
 import {
   FlatList,
   Image,
@@ -8,17 +9,13 @@ import {
   View
 } from "react-native";
 import Icon from 'react-native-vector-icons/Ionicons';
+import { serviceCategories } from "../../data/servicesData";
 
 export default function Data() {
-  // Categories data
-  const categories = [
-    { id: 1, name: 'Plumbing', icon: 'water-outline', color: '#4A90E2' },
-    { id: 2, name: 'Cleaning', icon: 'home-outline', color: '#7ED321' },
-    { id: 3, name: 'Painting', icon: 'color-palette-outline', color: '#F5A623' },
-    { id: 4, name: 'Electrical', icon: 'flash-outline', color: '#BD10E0' },
-    { id: 5, name: 'Carpentry', icon: 'hammer-outline', color: '#B8E986' },
-    { id: 6, name: 'AC Service', icon: 'snow-outline', color: '#50E3C2' },
-  ];
+  const router = useRouter();
+
+  // Use categories from servicesData.js - no need to redefine them
+  const categories = serviceCategories;
 
   // Popular services data
   const popularServices = [
@@ -76,14 +73,38 @@ const bookAgainServices = [
   },
 ];
 
-  const renderCategoryItem = ({ item }) => (
-    <TouchableOpacity style={styles.categoryItem} onPress={() => {}}>
-      <View style={[styles.categoryIcon, { backgroundColor: item.color + '40' }]}>
-        <Icon name={item.icon} size={24} color={item.color} />
-      </View>
-      <Text style={styles.categoryText}>{item.name}</Text>
-    </TouchableOpacity>
-  );
+  const renderCategoryItem = ({ item }) => {
+    // Handle different icon naming conventions
+    const getIconName = (iconName) => {
+      const iconMap = {
+        'flash': 'flash-outline',
+        'water': 'water-outline', 
+        'hammer': 'hammer-outline',
+        'home': 'home-outline',
+        'snow': 'snow-outline',
+        'clipboard': 'clipboard-outline'
+      };
+      return iconMap[iconName] || `${iconName}-outline`;
+    };
+
+    return (
+      <TouchableOpacity 
+        style={styles.categoryItem} 
+        onPress={() => {
+          // Navigate to Services page with selected category
+          router.push({
+            pathname: '/(app)/protected/(tabs)/Services',
+            params: { selectedCategory: item.id }
+          });
+        }}
+      >
+        <View style={[styles.categoryIcon, { backgroundColor: item.color + '40' }]}>
+          <Icon name={getIconName(item.icon)} size={24} color={item.color} />
+        </View>
+        <Text style={styles.categoryText}>{item.name}</Text>
+      </TouchableOpacity>
+    );
+  };
 
   const renderPopularServiceItem = ({ item }) => (
     <TouchableOpacity style={styles.serviceCard} onPress={() => {}}>
@@ -142,13 +163,19 @@ const bookAgainServices = [
         <FlatList
           data={categories}
           renderItem={renderCategoryItem}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item) => item.id}
           numColumns={3}
           scrollEnabled={false}
           contentContainerStyle={styles.categoriesContainer}
         />
         
-        <TouchableOpacity style={styles.seeMoreContainer} onPress={() => {}}>
+        <TouchableOpacity 
+          style={styles.seeMoreContainer} 
+          onPress={() => {
+            // Navigate to Services page without category filter
+            router.push('/(app)/protected/(tabs)/Services');
+          }}
+        >
           <Text style={styles.seeMoreText}>All Categories</Text>
         </TouchableOpacity>
       </View>
@@ -157,7 +184,10 @@ const bookAgainServices = [
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Popular Services</Text>
-          <TouchableOpacity onPress={() => {}}>
+          <TouchableOpacity onPress={() => {
+            // Navigate to Services page
+            router.push('/(app)/protected/(tabs)/Services');
+          }}>
             <Text style={styles.seeAllText}>See All</Text>
           </TouchableOpacity>
         </View>

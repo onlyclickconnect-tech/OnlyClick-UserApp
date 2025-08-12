@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 import {
   FlatList,
   Image,
@@ -12,119 +12,71 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
+import {
+  allServices,
+  getServicesByCategory,
+  serviceCategories
+} from "../../../../../data/servicesData";
 
 export default function ServicesPage() {
   const router = useRouter();
+  const { selectedCategory: incomingCategory } = useLocalSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [cartItems, setCartItems] = useState([]);
 
-  // Service categories with counts
+  // Handle incoming category selection from navigation
+  useEffect(() => {
+    if (incomingCategory) {
+      // Find the matching category and set it as selected
+      const categoryExists = serviceCategories.find(cat => cat.id === incomingCategory);
+      if (categoryExists) {
+        setSelectedCategory(categoryExists.name);
+      }
+    }
+  }, [incomingCategory]);
+
+  // Transform service categories for the UI with proper counts
   const categories = [
-    { id: 1, name: 'All', icon: 'apps', count: 24, color: '#3898B3' },
-    { id: 2, name: 'Plumbing', icon: 'water', count: 6, color: '#2196F3' },
-    { id: 3, name: 'Electrical', icon: 'flash', count: 4, color: '#FF9800' },
-    { id: 4, name: 'Cleaning', icon: 'home', count: 5, color: '#4CAF50' },
-    { id: 5, name: 'AC Service', icon: 'snow', count: 3, color: '#9C27B0' },
-    { id: 6, name: 'Carpentry', icon: 'hammer', count: 4, color: '#795548' },
-    { id: 7, name: 'Painting', icon: 'color-palette', count: 2, color: '#E91E63' },
+    { id: 'all', name: 'All', icon: 'apps', count: allServices.length, color: '#3898B3' },
+    ...serviceCategories.map((cat, index) => ({
+      id: cat.id,
+      name: cat.name,
+      icon: cat.icon,
+      count: getServicesByCategory(cat.id).length,
+      color: cat.color
+    }))
   ];
 
-  // Featured services data
-  const services = [
-    {
-      id: 1,
-      name: 'Professional Plumbing',
-      category: 'Plumbing',
-      description: 'Expert pipe repair, installation and maintenance',
-      price: 299,
-      originalPrice: 399,
-      rating: 4.8,
-      reviews: 156,
-      duration: '1-2 hours',
-      image: require("../../../../../../assets/images/react-logo.png"),
-      badge: 'Popular',
-      features: ['Quick Service', 'Warranty', 'Expert Technician'],
-    },
-    {
-      id: 2,
-      name: 'Deep House Cleaning',
-      category: 'Cleaning',
-      description: 'Complete home cleaning and sanitization',
-      price: 599,
-      originalPrice: 799,
-      rating: 4.9,
-      reviews: 234,
-      duration: '3-4 hours',
-      image: require("../../../../../../assets/images/react-logo.png"),
-      badge: 'Best Seller',
-      features: ['Eco-friendly', 'Insured', 'Same Day'],
-    },
-    {
-      id: 3,
-      name: 'Electrical Repair',
-      category: 'Electrical',
-      description: 'Safe electrical installation and repair services',
-      price: 199,
-      originalPrice: 299,
-      rating: 4.7,
-      reviews: 189,
-      duration: '1-3 hours',
-      image: require("../../../../../../assets/images/react-logo.png"),
-      badge: 'Trusted',
-      features: ['Licensed', '24/7 Support', 'Safety First'],
-    },
-    {
-      id: 4,
-      name: 'AC Installation & Repair',
-      category: 'AC Service',
-      description: 'Professional AC installation and maintenance',
-      price: 899,
-      originalPrice: 1199,
-      rating: 4.6,
-      reviews: 98,
-      duration: '2-4 hours',
-      image: require("../../../../../../assets/images/react-logo.png"),
-      badge: 'New',
-      features: ['All Brands', 'Warranty', 'Expert Team'],
-    },
-    {
-      id: 5,
-      name: 'Furniture Assembly',
-      category: 'Carpentry',
-      description: 'Professional furniture assembly and repair',
-      price: 149,
-      originalPrice: 199,
-      rating: 4.5,
-      reviews: 67,
-      duration: '1-2 hours',
-      image: require("../../../../../../assets/images/react-logo.png"),
-      badge: 'Quick',
-      features: ['Fast Service', 'Tool Included', 'Assembly Expert'],
-    },
-    {
-      id: 6,
-      name: 'Wall Painting Service',
-      category: 'Painting',
-      description: 'Professional interior and exterior painting',
-      price: 449,
-      originalPrice: 599,
-      rating: 4.4,
-      reviews: 45,
-      duration: '1 Day',
-      image: require("../../../../../../assets/images/react-logo.png"),
-      badge: 'Premium',
-      features: ['Quality Paint', 'Clean Work', 'Color Consultation'],
-    },
-  ];
+  // Use imported services data
+  const services = allServices;
 
   // Filter services based on search and category
   const filteredServices = services.filter(service => {
-    const matchesSearch = service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    const matchesSearch = service.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          service.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         service.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'All' || service.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+                         service.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         service.subCategory.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    // Handle category filtering - convert category names to match our data structure
+    let categoryMatches = false;
+    if (selectedCategory === 'All') {
+      categoryMatches = true;
+    } else {
+      // Map UI category names to our data structure
+      const categoryMapping = {
+        'Electrical': 'electrical',
+        'Plumbing': 'plumbing', 
+        'Carpentry': 'carpentry',
+        'Cleaning': 'cleaning',
+        'AC Service': 'ac_service',
+        'Consultation': 'consultation'
+      };
+      const mappedCategory = categoryMapping[selectedCategory] || selectedCategory.toLowerCase();
+      categoryMatches = service.category === mappedCategory;
+    }
+    
+    return matchesSearch && categoryMatches;
   });
 
   const handleCategoryPress = (category) => {
@@ -137,12 +89,12 @@ export default function ServicesPage() {
 
   const addToCart = (service) => {
     // Check if item already exists in cart
-    const existingItem = cartItems.find(item => item.id === service.id);
+    const existingItem = cartItems.find(item => item.serviceId === service.serviceId);
     
     if (existingItem) {
       // Update quantity if item exists
       setCartItems(cartItems.map(item => 
-        item.id === service.id 
+        item.serviceId === service.serviceId 
           ? { ...item, quantity: item.quantity + 1 }
           : item
       ));
@@ -152,7 +104,7 @@ export default function ServicesPage() {
     }
     
     // Show success feedback (you can customize this)
-    alert(`${service.name} added to cart!`);
+    alert(`${service.title} added to cart!`);
   };
 
   const getBadgeColor = (badge) => {
@@ -163,6 +115,17 @@ export default function ServicesPage() {
       case 'New': return '#DC3545';
       case 'Quick': return '#FFC107';
       case 'Premium': return '#6F42C1';
+      case 'Same Day': return '#17A2B8';
+      case 'Emergency': return '#DC3545';
+      case 'Quick Service': return '#FFC107';
+      case 'Quick Fix': return '#FD7E14';
+      case 'Professional': return '#6610F2';
+      case 'Essential': return '#198754';
+      case 'Modern': return '#0D6EFD';
+      case 'Space Saver': return '#6F42C1';
+      case 'Weather Resistant': return '#0DCAF0';
+      case 'Decorative': return '#D63384';
+      case 'Repair': return '#FD7E14';
       default: return '#6C757D';
     }
   };
@@ -197,17 +160,24 @@ export default function ServicesPage() {
   const renderServiceCard = ({ item }) => (
     <TouchableOpacity
       style={styles.serviceCard}
-      onPress={() => router.push(`/protected/(tabs)/Services/${item.id}`)}
+      onPress={() => router.push(`/protected/(tabs)/Services/${item.serviceId}`)}
       activeOpacity={0.8}
     >
       {/* Service Badge */}
-      <View style={[styles.serviceBadge, { backgroundColor: getBadgeColor(item.badge) }]}>
-        <Text style={styles.badgeText}>{item.badge}</Text>
-      </View>
+      {item.tags && item.tags.length > 0 && (
+        <View style={[styles.serviceBadge, { backgroundColor: getBadgeColor(item.tags[0]) }]}>
+          <Text style={styles.badgeText}>{item.tags[0]}</Text>
+        </View>
+      )}
 
       {/* Service Image */}
       <View style={styles.serviceImageContainer}>
-        <Image source={item.image} style={styles.serviceImage} />
+        <Image 
+          source={item.image || {uri: "https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751596604/ChatGPT_Image_Jul_3_2025_10_18_12_PM_xqu38i.png"}} 
+          style={styles.serviceImage}
+          resizeMode="cover"
+          onError={(error) => console.log('Image loading error:', error)}
+        />
         <View style={styles.imageOverlay}>
           <TouchableOpacity style={styles.favoriteButton}>
             <Ionicons name="heart-outline" size={20} color="#fff" />
@@ -218,8 +188,8 @@ export default function ServicesPage() {
       {/* Service Content */}
       <View style={styles.serviceContent}>
         <View style={styles.serviceHeader}>
-          <Text style={styles.serviceName} numberOfLines={1}>{item.name}</Text>
-          <Text style={styles.serviceCategory}>{item.category}</Text>
+          <Text style={styles.serviceName} numberOfLines={1}>{item.title}</Text>
+          <Text style={styles.serviceCategory}>{item.subCategory}</Text>
         </View>
 
         <Text style={styles.serviceDescription} numberOfLines={2}>
@@ -228,7 +198,7 @@ export default function ServicesPage() {
 
         {/* Features */}
         <View style={styles.featuresContainer}>
-          {item.features.slice(0, 2).map((feature, index) => (
+          {item.includes && item.includes.slice(0, 2).map((feature, index) => (
             <View key={index} style={styles.featureTag}>
               <Text style={styles.featureText}>{feature}</Text>
             </View>
@@ -356,19 +326,26 @@ export default function ServicesPage() {
             {filteredServices.length > 0 ? (
               filteredServices.map((item) => (
                 <TouchableOpacity
-                  key={item.id}
+                  key={item.serviceId}
                   style={styles.serviceCard}
-                  onPress={() => router.push(`/protected/(tabs)/Services/${item.id}`)}
+                  onPress={() => router.push(`/protected/(tabs)/Services/${item.serviceId}`)}
                   activeOpacity={0.8}
                 >
                   {/* Service Badge */}
-                  <View style={[styles.serviceBadge, { backgroundColor: getBadgeColor(item.badge) }]}>
-                    <Text style={styles.badgeText}>{item.badge}</Text>
-                  </View>
+                  {item.tags && item.tags.length > 0 && (
+                    <View style={[styles.serviceBadge, { backgroundColor: getBadgeColor(item.tags[0]) }]}>
+                      <Text style={styles.badgeText}>{item.tags[0]}</Text>
+                    </View>
+                  )}
 
                   {/* Service Image */}
                   <View style={styles.serviceImageContainer}>
-                    <Image source={item.image} style={styles.serviceImage} />
+                    <Image 
+                      source={item.image || {uri: "https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751596604/ChatGPT_Image_Jul_3_2025_10_18_12_PM_xqu38i.png"}} 
+                      style={styles.serviceImage}
+                      resizeMode="cover"
+                      onError={(error) => console.log('Image loading error:', error)}
+                    />
                     <View style={styles.imageOverlay}>
                       <TouchableOpacity style={styles.favoriteButton}>
                         <Ionicons name="heart-outline" size={20} color="#fff" />
@@ -379,8 +356,8 @@ export default function ServicesPage() {
                   {/* Service Content */}
                   <View style={styles.serviceContent}>
                     <View style={styles.serviceHeader}>
-                      <Text style={styles.serviceName} numberOfLines={1}>{item.name}</Text>
-                      <Text style={styles.serviceCategory}>{item.category}</Text>
+                      <Text style={styles.serviceName} numberOfLines={1}>{item.title}</Text>
+                      <Text style={styles.serviceCategory}>{item.subCategory}</Text>
                     </View>
 
                     <Text style={styles.serviceDescription} numberOfLines={2}>
@@ -389,7 +366,7 @@ export default function ServicesPage() {
 
                     {/* Features */}
                     <View style={styles.featuresContainer}>
-                      {item.features.slice(0, 2).map((feature, index) => (
+                      {item.includes && item.includes.slice(0, 2).map((feature, index) => (
                         <View key={index} style={styles.featureTag}>
                           <Text style={styles.featureText}>{feature}</Text>
                         </View>
