@@ -64,7 +64,7 @@ export default function LoadingScreen() {
         />
         <Image 
           source={animationImages[currentAnimation - 1]} 
-          style={{ width: 200, height: 205 }}
+          style={{ width: 400, height: 405 }}
           resizeMode="contain"
         />
       </View>

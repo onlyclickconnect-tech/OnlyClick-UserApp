@@ -2,7 +2,6 @@
 // Complete service catalog with all 111 services
 
 export const serviceCategories = [
-  
   {
     id: 'electrical',
     name: 'Electrical',
