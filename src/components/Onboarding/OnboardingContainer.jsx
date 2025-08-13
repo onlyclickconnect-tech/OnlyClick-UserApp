@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Animated, PanResponder, StyleSheet, View } from 'react-native';
 import OnboardingFooter from './OnboardingFooter';
 import OnboardingHeader from './OnboardingHeader';
@@ -119,11 +119,11 @@ const OnboardingContainer = ({ onComplete }) => {
     });
   };
 
-  // Create PanResponder for swipe gestures
-  const panResponder = useRef(
+  // Create PanResponder for swipe gestures - recreate when currentSlide changes
+  const panResponder = useMemo(() => 
     PanResponder.create({
       onMoveShouldSetPanResponder: (evt, gestureState) => {
-        // Disable swiping on the last slide
+        // Disable swiping completely on the last slide
         if (currentSlide === slides.length - 1) {
           return false;
         }
@@ -144,8 +144,7 @@ const OnboardingContainer = ({ onComplete }) => {
           handlePrevious();
         }
       },
-    })
-  ).current;
+    }), [currentSlide, handleNext, handlePrevious]);
 
   return (
     <View style={styles.container}>
