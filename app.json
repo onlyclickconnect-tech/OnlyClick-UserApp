@@ -8,12 +8,19 @@
     "scheme": "onlyclick",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/images/logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "icon": "./assets/images/logo.png"
     },
     "android": {
+      "icon": "./assets/images/logo.png",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/images/logo.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
@@ -31,15 +38,6 @@
     },
     "plugins": [
       "expo-router",
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/images/logo.png",
-          "imageWidth": 100,
-          "resizeMode": "fit",
-          "backgroundColor": "#ffffff"
-        }
-      ],
       [
         "expo-location",
         {

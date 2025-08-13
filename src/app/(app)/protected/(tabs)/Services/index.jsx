@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 import {
   FlatList,
   Image,
@@ -20,6 +20,7 @@ import {
 
 export default function ServicesPage() {
   const router = useRouter();
+  const { selectedCategory: categoryParam } = useLocalSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [cartItems, setCartItems] = useState([]);
@@ -35,6 +36,17 @@ export default function ServicesPage() {
       color: cat.color
     }))
   ];
+
+  // Handle category selection from navigation params
+  useEffect(() => {
+    if (categoryParam) {
+      // Find the category by ID and set its name
+      const category = serviceCategories.find(cat => cat.id === categoryParam);
+      if (category) {
+        setSelectedCategory(category.name);
+      }
+    }
+  }, [categoryParam]);
 
   // Use imported services data
   const services = allServices;

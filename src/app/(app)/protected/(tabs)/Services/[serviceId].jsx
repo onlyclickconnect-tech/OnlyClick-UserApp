@@ -77,7 +77,7 @@ export default function ServiceDetails() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#333" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Electrician</Text>
+        <Text style={styles.headerTitle}>{service.category.charAt(0).toUpperCase() + service.category.slice(1)}</Text>
         <View style={styles.headerRight}>
           <TouchableOpacity style={styles.searchButton}>
             <Ionicons name="search" size={24} color="#333" />
@@ -92,9 +92,15 @@ export default function ServiceDetails() {
         {/* Service Image */}
         <View style={styles.imageContainer}>
           <Image source={service.image} style={styles.serviceImage} />
-          <View style={styles.priceTag}>
-            <Text style={styles.priceTagText}>Rs. {service.price}</Text>
-          </View>
+          {service.tags && service.tags.length > 0 && (
+            <View style={styles.tagContainer}>
+              {service.tags.map((tag, index) => (
+                <View key={index} style={styles.tag}>
+                  <Text style={styles.tagText}>{tag}</Text>
+                </View>
+              ))}
+            </View>
+          )}
         </View>
 
         {/* Service Content */}
@@ -102,8 +108,34 @@ export default function ServiceDetails() {
           {/* Service Title */}
           <Text style={styles.serviceName}>{service.title}</Text>
           
+          
           {/* Service Description */}
           <Text style={styles.serviceDescription}>{service.description}</Text>
+
+          {/* Rating and Reviews */}
+          <View style={styles.ratingContainer}>
+            <View style={styles.ratingSection}>
+              <Ionicons name="star" size={16} color="#FFD700" />
+              <Text style={styles.ratingText}>{service.rating}</Text>
+              <Text style={styles.reviewsText}>({service.reviews} reviews)</Text>
+            </View>
+            <View style={styles.durationSection}>
+              <Ionicons name="time-outline" size={16} color="#666" />
+              <Text style={styles.durationText}>{service.duration}</Text>
+            </View>
+          </View>
+
+          
+          
+          
+
+          {/* Professional Info */}
+          {service.professional && (
+            <View style={styles.professionalSection}>
+              <Text style={styles.sectionTitle}>👨‍🔧 Professional</Text>
+              <Text style={styles.professionalText}>{service.professional}</Text>
+            </View>
+          )}
 
           {/* Included Section */}
           <View style={styles.section}>
@@ -117,25 +149,31 @@ export default function ServiceDetails() {
           </View>
 
           {/* Not Included Section */}
-          <View style={styles.section}>
-            {service.notIncluded && <Text style={styles.sectionTitle}>❌ Not included</Text>}
-            {service.notIncluded &&service.notIncluded.map((item, index) => (
-              <View key={index} style={styles.listItem}>
-                <View style={styles.bulletPoint} />
-                <Text style={styles.listItemText}>{item}</Text>
-              </View>
-            ))}
-          </View>
-
-          {/* Price Section */}
-          <View style={styles.priceSection}>
-            <Text style={styles.finalPriceLabel}>Rs. {service.price}/-</Text>
-          </View>
+          {service.notIncluded && service.notIncluded.length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>❌ Not included</Text>
+              {service.notIncluded.map((item, index) => (
+                <View key={index} style={styles.listItem}>
+                  <View style={styles.bulletPoint} />
+                  <Text style={styles.listItemText}>{item}</Text>
+                </View>
+              ))}
+            </View>
+          )}
         </View>
+        
+        {/* Add bottom padding to ensure content doesn't get hidden behind fixed button */}
+        <View style={styles.bottomPadding} />
       </ScrollView>
 
       {/* Fixed Bottom Button */}
       <View style={styles.bottomSection}>
+        <View style={styles.bottomPriceContainer}>
+          <Text style={styles.bottomCurrentPrice}>₹{service.price}</Text>
+          {service.originalPrice && service.originalPrice > service.price && (
+            <Text style={styles.bottomOriginalPrice}>₹{service.originalPrice}</Text>
+          )}
+        </View>
         <TouchableOpacity 
           style={styles.addToCartButton}
           onPress={addToCart}
@@ -203,6 +241,25 @@ const styles = StyleSheet.create({
     height: '100%',
     resizeMode: 'cover',
   },
+  tagContainer: {
+    position: 'absolute',
+    top: 15,
+    left: 15,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  tag: {
+    backgroundColor: '#FF6B35',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  tagText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
   priceTag: {
     position: 'absolute',
     bottom: 15,
@@ -224,7 +281,79 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: 10,
+    marginBottom: 5,
+  },
+  subCategory: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 15,
+  },
+  ratingContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  ratingSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  ratingText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginLeft: 5,
+  },
+  reviewsText: {
+    fontSize: 14,
+    color: '#666',
+    marginLeft: 5,
+  },
+  durationSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  durationText: {
+    fontSize: 14,
+    color: '#666',
+    marginLeft: 5,
+  },
+  priceSection: {
+    marginBottom: 20,
+  },
+  priceContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  currentPrice: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#4CAF50',
+  },
+  originalPrice: {
+    fontSize: 20,
+    color: '#999',
+    textDecorationLine: 'line-through',
+  },
+  discountBadge: {
+    backgroundColor: '#4CAF50',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+  },
+  discountText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  professionalSection: {
+    marginBottom: 20,
+  },
+  professionalText: {
+    fontSize: 16,
+    color: '#333',
+    fontWeight: '500',
   },
   serviceDescription: {
     fontSize: 16,
@@ -270,20 +399,57 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   bottomSection: {
+    position: 'absolute',
+    bottom: 90,
+    left: 0,
+    right: 0,
     backgroundColor: '#fff',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingVertical: 15,
     borderTopWidth: 1,
     borderTopColor: '#E5E5E5',
-    marginBottom: 80,
+    borderRadius: 24,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: -2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  bottomPadding: {
+    height: 200,
+  },
+  bottomPriceContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  bottomCurrentPrice: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#4CAF50',
+  },
+  bottomOriginalPrice: {
+    fontSize: 18,
+    color: '#999',
+    textDecorationLine: 'line-through',
   },
   addToCartButton: {
     backgroundColor: '#00BCD4',
     paddingVertical: 15,
+    paddingHorizontal: 20,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
+    flex: 1,
+    marginLeft: 15,
+    minHeight: 50,
   },
   cartIcon: {
     marginRight: 10,

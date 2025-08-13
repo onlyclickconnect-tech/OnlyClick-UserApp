@@ -34,6 +34,11 @@ export default function Cart() {
   const [manualLocation, setManualLocation] = useState("");
   const [isManualLocationEditing, setIsManualLocationEditing] = useState(false);
   
+  // Mobile number state management
+  const [showMobileModal, setShowMobileModal] = useState(false);
+  const [mobileNumber, setMobileNumber] = useState("+91 98765 43210"); // Default number
+  const [tempMobileNumber, setTempMobileNumber] = useState("");
+  
   // Interactive kindness reminder
   const [hasClickedKindness, setHasClickedKindness] = useState(false);
   
@@ -102,7 +107,48 @@ export default function Cart() {
     }
   };
 
-  // Generate next 7 days for date selection
+  // Mobile number management functions
+  const openMobileModal = () => {
+    setShowMobileModal(true);
+    // Extract only the number part (without +91) for editing
+    const numberOnly = mobileNumber.replace('+91 ', '').replace(/\s/g, '');
+    setTempMobileNumber(numberOnly);
+  };
+
+  const handleMobileNumberChange = (text) => {
+    // Simple approach - just limit to 10 digits, no formatting while typing
+    const numbersOnly = text.replace(/\D/g, '');
+    if (numbersOnly.length <= 10) {
+      setTempMobileNumber(numbersOnly);
+    }
+  };
+
+  const saveMobileNumber = () => {
+    if (tempMobileNumber && tempMobileNumber.trim()) {
+      // Remove spaces and validate
+      const cleanNumber = tempMobileNumber.replace(/\s/g, '');
+      if (cleanNumber.length === 10 && /^\d{10}$/.test(cleanNumber)) {
+        // Format as +91 XXXXX XXXXX for display
+        const formattedNumber = `+91 ${cleanNumber.slice(0, 5)} ${cleanNumber.slice(5)}`;
+        setMobileNumber(formattedNumber);
+        setShowMobileModal(false);
+      } else {
+        Alert.alert("Invalid Number", "Please enter a valid 10-digit mobile number");
+      }
+    }
+  };
+
+  const cancelMobileEdit = () => {
+    setTempMobileNumber("");
+    setShowMobileModal(false);
+  };
+
+  // Helper function to compare dates without time
+  // This fixes the issue where selected dates weren't highlighting properly
+  const isSameDate = (date1, date2) => {
+    if (!date1 || !date2) return false;
+    return date1.toDateString() === date2.toDateString();
+  };
   const generateDates = () => {
     const dates = [];
     const today = new Date();
@@ -406,6 +452,73 @@ export default function Cart() {
     </Modal>
   );
 
+  const MobileNumberModal = () => (
+    <Modal 
+      visible={showMobileModal} 
+      transparent 
+      animationType="slide"
+      onRequestClose={cancelMobileEdit}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>📱 Update Mobile Number</Text>
+            <TouchableOpacity 
+              onPress={cancelMobileEdit}
+              style={styles.closeButton}
+            >
+              <Ionicons name="close" size={24} color="#666" />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.modalContent}>
+            {/* Mobile Number Input Section */}
+            <View style={styles.manualSection}>
+              <Text style={styles.sectionTitle}>Enter your mobile number</Text>
+              <View style={styles.inputContainer}>
+                <Text style={styles.countryCodePrefix}>+91</Text>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="9876543210"
+                  placeholderTextColor="#999"
+                  value={tempMobileNumber}
+                  onChangeText={handleMobileNumberChange}
+                  keyboardType="numeric"
+                  maxLength={10}
+                  autoFocus
+                />
+              </View>
+              <Text style={styles.inputHint}>
+                This number will be used to contact you for service coordination
+              </Text>
+            </View>
+
+            {/* Action Buttons */}
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity 
+                style={styles.cancelButton}
+                onPress={cancelMobileEdit}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[
+                  styles.saveButton,
+                  (!tempMobileNumber || !tempMobileNumber.trim()) && styles.saveButtonDisabled
+                ]}
+                onPress={saveMobileNumber}
+                disabled={!tempMobileNumber || !tempMobileNumber.trim()}
+              >
+                <Text style={styles.saveButtonText}>Save Number</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+
   const CancellationPolicyModal = () => (
     <Modal visible={showCancellationPolicy} transparent animationType="slide">
       <View style={styles.modalOverlay}>
@@ -459,7 +572,7 @@ export default function Cart() {
                     key={index}
                     style={[
                       styles.dateCard,
-                      selectedDate?.getTime() === dateItem.date.getTime() && styles.selectedDateCard
+                      isSameDate(selectedDate, dateItem.date) && styles.selectedDateCard
                     ]}
                     onPress={() => {
                       setSelectedDate(dateItem.date);
@@ -468,19 +581,19 @@ export default function Cart() {
                   >
                     <Text style={[
                       styles.dayName,
-                      selectedDate?.getTime() === dateItem.date.getTime() && styles.selectedDateText
+                      isSameDate(selectedDate, dateItem.date) && styles.selectedDateText
                     ]}>
                       {dateItem.dayName}
                     </Text>
                     <Text style={[
                       styles.dayNumber,
-                      selectedDate?.getTime() === dateItem.date.getTime() && styles.selectedDateText
+                      isSameDate(selectedDate, dateItem.date) && styles.selectedDateText
                     ]}>
                       {dateItem.dayNumber}
                     </Text>
                     <Text style={[
                       styles.monthName,
-                      selectedDate?.getTime() === dateItem.date.getTime() && styles.selectedDateText
+                      isSameDate(selectedDate, dateItem.date) && styles.selectedDateText
                     ]}>
                       {dateItem.month}
                     </Text>
@@ -1054,6 +1167,27 @@ export default function Cart() {
           </Text>
         </TouchableOpacity>
 
+        {/* Mobile Number Section */}
+        <TouchableOpacity 
+          style={styles.locationCard}
+          onPress={openMobileModal}
+        >
+          <View style={styles.locationHeader}>
+            <Ionicons 
+              name="call" 
+              size={20} 
+              color="#3898B3" 
+            />
+            <Text style={styles.locationTitle}>Mobile Number</Text>
+          </View>
+          <Text style={styles.locationAddress}>
+            {mobileNumber || "Tap to set mobile number"}
+          </Text>
+          <Text style={styles.changeLocationLink}>
+            Tap to change
+          </Text>
+        </TouchableOpacity>
+
         {/* Cart Categories */}
         {cartData.map((categoryData, index) => 
           renderCategorySection(categoryData, index)
@@ -1114,6 +1248,7 @@ export default function Cart() {
       </View>
 
       <LocationModal />
+      <MobileNumberModal />
       <CancellationPolicyModal />
       <DateTimeModal />
       <PaymentModal />
@@ -1468,16 +1603,66 @@ const styles = StyleSheet.create({
     padding: 20,
     maxHeight: '80%',
   },
+  modalContainer: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '80%',
+  },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  closeButton: {
+    padding: 5,
   },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1A1A1A',
+  },
+  manualSection: {
+    marginBottom: 30,
+  },
+  sectionTitle: {
+    fontSize: 16,
     fontWeight: '600',
     color: '#1A1A1A',
+    marginBottom: 12,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
+  },
+  countryCodePrefix: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#3898B3',
+    marginRight: 8,
+  },
+  textInput: {
+    flex: 1,
+    fontSize: 16,
+    color: '#1A1A1A',
+  },
+  inputHint: {
+    fontSize: 14,
+    color: '#666',
+    fontStyle: 'italic',
+    marginTop: 8,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    gap: 12,
   },
   locationOption: {
     flexDirection: 'row',
@@ -2314,7 +2499,7 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     marginRight: 12,
     marginTop: 12,
-    minWidth: 92,
+    minWidth: 90,
     borderWidth: 2,
     borderColor: 'transparent',
     position: 'relative',
@@ -2345,8 +2530,8 @@ const styles = StyleSheet.create({
   },
   todayBadge: {
     position: 'absolute',
-    top: 4,
-    right: 4,
+    top: -10,
+    right: -8,
     backgroundColor: '#4CAF50',
     borderRadius: 10,
     paddingHorizontal: 6,
@@ -2360,11 +2545,11 @@ const styles = StyleSheet.create({
   },
   tomorrowBadge: {
     position: 'absolute',
-    top: 4,
-    right: 4,
+    top: -10,
+    right: -8,
     backgroundColor: '#FF9800',
     borderRadius: 10,
-    paddingHorizontal: 6,
+    paddingHorizontal: 5,
     paddingVertical: 2,
     zIndex: 1,
   },
@@ -2559,5 +2744,34 @@ const styles = StyleSheet.create({
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
     borderBottomColor: '#FFD54F',
+  },
+  cancelButton: {
+    flex: 1,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#666',
+  },
+  saveButton: {
+    flex: 1,
+    backgroundColor: '#3898B3',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+  },
+  saveButtonDisabled: {
+    backgroundColor: '#E5E5E5',
+  },
+  saveButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
   },
 });
