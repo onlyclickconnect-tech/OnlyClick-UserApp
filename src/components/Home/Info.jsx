@@ -42,7 +42,7 @@ export default function Info() {
     
   return (
     <View style={styles.container}>
-      <Text style={{ fontSize: 20, fontWeight: 500 }}>Hello, User</Text>
+      <Text style={{ fontSize: 20, fontWeight: '500' }}>Hello, User</Text>
       
       <View style={styles.carouselContainer}>
         <Carousel 

@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Animated, StyleSheet, View } from 'react-native';
+import { Animated, PanResponder, StyleSheet, View } from 'react-native';
 import OnboardingFooter from './OnboardingFooter';
 import OnboardingHeader from './OnboardingHeader';
 import OnboardingSlide from './OnboardingSlide';
@@ -26,8 +26,10 @@ const OnboardingContainer = ({ onComplete }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
+  const footerRef = useRef(null);
 
-  const handleNext = () => {
+  // Unified completion function
+  const handleComplete = () => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 0,
@@ -40,11 +42,29 @@ const OnboardingContainer = ({ onComplete }) => {
         useNativeDriver: true,
       })
     ]).start(() => {
-      setCurrentSlide(prev => {
-        const nextSlide = prev < slides.length - 1 ? prev + 1 : prev;
-        if (nextSlide === prev) onComplete();
-        return nextSlide;
-      });
+      onComplete();
+    });
+  };
+
+  const handleNext = () => {
+    if (currentSlide === slides.length - 1) {
+      handleComplete();
+      return;
+    }
+
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: -50,
+        duration: 300,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setCurrentSlide(prev => prev + 1);
       
       fadeAnim.setValue(0);
       slideAnim.setValue(50);
@@ -64,19 +84,83 @@ const OnboardingContainer = ({ onComplete }) => {
     });
   };
 
-  const handleSkip = () => onComplete();
+  const handlePrevious = () => {
+    if (currentSlide === 0) return;
+
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 50,
+        duration: 300,
+        useNativeDriver: true,
+      })
+    ]).start(() => {
+      setCurrentSlide(prev => prev - 1);
+      
+      fadeAnim.setValue(0);
+      slideAnim.setValue(-50);
+      
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        })
+      ]).start();
+    });
+  };
+
+  // Create PanResponder for swipe gestures
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (evt, gestureState) => {
+        // Disable swiping on the last slide
+        if (currentSlide === slides.length - 1) {
+          return false;
+        }
+        return Math.abs(gestureState.dx) > 20 && Math.abs(gestureState.dy) < 100;
+      },
+      onPanResponderMove: (evt, gestureState) => {
+        // Optional: Add visual feedback during swipe
+      },
+      onPanResponderRelease: (evt, gestureState) => {
+        const { dx } = gestureState;
+        
+        // Swipe left (next slide)
+        if (dx < -50) {
+          handleNext();
+        }
+        // Swipe right (previous slide)
+        else if (dx > 50) {
+          handlePrevious();
+        }
+      },
+    })
+  ).current;
 
   return (
     <View style={styles.container}>
       <OnboardingHeader />
       
-      <Animated.View style={[
-        styles.content,
-        {
-          opacity: fadeAnim,
-          transform: [{ translateY: slideAnim }]
-        }
-      ]}>
+      <Animated.View 
+        style={[
+          styles.content,
+          {
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }]
+          }
+        ]}
+        {...panResponder.panHandlers}
+      >
         <OnboardingSlide 
           title={slides[currentSlide].title}
           description={slides[currentSlide].description}
@@ -85,8 +169,11 @@ const OnboardingContainer = ({ onComplete }) => {
       </Animated.View>
       
       <OnboardingFooter 
+        ref={footerRef}
         onNext={handleNext}
-        onSkip={handleSkip}
+        onComplete={handleComplete}
+        currentSlide={currentSlide}
+        totalSlides={slides.length}
         isLastSlide={currentSlide === slides.length - 1}
       />
     </View>

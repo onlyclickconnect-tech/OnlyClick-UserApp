@@ -1,7 +1,7 @@
-import { useEffect, useRef } from 'react';
-import { Animated, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
+import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-const OnboardingFooter = ({ onNext, onSkip, isLastSlide }) => {
+const OnboardingFooter = forwardRef(({ onNext, onComplete, currentSlide, totalSlides, isLastSlide }, ref) => {
   const buttonAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -12,9 +12,44 @@ const OnboardingFooter = ({ onNext, onSkip, isLastSlide }) => {
     }).start();
   }, []);
 
+  const handleButtonPress = () => {
+    if (isLastSlide) {
+      onComplete();
+    } else {
+      onNext();
+    }
+  };
+
+  // Expose the button press function to parent component
+  useImperativeHandle(ref, () => ({
+    pressButton: handleButtonPress
+  }));
+
+  const renderDots = () => {
+    // Hide dots on the last slide
+    if (isLastSlide) {
+      return null;
+    }
+    
+    return (
+      <View style={styles.dotsContainer}>
+        {Array.from({ length: totalSlides }).map((_, index) => (
+          <View
+            key={index}
+            style={[
+              styles.dot,
+              index === currentSlide ? styles.activeDot : styles.inactiveDot
+            ]}
+          />
+        ))}
+      </View>
+    );
+  };
+
   return (
     <Animated.View style={[
       styles.footer,
+      isLastSlide && styles.footerLastSlide, // Add special styling for last slide
       {
         opacity: buttonAnim,
         transform: [{
@@ -25,13 +60,14 @@ const OnboardingFooter = ({ onNext, onSkip, isLastSlide }) => {
         }]
       }
     ]}>
-      <TouchableOpacity onPress={onSkip}>
-        <Text style={styles.skipButton}>Skip</Text>
-      </TouchableOpacity>
+      {renderDots()}
       
       <TouchableOpacity 
-        style={styles.nextButton} 
-        onPress={onNext}
+        style={[
+          styles.nextButton,
+          isLastSlide && styles.getStartedButton // Add special styling for last slide button
+        ]} 
+        onPress={handleButtonPress}
       >
         <Text style={styles.nextButtonText}>
           {isLastSlide ? 'Get Started' : 'Next'}
@@ -39,7 +75,7 @@ const OnboardingFooter = ({ onNext, onSkip, isLastSlide }) => {
       </TouchableOpacity>
     </Animated.View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   footer: {
@@ -47,23 +83,44 @@ const styles = StyleSheet.create({
     bottom: 30,
     left: 0,
     right: 0,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 30,
   },
-  skipButton: {
-    color: '#8C8C8C',
-    fontSize: 16,
-    padding: 12,
+  footerLastSlide: {
+    bottom: 50, // More space from bottom when no dots
+  },
+  dotsContainer: {
+    flexDirection: 'row',
+    marginBottom: 30,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginHorizontal: 4,
+  },
+  activeDot: {
+    backgroundColor: '#3898b3',
+    width: 24,
+  },
+  inactiveDot: {
+    backgroundColor: '#D1D5DB',
   },
   nextButton: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 30,
-    paddingVertical: 12,
+    backgroundColor: '#3898b3',
+    paddingHorizontal: 40,
+    paddingVertical: 15,
     borderRadius: 25,
+    minWidth: 120,
+    alignItems: 'center',
+  },
+  getStartedButton: {
+    paddingHorizontal: 50, // Wider button for "Get Started"
+    paddingVertical: 18, // Slightly taller
+    minWidth: 160, // Wider minimum width
   },
   nextButtonText: {
-    color: '#3898b3',
+    color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
   },

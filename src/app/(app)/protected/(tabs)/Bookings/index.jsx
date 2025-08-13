@@ -223,7 +223,7 @@ export default function Bookings() {
         bounces={true}
       >
         {/* Prominent OTP Notice */}
-        <View style={styles.otpNoticeContainer}>
+        {/* <View style={styles.otpNoticeContainer}>
           <View style={styles.otpNoticeCard}>
             <View style={styles.otpNoticeHeader}>
               <View style={styles.otpNoticeIconContainer}>
@@ -243,7 +243,7 @@ export default function Bookings() {
               </Text>
             </View>
           </View>
-        </View>
+        </View> */}
 
         {/* Tabs */}
         <View style={styles.tabsContainer}>
@@ -384,70 +384,71 @@ const styles = StyleSheet.create({
   filterButton: {
     padding: 5,
   },
-  otpNoticeContainer: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5E5',
-    marginTop: 20,
-  },
-  otpNoticeCard: {
-    backgroundColor: 'linear-gradient(135deg, #4A90E2 0%, #3898B3 100%)',
-    backgroundColor: '#4A90E2',
-    borderRadius: 12,
-    padding: 16,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-  },
-  otpNoticeHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 12,
-  },
-  otpNoticeIconContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 20,
-    padding: 8,
-    marginRight: 12,
-  },
-  otpNoticeContent: {
-    flex: 1,
-  },
-  otpNoticeTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
-    marginBottom: 6,
-  },
-  otpNoticeText: {
-    fontSize: 14,
-    color: '#fff',
-    lineHeight: 20,
-    opacity: 0.9,
-  },
-  otpNoticeFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  otpNoticeFooterText: {
-    fontSize: 12,
-    color: '#fff',
-    marginLeft: 6,
-    fontWeight: '500',
-    opacity: 0.8,
-  },
+  // otpNoticeContainer: {
+  //   backgroundColor: '#fff',
+  //   paddingHorizontal: 20,
+  //   paddingVertical: 15,
+  //   borderBottomWidth: 1,
+  //   borderBottomColor: '#E5E5E5',
+  //   marginTop: 20,
+  // },
+  // otpNoticeCard: {
+  //   backgroundColor: 'linear-gradient(135deg, #4A90E2 0%, #3898B3 100%)',
+  //   backgroundColor: '#4A90E2',
+  //   borderRadius: 12,
+  //   padding: 16,
+  //   elevation: 3,
+  //   shadowColor: '#000',
+  //   shadowOffset: { width: 0, height: 2 },
+  //   shadowOpacity: 0.15,
+  //   shadowRadius: 6,
+  // },
+  // otpNoticeHeader: {
+  //   flexDirection: 'row',
+  //   alignItems: 'flex-start',
+  //   marginBottom: 12,
+  // },
+  // otpNoticeIconContainer: {
+  //   backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  //   borderRadius: 20,
+  //   padding: 8,
+  //   marginRight: 12,
+  // },
+  // otpNoticeContent: {
+  //   flex: 1,
+  // },
+  // otpNoticeTitle: {
+  //   fontSize: 16,
+  //   fontWeight: '600',
+  //   color: '#fff',
+  //   marginBottom: 6,
+  // },
+  // otpNoticeText: {
+  //   fontSize: 14,
+  //   color: '#fff',
+  //   lineHeight: 20,
+  //   opacity: 0.9,
+  // },
+  // otpNoticeFooter: {
+  //   flexDirection: 'row',
+  //   alignItems: 'center',
+  //   paddingTop: 12,
+  //   borderTopWidth: 1,
+  //   borderTopColor: 'rgba(255, 255, 255, 0.2)',
+  // },
+  // otpNoticeFooterText: {
+  //   fontSize: 12,
+  //   color: '#fff',
+  //   marginLeft: 6,
+  //   fontWeight: '500',
+  //   opacity: 0.8,
+  // },
   tabsContainer: {
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#E5E5E5',
     paddingVertical: 15,
+    marginTop: 10,
   },
   tabsContent: {
     paddingHorizontal: 20,

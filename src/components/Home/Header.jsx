@@ -178,20 +178,20 @@ function Header() {
     <LinearGradient colors={["#4cb6c9", "#3898b3"]} style={styles.header}>
       <View style={styles.locationAndNotification}>
         <View style={styles.location}>
-          <Text style={{ fontSize: 15, color: "white" }}>Location</Text>
+          <Text style={{ fontSize: 14, color: "white", fontWeight: "500" }}>Location</Text>
           <TouchableOpacity style={styles.locationText} onPress={changeAddress}>
             {/*TODO:  */}
             <Entypo 
               name="location-pin" 
-              size={24} 
+              size={21} // Reduced from 24
               color={isLocationLoading ? "#FFE082" : "#f8bd00"} 
             />
-            <Text style={{ fontSize: 15, color: "white", flex: 1 }}>
+            <Text style={{ fontSize: 12, color: "white", flex: 1, fontWeight: "400" }}>
               {isLocationLoading ? "Getting location..." : selectedLocation || "Tap to set location"}
             </Text>
             <AntDesign
               name="down"
-              size={12}
+              size={11} // Reduced from 12
               style={{ fontWeight: "bold" }}
               color="#f8bd00"
             />
@@ -206,19 +206,19 @@ function Header() {
             }}
             hasBadge={hasNotification}
             style={{
-              height: screenHeight * 0.25 * 0.2,
-              width: screenWidth * 0.1,
+              height: screenHeight * 0.18 * 0.25, // Updated for smaller header
+              width: screenWidth * 0.09, // Slightly smaller width
               backgroundColor: "#56bacc",
               border: 1,
-              borderRadius: 5,
+              borderRadius: 8, // Increased border radius
             }}
-            badgeSize={15}
+            badgeSize={12} // Reduced badge size
             badgeColor={"red"}
-            badgeTop={-6}
-            badgeRight={-6}
+            badgeTop={-4} // Adjusted position
+            badgeRight={-4} // Adjusted position
             textColor="white"
             withNumbers={false}
-            element={<Ionicons name="notifications" size={27} color="white" />}
+            element={<Ionicons name="notifications" size={25} color="white" />} // Reduced icon size
           />
         </View>
       </View>
@@ -228,14 +228,14 @@ function Header() {
         <View style={styles.search}>
           <View
             style={{
-              height: 30,
-              width: 30,
+              height: 25, // Reduced from 30
+              width: 25, // Reduced from 30
               position: "absolute",
               left: 20,
               zIndex: 1,
             }}
           >
-            <FontAwesome name="search" size={24} color="#3898b3" />
+            <FontAwesome name="search" size={18} color="#30a7c8ff" /> {/* Reduced from 24 */}
           </View>
           <TextInput
             placeholder="Search"
