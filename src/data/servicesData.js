@@ -122,7 +122,7 @@ export const allServices = [
     duration: '1 hour',
     rating: 4.7,
     reviews: 312,
-    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751557281/openart-image_nWsgUrQD_1751513389869_raw_kmtmce.jpg' },
+    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751557087/ChatGPT_Image_Jul_3_2025_10_06_57_AM_zmuowi.png' },
     tags: ['Quick Fix'],
     includes: ['Diagnosis', 'Repair', 'Testing'],
     professional: 'Fan Specialist'
@@ -139,7 +139,7 @@ export const allServices = [
     duration: '45 minutes',
     rating: 4.8,
     reviews: 298,
-    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751557281/openart-image_nWsgUrQD_1751513389869_raw_kmtmce.jpg' },
+    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751557087/ChatGPT_Image_Jul_3_2025_10_06_57_AM_zmuowi.png' },
     tags: ['Popular', 'Same Day'],
     includes: ['Mounting', 'Wiring', 'Testing'],
     professional: 'Certified Electrician'
@@ -156,7 +156,7 @@ export const allServices = [
     duration: '1 hour',
     rating: 4.9,
     reviews: 254,
-    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751557281/openart-image_nWsgUrQD_1751513389869_raw_kmtmce.jpg' },
+    image: { uri: 'image_nWsgUrQD_1751513389869_raw_kmtmce.jpg' },
     tags: ['Decorative', 'Same Day'],
     includes: ['Mounting', 'Wiring', 'Testing'],
     professional: 'Certified Electrician'
@@ -190,7 +190,7 @@ export const allServices = [
     duration: '45 minutes',
     rating: 4.7,
     reviews: 165,
-    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751557281/openart-image_nWsgUrQD_1751513389869_raw_kmtmce.jpg' },
+    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751557088/lohit_cherukuri_Generate_a_high-resolution__realistic_image_clearly_showcasing_a_2c971bf7-20a0-481a-9d82-2b0840041ec5_lmoqa5.png' },
     tags: ['Quick Service'],
     includes: ['Mounting', 'Wiring', 'Testing'],
     professional: 'Technician'
@@ -207,7 +207,7 @@ export const allServices = [
     duration: '20 minutes',
     rating: 4.8,
     reviews: 214,
-    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751557281/openart-image_nWsgUrQD_1751513389869_raw_kmtmce.jpg' },
+    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751557089/ChatGPT_Image_Jul_3_2025_09_50_29_AM_mrxblj.png' },
     tags: ['Quick Fix'],
     includes: ['New regulator', 'Installation', 'Testing'],
     professional: 'Certified Electrician'
@@ -250,15 +250,15 @@ export const allServices = [
     serviceId: '012OC',
     category: 'electrical',
     subCategory: 'Lighting Solutions',
-    title: 'Fancy Light Installation',
-    description: 'Installation of decorative and fancy lights',
+    title: 'Bulb Installation/Repair',
+    description: 'Installation or repair of light bulbs',
     price: 199,
     originalPrice: null,
     discount: null,
-    duration: '45 minutes',
+    duration: '15 minutes',
     rating: 4.7,
     reviews: 243,
-    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751557197/ChatGPT_Image_Jul_3_2025_08_23_43_AM_p72ebu.png' },
+    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751697156/ChatGPT_Image_Jul_5_2025_11_57_02_AM_pvbwgv.png' },
     tags: ['Decorative'],
     includes: ['Mounting', 'Wiring', 'Testing'],
     professional: 'Lighting Specialist'
@@ -326,7 +326,7 @@ export const allServices = [
     duration: '30 minutes',
     rating: 4.7,
     reviews: 205,
-    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751557197/ChatGPT_Image_Jul_3_2025_08_23_43_AM_p72ebu.png' },
+    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751557087/ChatGPT_Image_Jul_3_2025_10_18_18_AM_xamx07.png' },
     tags: ['Quick Service'],
     includes: ['Mounting', 'Wiring', 'Testing'],
     professional: 'Technician'
@@ -360,7 +360,7 @@ export const allServices = [
     duration: '1 hour',
     rating: 4.8,
     reviews: 273,
-    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751557197/ChatGPT_Image_Jul_3_2025_08_23_43_AM_p72ebu.png' },
+    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751557088/ChatGPT_Image_Jul_3_2025_10_15_53_AM_zura1i.png' },
     tags: ['Security'],
     includes: ['Mounting', 'Configuration', 'Testing'],
     professional: 'Security Specialist'
@@ -437,7 +437,7 @@ export const allServices = [
     serviceId: '023OC',
     category: 'electrical',
     subCategory: 'Appliance Installation',
-    title: 'Geyser Installation',
+    title: 'Geyser Installation/Repair',
     description: 'Installation of electric and instant water heaters',
     price: 499,
     originalPrice: null,
@@ -445,7 +445,7 @@ export const allServices = [
     duration: '1 hour',
     rating: 4.8,
     reviews: 178,
-    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751557197/ChatGPT_Image_Jul_3_2025_08_23_43_AM_p72ebu.png' },
+    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751557088/ChatGPT_Image_Jul_3_2025_10_13_16_AM_vwk8rr.png' },
     tags: ['Same Day'],
     includes: ['Mounting', 'Plumbing connections', 'Testing'],
     professional: 'Certified Electrician'
@@ -537,7 +537,7 @@ export const allServices = [
     duration: '30 minutes',
     rating: 4.7,
     reviews: 210,
-    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751596604/ChatGPT_Image_Jul_3_2025_09_39_44_PM_wmlk17.png' },
+    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751596604/ChatGPT_Image_Jul_3_2025_10_18_12_PM_xqu38i.png' },
     tags: ['Quick Service'],
     includes: ['Diagnosis', 'Repair', 'Leak testing'],
     professional: 'Experienced Plumber'
@@ -554,7 +554,7 @@ export const allServices = [
     duration: '30-45 minutes',
     rating: 4.8,
     reviews: 198,
-    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751596604/ChatGPT_Image_Jul_3_2025_09_39_44_PM_wmlk17.png' },
+    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751596604/ChatGPT_Image_Jul_3_2025_10_18_12_PM_xqu38i.png' },
     tags: ['Professional'],
     includes: ['Tap fitting', 'Sealing', 'Testing'],
     professional: 'Licensed Plumber'
@@ -588,7 +588,7 @@ export const allServices = [
     duration: '20 minutes',
     rating: 4.7,
     reviews: 175,
-    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751596604/ChatGPT_Image_Jul_3_2025_09_39_44_PM_wmlk17.png' },
+    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751596605/ChatGPT_Image_Jul_3_2025_10_27_31_PM_vg50of.png' },
     tags: ['Quick Service'],
     includes: ['Diagnosis', 'Repair', 'Leak testing'],
     professional: 'Experienced Plumber'
@@ -622,7 +622,7 @@ export const allServices = [
     duration: '30-45 minutes',
     rating: 4.7,
     reviews: 200,
-    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751596604/ChatGPT_Image_Jul_3_2025_09_39_44_PM_wmlk17.png' },
+    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751596604/ChatGPT_Image_Jul_3_2025_09_51_51_PM_fyumyc.png' },
     tags: ['Quick Fix'],
     includes: ['Diagnosis', 'Parts replacement', 'Testing'],
     professional: 'Experienced Plumber'
@@ -639,7 +639,7 @@ export const allServices = [
     duration: '1 hour',
     rating: 4.9,
     reviews: 142,
-    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751596604/ChatGPT_Image_Jul_3_2025_09_39_44_PM_wmlk17.png' },
+    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751596611/ChatGPT_Image_Jul_3_2025_09_48_47_PM_qakmwj.png' },
     tags: ['Professional', 'Same Day'],
     includes: ['Flush unit', 'Installation', 'Testing'],
     professional: 'Licensed Plumber'
@@ -673,7 +673,7 @@ export const allServices = [
     duration: '2-3 hours',
     rating: 4.8,
     reviews: 220,
-    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751596604/ChatGPT_Image_Jul_3_2025_09_39_44_PM_wmlk17.png' },
+    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751596611/ChatGPT_Image_Jul_3_2025_09_48_47_PM_qakmwj.png' },
     tags: ['Premium', 'Professional'],
     includes: ['Toilet fixture', 'Installation', '1 year warranty'],
     professional: 'Licensed Plumber'
@@ -690,7 +690,7 @@ export const allServices = [
     duration: '2-3 hours',
     rating: 4.8,
     reviews: 215,
-    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751596604/ChatGPT_Image_Jul_3_2025_09_39_44_PM_wmlk17.png' },
+    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751596605/ChatGPT_Image_Jul_3_2025_09_41_55_PM_nkff9i.png' },
     tags: ['Premium', 'Professional'],
     includes: ['Toilet fixture', 'Installation', '1 year warranty'],
     professional: 'Licensed Plumber'
@@ -724,7 +724,7 @@ export const allServices = [
     duration: '1 hour',
     rating: 4.7,
     reviews: 110,
-    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751596604/shower_installation.png' },
+    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751603959/ChatGPT_Image_Jul_4_2025_09_13_36_AM_ukvtq6.png' },
     tags: ['Quick Service'],
     includes: ['Shower fitting', 'Basic plumbing'],
     professional: 'Licensed Plumber'
@@ -758,7 +758,7 @@ export const allServices = [
     duration: '1 hour',
     rating: 4.5,
     reviews: 85,
-    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751596604/shower_repair.png' },
+    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751603959/ChatGPT_Image_Jul_4_2025_09_13_36_AM_ukvtq6.png' },
     tags: ['Quick Fix'],
     includes: ['Leak repair', 'Basic maintenance'],
     professional: 'Licensed Plumber'
@@ -775,7 +775,7 @@ export const allServices = [
     duration: '30-45 mins',
     rating: 4.7,
     reviews: 140,
-    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751596604/soap_towel_shelf_installation.png' },
+    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751603957/ChatGPT_Image_Jul_4_2025_09_21_41_AM_q9ef6c.png' },
     tags: ['Custom Setup'],
     includes: ['Mounting hardware', 'Wall drilling'],
     professional: 'Licensed Plumber'
@@ -792,7 +792,7 @@ export const allServices = [
     duration: '1-2 hours',
     rating: 4.6,
     reviews: 100,
-    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751596604/wash_basin_repair.png' },
+    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751596885/ChatGPT_Image_Jul_4_2025_08_10_33_AM_hbazxt.png' },
     tags: ['Durable Repair'],
     includes: ['Leak fix', 'Sealant application'],
     professional: 'Licensed Plumber'
@@ -809,7 +809,7 @@ export const allServices = [
     duration: '30-60 mins',
     rating: 4.8,
     reviews: 105,
-    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751596604/wash_basin_blockage.png' },
+    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751603974/ChatGPT_Image_Jul_4_2025_08_13_44_AM_aauv7d.png' },
     tags: ['Quick Fix'],
     includes: ['Drain cleaning', 'Clog removal'],
     professional: 'Licensed Plumber'
@@ -826,7 +826,7 @@ export const allServices = [
     duration: '2-3 hours',
     rating: 4.9,
     reviews: 98,
-    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751596604/wash_basin_installation.png' },
+    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751596605/ChatGPT_Image_Jul_3_2025_10_27_31_PM_vg50of.png' },
     tags: ['Professional Setup'],
     includes: ['Basin fitting', 'Plumbing work'],
     professional: 'Licensed Plumber'
@@ -915,7 +915,7 @@ export const allServices = [
     duration: "30-45 mins",
     rating: 4.8,
     reviews: 85,
-    image: ""
+    image: { uri: "https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751557088/ChatGPT_Image_Jul_3_2025_10_13_16_AM_vwk8rr.png" }
   },
   {
     serviceId: "025PL",

@@ -186,7 +186,7 @@ export default function ServicesPage() {
           <View style={styles.serviceMetrics}>
             <View style={styles.ratingContainer}>
               <Ionicons name="star" size={14} color="#FFD700" />
-              <Text style={styles.ratingText}>{item.rating}</Text>
+              <Text style={styles.ratingText}>{item.rating || 0.0}</Text>
               <Text style={styles.reviewsText}>({item.reviews})</Text>
             </View>
             <View style={styles.durationContainer}>
