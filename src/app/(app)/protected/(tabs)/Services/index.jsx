@@ -1,10 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   FlatList,
   Image,
-  ScrollView,
   StatusBar,
   StyleSheet,
   Text,
@@ -157,84 +156,77 @@ export default function ServicesPage() {
     </TouchableOpacity>
   );
 
-  const renderServiceCard = ({ item }) => (
-    <TouchableOpacity
+  // Memoized service card for performance
+  const ServiceCard = React.memo(({ item }) => (
+    <View
       style={styles.serviceCard}
-      onPress={() => router.push(`/protected/(tabs)/Services/${item.serviceId}`)}
       activeOpacity={0.8}
     >
-      {/* Service Badge */}
+      {/* Service Badge
       {item.tags && item.tags.length > 0 && (
         <View style={[styles.serviceBadge, { backgroundColor: getBadgeColor(item.tags[0]) }]}>
           <Text style={styles.badgeText}>{item.tags[0]}</Text>
         </View>
-      )}
+      )} */}
 
-      {/* Service Image */}
-      <View style={styles.serviceImageContainer}>
-        <Image 
-          source={item.image || {uri: "https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751596604/ChatGPT_Image_Jul_3_2025_10_18_12_PM_xqu38i.png"}} 
-          style={styles.serviceImage}
-          resizeMode="cover"
-          onError={(error) => console.log('Image loading error:', error)}
-        />
-        <View style={styles.imageOverlay}>
-          <TouchableOpacity style={styles.favoriteButton}>
-            <Ionicons name="heart-outline" size={20} color="#fff" />
-          </TouchableOpacity>
-        </View>
-      </View>
+      {/* Card Content - Horizontal Layout */}
+      <View style={styles.cardContentHorizontal}>
+        {/* Left Side - Service Details */}
+        <View style={styles.serviceDetailsLeft}>
+          <View style={styles.serviceHeader}>
+            <Text style={styles.serviceName} numberOfLines={1}>{item.title}</Text>
+            <Text style={styles.serviceCategory}>{item.subCategory}</Text>
+          </View>
 
-      {/* Service Content */}
-      <View style={styles.serviceContent}>
-        <View style={styles.serviceHeader}>
-          <Text style={styles.serviceName} numberOfLines={1}>{item.title}</Text>
-          <Text style={styles.serviceCategory}>{item.subCategory}</Text>
-        </View>
+          <Text style={styles.serviceDescription} numberOfLines={2}>
+            {item.description}
+          </Text>
 
-        <Text style={styles.serviceDescription} numberOfLines={2}>
-          {item.description}
-        </Text>
-
-        {/* Features */}
-        <View style={styles.featuresContainer}>
-          {item.includes && item.includes.slice(0, 2).map((feature, index) => (
-            <View key={index} style={styles.featureTag}>
-              <Text style={styles.featureText}>{feature}</Text>
+          {/* Rating and Duration */}
+          <View style={styles.serviceMetrics}>
+            <View style={styles.ratingContainer}>
+              <Ionicons name="star" size={14} color="#FFD700" />
+              <Text style={styles.ratingText}>{item.rating}</Text>
+              <Text style={styles.reviewsText}>({item.reviews})</Text>
             </View>
-          ))}
+            <View style={styles.durationContainer}>
+              <Ionicons name="time-outline" size={12} color="#666" />
+              <Text style={styles.durationText}>{item.duration}</Text>
+            </View>
+          </View>
+
+          {/* Price and Add to Cart Button */}
+          <View style={styles.serviceFooter}>
+            <View style={styles.priceContainer}>
+              <Text style={styles.currentPrice}>₹{item.price}</Text>
+            </View>
+            <TouchableOpacity 
+              style={styles.addToCartButton}
+              onPress={() => addToCart(item)}
+            >
+              <Text style={styles.addToCartButtonText}>Add to Cart</Text>
+              <Ionicons name="cart-outline" size={14} color="#fff" />
+            </TouchableOpacity>
+          </View>
         </View>
 
-        {/* Rating and Duration */}
-        <View style={styles.serviceMetrics}>
-          <View style={styles.ratingContainer}>
-            <Ionicons name="star" size={16} color="#FFD700" />
-            <Text style={styles.ratingText}>{item.rating}</Text>
-            <Text style={styles.reviewsText}>({item.reviews})</Text>
+        {/* Right Side - Service Image */}
+        <View style={styles.serviceImageContainer}>
+          <Image 
+            source={item.image || {uri: "https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751596604/ChatGPT_Image_Jul_3_2025_10_18_12_PM_xqu38i.png"}} 
+            style={styles.serviceImage}
+            resizeMode="cover"
+            onError={e => console.log(e.nativeEvent?.error)}
+          />
+          <View style={styles.imageOverlay}>
+            <TouchableOpacity style={styles.favoriteButton}>
+              <Ionicons name="heart-outline" size={16} color="#fff" />
+            </TouchableOpacity>
           </View>
-          <View style={styles.durationContainer}>
-            <Ionicons name="time-outline" size={14} color="#666" />
-            <Text style={styles.durationText}>{item.duration}</Text>
-          </View>
-        </View>
-
-        {/* Price and Book Button */}
-        <View style={styles.serviceFooter}>
-          <View style={styles.priceContainer}>
-            <Text style={styles.currentPrice}>₹{item.price}</Text>
-            <Text style={styles.originalPrice}>₹{item.originalPrice}</Text>
-          </View>
-          <TouchableOpacity 
-            style={styles.addToCartButton}
-            onPress={() => addToCart(item)}
-          >
-            <Text style={styles.addToCartButtonText}>Add to Cart</Text>
-            <Ionicons name="cart" size={14} color="#fff" />
-          </TouchableOpacity>
         </View>
       </View>
-    </TouchableOpacity>
-  );
+    </View>
+  ));
 
   return (
     <View style={styles.container}>
@@ -269,152 +261,79 @@ export default function ServicesPage() {
         </View>
       </View>
 
-      <ScrollView 
-        style={styles.scrollContainer}
+      <FlatList
+        data={filteredServices}
+        renderItem={({ item }) => <ServiceCard item={item} />}
+        keyExtractor={item => `service-${item.serviceId}`}
+        ListHeaderComponent={
+          <View>
+            {/* Search Bar */}
+            <View style={styles.searchSection}>
+              <View style={styles.searchContainer}>
+                <Ionicons name="search" size={20} color="#666" />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Search for services..."
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  placeholderTextColor="#999"
+                />
+                {searchQuery ? (
+                  <TouchableOpacity onPress={() => setSearchQuery('')}>
+                    <Ionicons name="close-circle" size={20} color="#666" />
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity>
+                    <Ionicons name="filter" size={20} color="#3898B3" />
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+
+            {/* Categories */}
+            <View style={styles.categoriesSection}>
+              <Text style={styles.sectionTitle}>Categories</Text>
+              <FlatList
+                data={categories}
+                renderItem={renderCategoryCard}
+                keyExtractor={(item) => item.id.toString()}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.categoriesContainer}
+              />
+            </View>
+
+            {/* Services Section Header */}
+            <View style={styles.servicesSection}>
+              <View style={styles.servicesSectionHeader}>
+                <Text style={styles.sectionTitle}>
+                  {selectedCategory === 'All' ? 'Featured Services' : `${selectedCategory} Services`}
+                </Text>
+                <TouchableOpacity>
+                  <Text style={styles.seeAllText}>See All</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Ionicons name="search-outline" size={64} color="#DDD" />
+            <Text style={styles.emptyTitle}>No services found</Text>
+            <Text style={styles.emptySubtitle}>
+              Try searching with different keywords
+            </Text>
+          </View>
+        }
+        initialNumToRender={6}
+        windowSize={7}
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={8}
+        updateCellsBatchingPeriod={50}
+        contentContainerStyle={{ paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
         bounces={true}
-      >
-        {/* Search Bar */}
-        <View style={styles.searchSection}>
-          <View style={styles.searchContainer}>
-            <Ionicons name="search" size={20} color="#666" />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search for services..."
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholderTextColor="#999"
-            />
-            {searchQuery ? (
-              <TouchableOpacity onPress={() => setSearchQuery('')}>
-                <Ionicons name="close-circle" size={20} color="#666" />
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity>
-                <Ionicons name="filter" size={20} color="#3898B3" />
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
-
-        {/* Categories */}
-        <View style={styles.categoriesSection}>
-          <Text style={styles.sectionTitle}>Categories</Text>
-          <FlatList
-            data={categories}
-            renderItem={renderCategoryCard}
-            keyExtractor={(item) => item.id.toString()}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.categoriesContainer}
-          />
-        </View>
-
-        {/* Services List */}
-        <View style={styles.servicesSection}>
-          <View style={styles.servicesSectionHeader}>
-            <Text style={styles.sectionTitle}>
-              {selectedCategory === 'All' ? 'Featured Services' : `${selectedCategory} Services`}
-            </Text>
-            <TouchableOpacity>
-              <Text style={styles.seeAllText}>See All</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Services Grid */}
-          <View style={styles.servicesContainer}>
-            {filteredServices.length > 0 ? (
-              filteredServices.map((item) => (
-                <TouchableOpacity
-                  key={item.serviceId}
-                  style={styles.serviceCard}
-                  onPress={() => router.push(`/protected/(tabs)/Services/${item.serviceId}`)}
-                  activeOpacity={0.8}
-                >
-                  {/* Service Badge */}
-                  {item.tags && item.tags.length > 0 && (
-                    <View style={[styles.serviceBadge, { backgroundColor: getBadgeColor(item.tags[0]) }]}>
-                      <Text style={styles.badgeText}>{item.tags[0]}</Text>
-                    </View>
-                  )}
-
-                  {/* Service Image */}
-                  <View style={styles.serviceImageContainer}>
-                    <Image 
-                      source={item.image || {uri: "https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751596604/ChatGPT_Image_Jul_3_2025_10_18_12_PM_xqu38i.png"}} 
-                      style={styles.serviceImage}
-                      resizeMode="cover"
-                      onError={(error) => console.log('Image loading error:', error)}
-                    />
-                    <View style={styles.imageOverlay}>
-                      <TouchableOpacity style={styles.favoriteButton}>
-                        <Ionicons name="heart-outline" size={20} color="#fff" />
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-
-                  {/* Service Content */}
-                  <View style={styles.serviceContent}>
-                    <View style={styles.serviceHeader}>
-                      <Text style={styles.serviceName} numberOfLines={1}>{item.title}</Text>
-                      <Text style={styles.serviceCategory}>{item.subCategory}</Text>
-                    </View>
-
-                    <Text style={styles.serviceDescription} numberOfLines={2}>
-                      {item.description}
-                    </Text>
-
-                    {/* Features */}
-                    <View style={styles.featuresContainer}>
-                      {item.includes && item.includes.slice(0, 2).map((feature, index) => (
-                        <View key={index} style={styles.featureTag}>
-                          <Text style={styles.featureText}>{feature}</Text>
-                        </View>
-                      ))}
-                    </View>
-
-                    {/* Rating and Duration */}
-                    <View style={styles.serviceMetrics}>
-                      <View style={styles.ratingContainer}>
-                        <Ionicons name="star" size={16} color="#FFD700" />
-                        <Text style={styles.ratingText}>{item.rating}</Text>
-                        <Text style={styles.reviewsText}>({item.reviews})</Text>
-                      </View>
-                      <View style={styles.durationContainer}>
-                        <Ionicons name="time-outline" size={14} color="#666" />
-                        <Text style={styles.durationText}>{item.duration}</Text>
-                      </View>
-                    </View>
-
-                    {/* Price and Add to Cart Button */}
-                    <View style={styles.serviceFooter}>
-                      <View style={styles.priceContainer}>
-                        <Text style={styles.currentPrice}>₹{item.price}</Text>
-                        <Text style={styles.originalPrice}>₹{item.originalPrice}</Text>
-                      </View>
-                      <TouchableOpacity 
-                        style={styles.addToCartButton}
-                        onPress={() => addToCart(item)}
-                      >
-                        <Text style={styles.addToCartButtonText}>Add to Cart</Text>
-                        <Ionicons name="cart" size={14} color="#fff" />
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              ))
-            ) : (
-              <View style={styles.emptyContainer}>
-                <Ionicons name="search-outline" size={64} color="#DDD" />
-                <Text style={styles.emptyTitle}>No services found</Text>
-                <Text style={styles.emptySubtitle}>
-                  Try searching with different keywords
-                </Text>
-              </View>
-            )}
-          </View>
-        </View>
-      </ScrollView>
+      />
     </View>
   );
 }
@@ -593,34 +512,52 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 100,
   },
+  serviceRow: {
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+  },
   serviceCard: {
     backgroundColor: '#fff',
-    borderRadius: 16,
-    marginBottom: 20,
-    elevation: 3,
+    borderRadius: 20,
+    marginBottom: 16,
+    marginHorizontal: 20,
+    elevation: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
     overflow: 'hidden',
+    height: 170,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+  },
+  cardContentHorizontal: {
+    flexDirection: 'row',
+    height: '100%',
+  },
+  serviceDetailsLeft: {
+    flex: 1,
+    padding: 18,
+    justifyContent: 'space-between',
   },
   serviceBadge: {
     position: 'absolute',
-    top: 12,
-    left: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    top: 8,
+    left: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 8,
     zIndex: 1,
   },
   badgeText: {
     color: '#fff',
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: 'bold',
   },
   serviceImageContainer: {
     position: 'relative',
-    height: 140,
+    width: 120,
+    height: '100%',
   },
   serviceImage: {
     width: '100%',
@@ -629,38 +566,38 @@ const styles = StyleSheet.create({
   },
   imageOverlay: {
     position: 'absolute',
-    top: 0,
-    right: 0,
-    padding: 12,
+    top: 4,
+    right: 4,
   },
   favoriteButton: {
     backgroundColor: 'rgba(0,0,0,0.3)',
-    borderRadius: 20,
-    padding: 8,
+    borderRadius: 12,
+    padding: 4,
   },
   serviceContent: {
     padding: 16,
   },
   serviceHeader: {
-    marginBottom: 8,
+    marginBottom: 4,
   },
   serviceName: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
     color: '#1A1A1A',
     marginBottom: 4,
+    lineHeight: 22,
   },
   serviceCategory: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#3898B3',
     fontWeight: '500',
     textTransform: 'uppercase',
   },
   serviceDescription: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: 12,
+    color: '#666666',
     lineHeight: 20,
-    marginBottom: 12,
+    marginBottom: 10,
   },
   featuresContainer: {
     flexDirection: 'row',
@@ -668,45 +605,45 @@ const styles = StyleSheet.create({
   },
   featureTag: {
     backgroundColor: '#F0F8FF',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginRight: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    marginRight: 4,
   },
   featureText: {
-    fontSize: 10,
+    fontSize: 9,
     color: '#3898B3',
     fontWeight: '500',
   },
   serviceMetrics: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 8,
   },
   ratingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginRight: 40,
   },
   ratingText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
-    marginLeft: 4,
+    color: '#FF6B35',
+    marginLeft: 6,
   },
   reviewsText: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#666',
-    marginLeft: 4,
+    marginLeft: 2,
   },
   durationContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   durationText: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#666',
-    marginLeft: 4,
+    marginLeft: 2,
   },
   serviceFooter: {
     flexDirection: 'row',
@@ -718,29 +655,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   currentPrice: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#28A745',
   },
   originalPrice: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#999',
     textDecorationLine: 'line-through',
-    marginLeft: 8,
+    marginLeft: 4,
   },
   addToCartButton: {
     backgroundColor: '#3898B3',
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 16,
+    marginLeft: 0,
+    marginTop: -8,
+    zIndex: 10,
   },
   addToCartButtonText: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
-    marginRight: 6,
+    marginRight: 4,
   },
   emptyContainer: {
     alignItems: 'center',
