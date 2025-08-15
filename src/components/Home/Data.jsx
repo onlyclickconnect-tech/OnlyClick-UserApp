@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
-import Icon from 'react-native-vector-icons/Ionicons';
 import { serviceCategories } from "../../data/servicesData";
 
 export default function Data() {
@@ -87,6 +86,18 @@ const bookAgainServices = [
       return iconMap[iconName] || `${iconName}-outline`;
     };
 
+    const getCategoryImage = (categoryId) => {
+      const imageMap = {
+        'electrical': require("../../../assets/images/electrical.png"),
+        'plumbing': require("../../../assets/images/plumbing.png"),
+        'carpentry': require("../../../assets/images/carpentry.png"),
+        'cleaning': require("../../../assets/images/cleaning.png"),
+        'ac_service': require("../../../assets/images/ACservices.png"),
+        'consultation': require("../../../assets/images/painting.png"),
+      };
+      return imageMap[categoryId] || require("../../../assets/images/cleaning.png");
+    };
+
     return (
       <TouchableOpacity 
         style={styles.categoryItem} 
@@ -95,10 +106,14 @@ const bookAgainServices = [
           router.push(`/(app)/protected/(tabs)/Services?selectedCategory=${item.id}`);
         }}
       >
-        <View style={[styles.categoryIcon, { backgroundColor: item.color + '40' }]}>
-          <Icon name={getIconName(item.icon)} size={24} color={item.color} />
+        <View style={[styles.categoryIcon]}>
+          <Image
+            source={getCategoryImage(item.id)}
+            style={{ width: 94, height: 94 }}
+            resizeMode="contain"
+          />
         </View>
-        <Text style={styles.categoryText}>{item.name}</Text>
+        {/* <Text style={styles.categoryText}>{item.name}</Text> */}
       </TouchableOpacity>
     );
   };
@@ -116,7 +131,7 @@ const bookAgainServices = [
       <View style={styles.serviceInfo}>
         <Text style={styles.serviceTitle}>{item.title}</Text>
         <View style={styles.ratingContainer}>
-          <Icon name="star" size={16} color="#FFD700" />
+          <Image name="star" size={16} color="#FFD700" />
           <Text style={styles.ratingText}>{item.rating}</Text>
           <Text style={styles.reviewsText}>({item.reviews})</Text>
         </View>
@@ -133,7 +148,7 @@ const bookAgainServices = [
         <Text style={styles.testimonialName}>{item.name}</Text>
         <View style={styles.starsContainer}>
           {[...Array(item.rating)].map((_, index) => (
-            <Icon key={index} name="star" size={14} color="#FFD700" />
+            <Image key={index} name="star" size={14} color="#FFD700" />
           ))}
         </View>
       </View>
@@ -265,8 +280,8 @@ const styles = StyleSheet.create({
     marginBottom: 0,
   },
   categoryIcon: {
-    width: 50,
-    height: 50,
+    width: 90,
+    height: 90,
     borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',

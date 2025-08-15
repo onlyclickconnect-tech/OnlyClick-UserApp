@@ -1,4 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -137,19 +137,19 @@ export default function ServicesPage() {
       ]}
       onPress={() => handleCategoryPress(item)}
     >
-      <View style={[styles.categoryIconContainer, { backgroundColor: item.color }]}>
-        <Ionicons 
-          name={item.icon} 
-          size={24} 
-          color="#fff" 
+      <View style={[styles.categoryIconContainer]}>
+        <Image
+          source={getCategoryImage(item.id)}
+          style={{ width: 84, height: 84 }}
+          resizeMode="contain"
         />
       </View>
-      <Text style={[
+      {/* <Text style={[
         styles.categoryName,
         selectedCategory === item.name && styles.selectedCategoryName
       ]}>
         {item.name}
-      </Text>
+      </Text> */}
       <Text style={styles.categoryCount}>
         {item.count} services
       </Text>
@@ -227,6 +227,18 @@ export default function ServicesPage() {
       </View>
     </View>
   ));
+
+  const getCategoryImage = (categoryId) => {
+    const imageMap = {
+      'electrical': require("../../../../../../assets/images/electrical.png"),
+      'plumbing': require("../../../../../../assets/images/plumbing.png"),
+      'carpentry': require("../../../../../../assets/images/carpentry.png"),
+      'cleaning': require("../../../../../../assets/images/cleaning.png"),
+      'ac_service': require("../../../../../../assets/images/ACservices.png"),
+      'consultation': require("../../../../../../assets/images/painting.png"),
+    };
+    return imageMap[categoryId] || require("../../../../../../assets/images/featuredService.png");
+  };
 
   return (
     <View style={styles.container}>
@@ -330,7 +342,7 @@ export default function ServicesPage() {
         removeClippedSubviews={true}
         maxToRenderPerBatch={8}
         updateCellsBatchingPeriod={50}
-        contentContainerStyle={{ paddingBottom: 40 }}
+        contentContainerStyle={{ paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
         bounces={true}
       />
@@ -444,11 +456,11 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
     color: '#1A1A1A',
-    marginBottom: 15,
+    marginBottom: 10,
     paddingHorizontal: 20,
   },
   categoriesContainer: {
-    paddingHorizontal: 15,
+    paddingHorizontal: 10,
   },
   categoryCard: {
     backgroundColor: '#fff',
@@ -470,9 +482,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0F8FF',
   },
   categoryIconContainer: {
-    width: 45,
-    height: 45,
-    borderRadius: 22.5,
+    width: 84,
+    height: 84,
+    borderRadius: 42,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
@@ -488,7 +500,7 @@ const styles = StyleSheet.create({
     color: '#3898B3',
   },
   categoryCount: {
-    fontSize: 10,
+    fontSize: 11,
     color: '#666',
     textAlign: 'center',
   },

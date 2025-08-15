@@ -3,6 +3,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   Alert,
+  Image,
+  Linking,
   Modal,
   ScrollView,
   StatusBar,
@@ -17,6 +19,7 @@ export default function BookingDetails() {
   const { id } = useLocalSearchParams();
   const [showCancellationModal, setShowCancellationModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [otp, setOtp] = useState('');
 
   const handleCancellation = () => {
     Alert.alert(
@@ -49,7 +52,7 @@ export default function BookingDetails() {
 🎫 Booking ID: ${booking.bookingId}
 📊 Status: ${booking.status}
 
-📞 Contact: ${booking.maskedContact}
+📞 Contact: ${booking.contact}
 💳 Payment: ${booking.paymentMethod}
 ⏱️ Duration: ${booking.estimatedDuration}
 
@@ -90,18 +93,23 @@ Booked via YourApp 📱`;
   // Mock booking data - in real app, fetch by ID
   const booking = {
     id: parseInt(id),
+    otp: 1037,
     serviceName: 'Plumbing Repair',
     date: '2025-08-08',
     time: '10:00 AM',
     location: '123 Main Street, Downtown Area, City - 400001',
-    status: 'Pending',
+    status: 'Accepted',
     provider: 'AquaFix Services',
     price: 299,
     category: 'Plumbing',
     bookingTime: '2025-08-06 14:30',
-    maskedContact: '+91 *****43210',
+    contact: '+91 56*** ***10',
     description: 'Kitchen sink pipe repair and faucet replacement',
-    taskMaster: null, // Will be assigned later
+    taskMaster: {
+      name: 'John Doe',
+      contact: '+91 56789 43210',
+      photo: 'https://via.placeholder.com/150'
+    },
     estimatedDuration: '1-2 hours',
     paymentMethod: 'Cash on Delivery',
     bookingId: 'BK2025080001',
@@ -137,8 +145,8 @@ Booked via YourApp 📱`;
 
   const getStatusMessage = (status) => {
     switch (status) {
-      case 'Pending': return 'A Task Master will be assigned in 1-2 hours';
-      case 'Accepted': return 'Your Task Master is on the way!';
+      case 'Pending': return 'A Service Provider will be assigned in 1-2 hours';
+      case 'Accepted': return 'Your Service Provider is on the way!';
       case 'Completed': return 'Service completed successfully';
       case 'Cancelled': return 'This booking has been cancelled';
       default: return '';
@@ -358,6 +366,8 @@ Booked via YourApp 📱`;
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+
+
         {/* Service Header */}
         <View style={styles.serviceHeader}>
           <Text style={styles.serviceName}>{booking.serviceName}</Text>
@@ -381,6 +391,40 @@ Booked via YourApp 📱`;
           </View>
           <Text style={styles.statusMessage}>{getStatusMessage(booking.status)}</Text>
         </View>
+
+        {/* Service Provider Details */}
+        {booking.taskMaster && (
+          <View style={styles.providerDetailsContainer}>
+            <Text style={styles.sectionTitle}>Service Provider</Text>
+            <View style={styles.providerDetails}>
+              <Image source={{ uri: booking.taskMaster.photo }} style={styles.providerPhoto} />
+              <View style={styles.providerInfo}>
+                <Text style={styles.providerName}>{booking.taskMaster.name}</Text>
+                <Text style={styles.providerContact}>{booking.taskMaster.contact}</Text>
+              </View>
+              <TouchableOpacity 
+                style={styles.callButton}
+                onPress={() => {
+                  const phoneNumber = booking.taskMaster.contact;
+                  Linking.openURL(`tel:${phoneNumber}`);
+                }}
+              >
+                <Ionicons name="call-outline" size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {/* OTP Display Section */}
+        {booking.status === 'Pending' && (
+          <View style={styles.otpDisplayContainer}>
+            <Text style={styles.sectionTitle}>Your OTP</Text>
+            <Text style={styles.otpCode}>{booking.otp}</Text>
+            <Text style={styles.otpInstruction}>Please share this OTP with the service provider upon arrival.</Text>
+          </View>
+        )}
+
+        
 
         {/* Booking Information */}
         <View style={styles.infoCard}>
@@ -408,7 +452,7 @@ Booked via YourApp 📱`;
             <Ionicons name="call" size={20} color="#3898B3" />
             <View style={styles.infoContent}>
               <Text style={styles.infoLabel}>Contact Info</Text>
-              <Text style={styles.infoValue}>{booking.maskedContact}</Text>
+              <Text style={styles.infoValue}>{booking.contact}</Text>
             </View>
           </View>
 
@@ -488,6 +532,8 @@ Booked via YourApp 📱`;
             ⛔ Free cancellation up to 5 minutes before service time
           </Text>
         </View>
+
+
       </ScrollView>
 
       {/* Bottom Actions */}
@@ -579,7 +625,7 @@ const styles = StyleSheet.create({
   statusSection: {
     backgroundColor: '#fff',
     padding: 20,
-    marginBottom: 10,
+    marginTop: 10,
   },
   statusHeader: {
     marginBottom: 10,
@@ -614,7 +660,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: '#1A1A1A',
-    marginBottom: 15,
+    marginBottom: 10,
   },
   infoRow: {
     flexDirection: 'row',
@@ -691,7 +737,7 @@ const styles = StyleSheet.create({
   cancellationCard: {
     backgroundColor: '#fff',
     padding: 20,
-    marginBottom: 20,
+    marginBottom: 140,
   },
   cancellationHeader: {
     flexDirection: 'row',
@@ -864,5 +910,71 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#666',
+  },
+  // Provider Details Styles
+  providerDetailsContainer: {
+    marginVertical: 10,
+    padding: 16,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  providerDetails: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  providerPhoto: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginRight: 16,
+  },
+  providerInfo: {
+    flex: 1,
+  },
+  providerName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  providerContact: {
+    fontSize: 14,
+    color: '#666',
+  },
+  callButton: {
+    backgroundColor: '#4CAF50',
+    padding: 10,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 16,
+  },
+  // OTP Display Styles
+  otpDisplayContainer: {
+    marginBottom: 10,
+    padding: 16,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+    alignItems: 'center',
+  },
+  otpCode: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#3898B3',
+    marginVertical: 4,
+  },
+  otpInstruction: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
   },
 });
