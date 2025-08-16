@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { useState } from "react";
 import {
   Alert,
+  Dimensions,
   Image,
   Modal,
   ScrollView,
@@ -15,7 +16,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import useDimension from "../../../../../hooks/useDimensions";
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 export default function PostRequest() {
   const router = useRouter();
@@ -26,7 +28,6 @@ export default function PostRequest() {
   const [urgency, setUrgency] = useState(null);
   const [contractorPreference, setContractorPreference] = useState(null);
   const [showHelpModal, setShowHelpModal] = useState(false);
-  const { screenHeight, screenWidth } = useDimension();
 
   const urgencyOptions = [
     { label: "Normal", value: "normal", icon: "schedule" },
@@ -316,7 +317,7 @@ export default function PostRequest() {
       >
 
       {/* Image Upload Section */}
-      <View style={styles.section}>
+      <View style={styles.camerasection}>
         <View style={styles.sectionHeaderWithIcon}>
           <View style={styles.sectionTitleContainer}>
             <View style={styles.iconContainer}>
@@ -539,16 +540,21 @@ const styles = StyleSheet.create({
     backgroundColor: "#f8f9fa",
   },
   header: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
     backgroundColor: '#3898B3',
-    paddingTop: 45,
-    paddingBottom: 25,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
+    paddingTop: screenHeight * 0.05, // Adjusted padding dynamically
+    paddingBottom: screenHeight * 0.03, // Adjusted padding dynamically
+    borderBottomLeftRadius: screenWidth * 0.08, // Dynamic radius
+    borderBottomRightRadius: screenWidth * 0.08, // Dynamic radius
     elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
+    zIndex: 1000,
   },
   headerContent: {
     paddingHorizontal: 20,
@@ -586,6 +592,21 @@ const styles = StyleSheet.create({
   contentContainer: {
     padding: 20,
     paddingBottom: 40,
+  },
+  camerasection: {
+    marginBottom: 25,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+    marginTop: screenHeight * 0.17, // Adjusted margin dynamically
   },
   section: {
     marginBottom: 25,

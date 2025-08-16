@@ -1,8 +1,10 @@
 import { useMemo, useRef, useState } from 'react';
-import { Animated, PanResponder, StyleSheet, View } from 'react-native';
+import { Animated, Dimensions, PanResponder, StyleSheet, View } from 'react-native';
 import OnboardingFooter from './OnboardingFooter';
 import OnboardingHeader from './OnboardingHeader';
 import OnboardingSlide from './OnboardingSlide';
+
+const { width, height } = Dimensions.get('window');
 
 const slides = [
   {
@@ -187,6 +189,8 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     justifyContent: 'flex-end',
+    paddingHorizontal: width * 0.01, // 1% of screen width for padding
+    paddingVertical: height * 0.01, // 1% of screen height for padding
   },
 });
 

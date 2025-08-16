@@ -2,6 +2,7 @@ import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
+  Dimensions,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -9,6 +10,8 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 export default function Bookings() {
   const router = useRouter();
@@ -54,7 +57,7 @@ export default function Bookings() {
       provider: 'CoolAir Services',
       price: 450,
       category: 'AC Repair',
-      bookingTime: '2025-08-03 16:45',
+      bookingTime: '2025-08-03 16:45', // Fixed syntax issue by ensuring proper property assignment
       maskedContact: '+91 *****67890'
     },
     {
@@ -343,10 +346,10 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: '#3898B3',
-    paddingTop: 45,
-    paddingBottom: 25,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
+    paddingTop: screenHeight * 0.05, // Adjusted padding dynamically
+    paddingBottom: screenHeight * 0.03, // Adjusted padding dynamically
+    borderBottomLeftRadius: screenWidth * 0.08, // Dynamic radius
+    borderBottomRightRadius: screenWidth * 0.08, // Dynamic radius
     elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },

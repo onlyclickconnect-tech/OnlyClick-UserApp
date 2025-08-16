@@ -8,13 +8,20 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
-import { serviceCategories } from "../../data/servicesData";
+import { getServicesByCategory, serviceCategories } from "../../data/servicesData";
 
 export default function Data() {
   const router = useRouter();
 
   // Use categories from servicesData.js - no need to redefine them
-  const categories = serviceCategories;
+  const categories = serviceCategories.map((cat, index) => ({
+        id: cat.id,
+        name: cat.name,
+        icon: cat.icon,
+        count: getServicesByCategory(cat.id).length,
+        color: cat.color
+      }));
+  const filteredCategories = categories.filter(category => category.count > 0);
 
   // Popular services data
   const popularServices = [
@@ -173,7 +180,7 @@ const bookAgainServices = [
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Categories</Text>
         <FlatList
-          data={categories}
+          data={filteredCategories}
           renderItem={renderCategoryItem}
           keyExtractor={(item) => item.id}
           numColumns={3}
@@ -188,7 +195,7 @@ const bookAgainServices = [
             router.push('/(app)/protected/(tabs)/Services');
           }}
         >
-          <Text style={styles.seeMoreText}>All Categories</Text>
+          <Text style={styles.seeMoreText}>All Services</Text>
         </TouchableOpacity>
       </View>
 

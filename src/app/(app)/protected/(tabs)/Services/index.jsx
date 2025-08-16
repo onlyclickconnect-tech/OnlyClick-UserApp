@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
+  Dimensions,
   FlatList,
   Image,
   StatusBar,
@@ -16,6 +17,8 @@ import {
   getServicesByCategory,
   serviceCategories
 } from "../../../../../data/servicesData";
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 export default function ServicesPage() {
   const router = useRouter();
@@ -35,6 +38,9 @@ export default function ServicesPage() {
       color: cat.color
     }))
   ];
+
+  // Filter categories to show only those with services available
+  const filteredCategories = categories.filter(category => category.count > 0);
 
   // Handle category selection from navigation params
   useEffect(() => {
@@ -237,7 +243,7 @@ export default function ServicesPage() {
       'ac_service': require("../../../../../../assets/images/ACservices.png"),
       'consultation': require("../../../../../../assets/images/painting.png"),
     };
-    return imageMap[categoryId] || require("../../../../../../assets/images/featuredService.png");
+    return imageMap[categoryId] || require("../../../../../../assets/images/allServices.png");
   };
 
   return (
@@ -306,7 +312,7 @@ export default function ServicesPage() {
             <View style={styles.categoriesSection}>
               <Text style={styles.sectionTitle}>Categories</Text>
               <FlatList
-                data={categories}
+                data={filteredCategories}
                 renderItem={renderCategoryCard}
                 keyExtractor={(item) => item.id.toString()}
                 horizontal
@@ -319,7 +325,7 @@ export default function ServicesPage() {
             <View style={styles.servicesSection}>
               <View style={styles.servicesSectionHeader}>
                 <Text style={styles.sectionTitle}>
-                  {selectedCategory === 'All' ? 'Featured Services' : `${selectedCategory} Services`}
+                  {selectedCategory === 'All' ? 'All Services' : `${selectedCategory} Services`}
                 </Text>
                 <TouchableOpacity>
                   <Text style={styles.seeAllText}>See All</Text>
@@ -359,16 +365,21 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
     backgroundColor: '#3898B3',
-    paddingTop: 45,
-    paddingBottom: 25,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
+    paddingTop: screenHeight * 0.06, // Adjusted padding dynamically
+    paddingBottom: screenHeight * 0.03, // Adjusted padding dynamically
+    borderBottomLeftRadius: screenWidth * 0.08, // Dynamic radius
+    borderBottomRightRadius: screenWidth * 0.08, // Dynamic radius
     elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
+    zIndex: 1000,
   },
   headerContent: {
     paddingHorizontal: 20,
@@ -425,7 +436,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     paddingHorizontal: 20,
     paddingVertical: 15,
-    marginTop: 10,
+    marginTop: screenHeight * 0.18,
     marginHorizontal: 20,
     borderRadius: 15,
     elevation: 4,

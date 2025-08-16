@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   Alert,
+  Dimensions,
   Image,
   Linking,
   Modal,
@@ -13,6 +14,8 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 export default function BookingDetails() {
   const router = useRouter();
@@ -569,10 +572,10 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     backgroundColor: '#3898B3',
-    paddingTop: 45,
-    paddingBottom: 25,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
+    paddingTop: screenHeight * 0.08, // Adjusted padding dynamically
+    paddingBottom: screenHeight * 0.04, // Adjusted padding dynamically
+    borderBottomLeftRadius: screenWidth * 0.08, // Dynamic radius
+    borderBottomRightRadius: screenWidth * 0.08, // Dynamic radius
     elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -611,6 +614,7 @@ const styles = StyleSheet.create({
     padding: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E5E5',
+    marginTop: screenHeight * 0.02,
   },
   serviceName: {
     fontSize: 24,

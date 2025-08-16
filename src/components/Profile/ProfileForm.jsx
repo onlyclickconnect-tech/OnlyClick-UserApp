@@ -3,7 +3,7 @@ import { useRef, useState } from "react";
 import { Animated, Dimensions, Easing, StyleSheet, TextInput, View } from "react-native";
 import useCurrentUserDetails from "../../hooks/useCurrentUserDetails";
 
-const screenWidth = Dimensions.get("window").width;
+const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 const ProfileForm = () => {
     const { phone, address, email} = useCurrentUserDetails();
@@ -131,12 +131,12 @@ const styles = StyleSheet.create({
   },
   input: {
     width: screenWidth * 0.9,
-    height: 66,
+    height: screenHeight * 0.08, // Adjusted height dynamically
     borderWidth: 1,
     borderColor: "#8080805c",
     borderRadius: 12,
     paddingLeft: 48,
-    fontSize: 16,
+    fontSize: screenWidth * 0.04, // Dynamic font size
     backgroundColor: "#fff",
     alignSelf: "center",
     color: "#333",

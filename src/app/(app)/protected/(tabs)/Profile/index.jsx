@@ -1,12 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { Alert, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Dimensions, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import AdvancedOptions from "../../../../../components/Profile/AdvancedOptions";
 import BottomLinks from "../../../../../components/Profile/BottomLinks";
 import ProfileForm from "../../../../../components/Profile/ProfileForm";
 import ProfileHeader from "../../../../../components/Profile/ProfileHeader";
 import { useAppStates } from "../../../../../context/AppStates";
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 const ProfilePage = () => {
   const [isGeneral, setIsGeneral] = useState(true);
@@ -118,21 +120,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#f8f9fa",
   },
   header: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#3898B3',
-    paddingTop: 45,
-    paddingBottom: 25,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    zIndex: 1000,
+    width: screenWidth,
+    height: screenHeight * 0.1, // Adjusted height dynamically
+    backgroundColor: "#3898B3",
+    justifyContent: "center",
+    alignItems: "center",
   },
   headerContent: {
     flexDirection: 'row',
