@@ -1,5 +1,5 @@
 // Services Data - Only Click User App
-// Complete service catalog with all 111 services
+// Complete service catalog with all services
 
 export const serviceCategories = [
   {
@@ -225,11 +225,28 @@ export const allServices = [
     duration: '20 minutes',
     rating: 4.8,
     reviews: 312,
-    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751557197/ChatGPT_Image_Jul_3_2025_08_23_43_AM_p72ebu.png' },
+    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751698002/ChatGPT_Image_Jul_5_2025_12_16_28_PM_bi4jq9.png' },
     tags: ['Same Day'],
     includes: ['Mounting', 'Wiring', 'Testing'],
     professional: 'Certified Electrician'
   },
+  {
+  serviceId: '007OC',
+  category: 'electrical',
+  subCategory: 'Lighting Solutions',
+  title: 'Fancy Light Installation',
+  description: 'Professional installation of decorative and fancy lights to enhance your space.',
+  price: 599,
+  originalPrice: 799,
+  discount: 25,
+  duration: '1-2 hours',
+  rating: 4.8,
+  reviews: 145,
+  image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751734235/ChatGPT_Image_Jul_5_2025_10_20_06_PM_ait91x.png' },
+  tags: ['Decorative', 'Premium'],
+  includes: ['Mounting', 'Wiring', 'Testing'],
+  professional: 'Lighting Specialist'
+},
   {
     serviceId: '011OC',
     category: 'electrical',
@@ -276,7 +293,7 @@ export const allServices = [
     duration: '1-2 hours',
     rating: 4.9,
     reviews: 156,
-    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751557197/ChatGPT_Image_Jul_3_2025_08_23_43_AM_p72ebu.png' },
+    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751722335/ChatGPT_Image_Jul_5_2025_07_01_58_PM_f9ygcd.png' },
     tags: ['Premium', 'Decorative'],
     includes: ['Ceiling mounting', 'Wiring', 'Testing'],
     professional: 'Lighting Specialist'
@@ -332,23 +349,23 @@ export const allServices = [
     includes: ['Mounting', 'Wiring', 'Testing'],
     professional: 'Technician'
   },
-  {
-    serviceId: '017OC',
-    category: 'electrical',
-    subCategory: 'Doorbell Installation',
-    title: 'Video Doorbell Installation',
-    description: 'Installation of smart video doorbell systems',
-    price: 600,
-    originalPrice: null,
-    discount: null,
-    duration: '1 hour',
-    rating: 4.9,
-    reviews: 189,
-    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751557197/ChatGPT_Image_Jul_3_2025_08_23_43_AM_p72ebu.png' },
-    tags: ['Smart Home'],
-    includes: ['Mounting', 'Configuration', 'Testing'],
-    professional: 'Smart Home Specialist'
-  },
+  // {
+  //   serviceId: '017OC',
+  //   category: 'electrical',
+  //   subCategory: 'Doorbell Installation',
+  //   title: 'Video Doorbell Installation',
+  //   description: 'Installation of smart video doorbell systems',
+  //   price: 600,
+  //   originalPrice: null,
+  //   discount: null,
+  //   duration: '1 hour',
+  //   rating: 4.9,
+  //   reviews: 189,
+  //   image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751557197/ChatGPT_Image_Jul_3_2025_08_23_43_AM_p72ebu.png' },
+  //   tags: ['Smart Home'],
+  //   includes: ['Mounting', 'Configuration', 'Testing'],
+  //   professional: 'Smart Home Specialist'
+  // },
   {
     serviceId: '018OC',
     category: 'electrical',
@@ -417,23 +434,23 @@ export const allServices = [
     includes: ['Meter box', 'Connection cables', 'Testing'],
     professional: 'Certified Electrician'
   },
-  {
-    serviceId: '022OC',
-    category: 'electrical',
-    subCategory: 'Appliance Installation',
-    title: 'Home Theatre Installation',
-    description: 'Installation and setup of home theatre systems',
-    price: 199,
-    originalPrice: null,
-    discount: null,
-    duration: '1 hour',
-    rating: 4.7,
-    reviews: 198,
-    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751557197/ChatGPT_Image_Jul_3_2025_08_23_43_AM_p72ebu.png' },
-    tags: ['Entertainment'],
-    includes: ['Mounting', 'Connection', 'Testing'],
-    professional: 'Technician'
-  },
+  // {
+  //   serviceId: '022OC',
+  //   category: 'electrical',
+  //   subCategory: 'Appliance Installation',
+  //   title: 'Home Theatre Installation',
+  //   description: 'Installation and setup of home theatre systems',
+  //   price: 199,
+  //   originalPrice: null,
+  //   discount: null,
+  //   duration: '1 hour',
+  //   rating: 4.7,
+  //   reviews: 198,
+  //   image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751557197/ChatGPT_Image_Jul_3_2025_08_23_43_AM_p72ebu.png' },
+  //   tags: ['Entertainment'],
+  //   includes: ['Mounting', 'Connection', 'Testing'],
+  //   professional: 'Technician'
+  // },
   {
     serviceId: '023OC',
     category: 'electrical',
@@ -463,7 +480,7 @@ export const allServices = [
     duration: '45 minutes',
     rating: 4.8,
     reviews: 263,
-    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751557197/ChatGPT_Image_Jul_3_2025_08_23_43_AM_p72ebu.png' },
+    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751722167/ChatGPT_Image_Jul_5_2025_03_02_54_PM_bt4dzw.png' },
     tags: ['Entertainment'],
     includes: ['Mounting', 'Connection', 'Testing'],
     professional: 'Technician'
@@ -480,7 +497,7 @@ export const allServices = [
   duration: '30 minutes',
   rating: 4.6,
   reviews: 432,
-  image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751558129/ChatGPT_Image_Jul_3_2025_09_22_21_AM_uvqeyv.png' },
+  image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751722167/ChatGPT_Image_Jul_5_2025_03_15_21_PM_np1pld.png' },
   tags: ['Quick Service', 'Expert Setup'],
   includes: ['Bracket fitting', 'Level alignment', 'Cable concealment'],
   professional: 'Certified Electrician'
@@ -572,7 +589,7 @@ export const allServices = [
     duration: '20-30 minutes',
     rating: 4.6,
     reviews: 154,
-    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751596604/ChatGPT_Image_Jul_3_2025_09_39_44_PM_wmlk17.png' },
+    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1755349402/ChatGPT_Image_Aug_16_2025_06_33_04_PM_fne1hk.png' },
     tags: ['Quick Service'],
     includes: ['Accessory fitting', 'Leak check'],
     professional: 'Skilled Plumber'
@@ -606,7 +623,7 @@ export const allServices = [
     duration: '30 minutes',
     rating: 4.8,
     reviews: 188,
-    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751596604/ChatGPT_Image_Jul_3_2025_09_39_44_PM_wmlk17.png' },
+    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751735244/ChatGPT_Image_Jul_5_2025_10_37_01_PM_afv2yu.png' },
     tags: ['Professional'],
     includes: ['Seat cover fitting', 'Alignment check'],
     professional: 'Licensed Plumber'
@@ -708,7 +725,7 @@ export const allServices = [
     duration: '1-2 hours',
     rating: 4.8,
     reviews: 120,
-    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751596604/mixer_tap_installation.png' },
+    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1755349476/ChatGPT_Image_Aug_16_2025_06_34_24_PM_afiyhu.png' },
     tags: ['Professional', 'Same Day'],
     includes: ['Mixer tap fitting', 'Leak check'],
     professional: 'Licensed Plumber'
@@ -742,7 +759,7 @@ export const allServices = [
     duration: '30-45 mins',
     rating: 4.6,
     reviews: 90,
-    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751596604/shower_filter_installation.png' },
+    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1755349648/ChatGPT_Image_Aug_16_2025_06_37_16_PM_odrsbi.png' },
     tags: ['Health Friendly'],
     includes: ['Filter fitting', 'Water test'],
     professional: 'Licensed Plumber'
@@ -844,7 +861,7 @@ export const allServices = [
     duration: '30 mins',
     rating: 4.6,
     reviews: 87,
-    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751596604/drain_cover_installation.png' },
+    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751603968/ChatGPT_Image_Jul_4_2025_08_30_53_AM_ckngh3.png' },
     tags: ['Quick Service'],
     includes: ['Cover fitting', 'Secure installation'],
     professional: 'Licensed Plumber'
@@ -861,7 +878,7 @@ export const allServices = [
     duration: '1 hour',
     rating: 4.7,
     reviews: 95,
-    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751596604/drain_blockage_removal.png' },
+    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751603971/ChatGPT_Image_Jul_4_2025_08_16_51_AM_jfgkxf.png' },
     tags: ['Quick Fix'],
     includes: ['Blockage removal', 'Flow restoration'],
     professional: 'Licensed Plumber'
@@ -877,21 +894,21 @@ export const allServices = [
     duration: "30-45 mins",
     rating: 4.8,
     reviews: 120,
-    image: ""
+    image: {uri: "https://res.cloudinary.com/dsjcgs6nu/image/upload/v1755350035/ChatGPT_Image_Aug_16_2025_06_43_15_PM_lagvmd.png"}
   },
-  {
-    serviceId: "022PL",
-    category: "plumbing",
-    subCategory: "Others",
-    title: "Washing Machine Inlet",
-    description: "Install or fix washing machine inlet pipe",
-    price: 59,
-    originalPrice: "",
-    duration: "30-45 mins",
-    rating: 4.8,
-    reviews: 98,
-    image: ""
-  },
+  // {
+  //   serviceId: "022PL",
+  //   category: "plumbing",
+  //   subCategory: "Others",
+  //   title: "Washing Machine Inlet",
+  //   description: "Install or fix washing machine inlet pipe",
+  //   price: 59,
+  //   originalPrice: "",
+  //   duration: "30-45 mins",
+  //   rating: 4.8,
+  //   reviews: 98,
+  //   image: ""
+  // },
   {
     serviceId: "023PL",
     category: "plumbing",
@@ -903,7 +920,7 @@ export const allServices = [
     duration: "30-45 mins",
     rating: 4.8,
     reviews: 110,
-    image: ""
+    image: {uri: "https://res.cloudinary.com/dsjcgs6nu/image/upload/v1755350381/ChatGPT_Image_Aug_16_2025_06_49_27_PM_vo8jqx.png"}
   },
   {
     serviceId: "024PL",
@@ -929,34 +946,34 @@ export const allServices = [
     duration: "30-45 mins",
     rating: 4.8,
     reviews: 90,
-    image: ""
+    image: {uri: "https://res.cloudinary.com/dsjcgs6nu/image/upload/v1755349322/ChatGPT_Image_Aug_16_2025_06_31_00_PM_srdtwu.png"}
   },
-  {
-    serviceId: "026PL",
-    category: "plumbing",
-    subCategory: "Others",
-    title: "Water Tank Installation",
-    description: "Install new water storage tank",
-    price: 599,
-    originalPrice: "",
-    duration: "2-3 hours",
-    rating: 4.8,
-    reviews: 75,
-    image: ""
-  },
-  {
-    serviceId: "027PL",
-    category: "plumbing",
-    subCategory: "Others",
-    title: "Tank Repair",
-    description: "Repair leakage or cracks in water tank",
-    price: 99,
-    originalPrice: "",
-    duration: "1-2 hours",
-    rating: 4.8,
-    reviews: 65,
-    image: ""
-  },
+  // {
+  //   serviceId: "026PL",
+  //   category: "plumbing",
+  //   subCategory: "Others",
+  //   title: "Water Tank Installation",
+  //   description: "Install new water storage tank",
+  //   price: 599,
+  //   originalPrice: "",
+  //   duration: "2-3 hours",
+  //   rating: 4.8,
+  //   reviews: 75,
+  //   image: ""
+  // },
+  // {
+  //   serviceId: "027PL",
+  //   category: "plumbing",
+  //   subCategory: "Others",
+  //   title: "Tank Repair",
+  //   description: "Repair leakage or cracks in water tank",
+  //   price: 99,
+  //   originalPrice: "",
+  //   duration: "1-2 hours",
+  //   rating: 4.8,
+  //   reviews: 65,
+  //   image: {uri: "https://res.cloudinary.com/dsjcgs6nu/image/upload/v1755353103/ChatGPT_Image_Aug_16_2025_07_34_50_PM_cbhqmn.png"}
+  // },
   {
     serviceId: "028PL",
     category: "plumbing",
@@ -968,7 +985,7 @@ export const allServices = [
     duration: "1-2 hours",
     rating: 4.8,
     reviews: 105,
-    image: ""
+    image: {uri: "https://res.cloudinary.com/dsjcgs6nu/image/upload/v1755353103/ChatGPT_Image_Aug_16_2025_07_34_50_PM_cbhqmn.png"}
   },
   {
     serviceId: "029PL",
@@ -981,7 +998,7 @@ export const allServices = [
     duration: "30-45 mins",
     rating: 4.8,
     reviews: 72,
-    image: ""
+    image: {uri: "https://res.cloudinary.com/dsjcgs6nu/image/upload/v1755353103/ChatGPT_Image_Aug_16_2025_07_34_50_PM_cbhqmn.png"}
   },
   {
     serviceId: "030PL",
@@ -994,7 +1011,7 @@ export const allServices = [
     duration: "30 mins",
     rating: 4.9,
     reviews: 200,
-    image: ""
+    image: {uri: "https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751794913/ChatGPT_Image_Apr_25_2025_05_39_10_PM_rxp7d0.png"}
   },
 
 
@@ -1268,7 +1285,7 @@ export const allServices = [
   duration: '30 minutes',
   rating: 4.3,
   reviews: 95,
-  image: { uri: "https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751697148/ChatGPT_Image_Jul_4_2025_10_59_51_PM_ngni5n.png" },
+  image: { uri: "https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751794913/ChatGPT_Image_Apr_25_2025_05_39_10_PM_rxp7d0.png" },
   tags: ['Basic', 'Quick Service'],
   includes: ['Inspection', 'Basic cleaning tasks'],
   professional: 'General Cleaner'

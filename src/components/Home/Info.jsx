@@ -33,8 +33,11 @@ export default function Info() {
     },
     carouselContainer: {
       marginTop: 15,
-      borderRadius: 10,
+      borderRadius: 15, // Increased border radius for better rounding
       overflow: 'hidden',
+      height: screenHeight * 0.25, // Adjusted height to ensure full visibility
+      width: screenWidth * 0.9, // Adjusted width to fit images
+      alignSelf: 'center', // Centered the carousel
     },
   });
   const { name, service, userId, profileImage, reviews, ratings } =
