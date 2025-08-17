@@ -4,7 +4,7 @@
     "slug": "only-click-user",
     "version": "1.0.0",
     "orientation": "portrait",
-  "icon": "./assets/images/whitebg.png",
+    "icon": "./assets/images/whitebg.png",
     "scheme": "onlyclick",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -15,7 +15,8 @@
     },
     "ios": {
       "supportsTablet": true,
-      "icon": "./assets/images/whitebg.png"
+      "icon": "./assets/images/whitebg.png",
+      "bundleIdentifier": "com.onlyclick.userapp"
     },
     "android": {
       "icon": "./assets/images/whitebg.png",
@@ -58,8 +59,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "6c4557dc-869a-4eef-af49-89367318c92e"
+        "projectId": "b9304d1f-b471-4063-952b-dd50e9fd4e27"
       }
-    }
+    },
+    "owner": "pokemon_070"
   }
 }
