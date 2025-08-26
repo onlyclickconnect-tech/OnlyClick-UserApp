@@ -4,24 +4,24 @@
     "slug": "only-click-user",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/whitebg.png",
+    "icon": "./assets/images/mainicon.png",
     "scheme": "onlyclick",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/whitebg.png",
+      "image": "./assets/images/mainicon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "ios": {
       "supportsTablet": true,
-      "icon": "./assets/images/whitebg.png",
+      "icon": "./assets/images/mainicon.png",
       "bundleIdentifier": "com.onlyclick.userapp"
     },
     "android": {
-      "icon": "./assets/images/whitebg.png",
+      "icon": "./assets/images/mainicon.png",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/whitebg.png",
+        "foregroundImage": "./assets/images/mainicon.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,

@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
+import AppHeader from '../../../../../components/common/AppHeader';
 import {
   allServices,
   getServicesByCategory,
@@ -249,37 +250,26 @@ export default function ServicesPage() {
   return (
     <View style={styles.container}>
       <StatusBar hidden={true} />
-      
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <View style={styles.headerTop}>
-            <TouchableOpacity 
-              style={styles.backButton}
-              onPress={() => router.back()}
-            >
-              <Ionicons name="arrow-back" size={24} color="#fff" />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>Services</Text>
-            <TouchableOpacity 
-              style={styles.cartButton}
-              onPress={() => router.push('/(modal)/cart')}
-            >
-              <View style={styles.cartIconContainer}>
-                <Ionicons name="cart" size={24} color="#fff" />
-                {cartItems.length > 0 && (
-                  <View style={styles.cartBadge}>
-                    <Text style={styles.cartBadgeText}>{cartItems.length}</Text>
-                  </View>
-                )}
-              </View>
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.headerSubtitle}>Professional home services at your doorstep</Text>
-        </View>
-      </View>
 
-      <FlatList
+      <AppHeader
+        title="Services"
+        showBack
+        onBack={() => router.back()}
+        rightElement={
+          <TouchableOpacity style={styles.cartButton} onPress={() => router.push('/(modal)/cart')}>
+            <View style={styles.cartIconContainer}>
+              <Ionicons name="cart" size={24} color="#fff" />
+              {cartItems.length > 0 && (
+                <View style={styles.cartBadge}>
+                  <Text style={styles.cartBadgeText}>{cartItems.length}</Text>
+                </View>
+              )}
+            </View>
+          </TouchableOpacity>
+        }
+      />
+
+  <FlatList
         data={filteredServices}
         renderItem={({ item }) => <ServiceCard item={item} />}
         keyExtractor={item => `service-${item.serviceId}`}
@@ -348,7 +338,7 @@ export default function ServicesPage() {
         removeClippedSubviews={true}
         maxToRenderPerBatch={8}
         updateCellsBatchingPeriod={50}
-        contentContainerStyle={{ paddingBottom: 100 }}
+  contentContainerStyle={{ paddingBottom: 100, paddingTop: 16 }}
         showsVerticalScrollIndicator={false}
         bounces={true}
       />
@@ -426,17 +416,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
   },
-  headerSubtitle: {
-    fontSize: 16,
-    color: '#E8F4F8',
-    opacity: 0.9,
-    textAlign: 'center',
-  },
+  // headerSubtitle removed - AppHeader has no subheading
   searchSection: {
     backgroundColor: '#fff',
     paddingHorizontal: 20,
     paddingVertical: 15,
-    marginTop: screenHeight * 0.18,
+  // spacing adjusted to sit closer under AppHeader
+  marginTop: 12,
     marginHorizontal: 20,
     borderRadius: 15,
     elevation: 4,

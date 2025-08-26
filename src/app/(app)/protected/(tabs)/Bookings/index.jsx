@@ -1,15 +1,16 @@
-import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   Dimensions,
   ScrollView,
-  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View
 } from 'react-native';
+
+import AppHeader from '../../../../../components/common/AppHeader';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -198,30 +199,16 @@ export default function Bookings() {
 
   return (
     <View style={styles.container}>
-      <StatusBar hidden={true} />
-      
-      {/* Fixed Header */}
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <View style={styles.headerTop}>
-            <TouchableOpacity 
-              style={styles.backButton}
-              onPress={() => router.back()}
-            >
-              <Ionicons name="arrow-back" size={24} color="#fff" />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>My Bookings</Text>
-            <TouchableOpacity style={styles.filterButton}>
-              <MaterialIcons name="filter-list" size={24} color="#fff" />
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.headerSubtitle}>Track and manage your service appointments</Text>
-        </View>
-      </View>
+      <AppHeader
+        title="My Bookings"
+        showBack
+        onBack={() => router.back()}
+        rightElement={null}
+      />
 
       <ScrollView 
         style={styles.scrollContainer}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: 4 }]}
         showsVerticalScrollIndicator={false}
         bounces={true}
       >
@@ -338,7 +325,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingTop: 120, // Height of the fixed header
+    paddingTop: 80, // Adjusted for AppHeader height
   },
   header: {
     position: 'absolute',
@@ -379,10 +366,7 @@ const styles = StyleSheet.create({
     marginRight: 40, // Balance the back button
   },
   headerSubtitle: {
-    fontSize: 16,
-    color: '#E8F4F8',
-    textAlign: 'center',
-    opacity: 0.9,
+    // headerSubtitle removed - AppHeader has no subheading
   },
   filterButton: {
     padding: 5,

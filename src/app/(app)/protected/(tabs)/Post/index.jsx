@@ -9,15 +9,16 @@ import {
   Image,
   Modal,
   ScrollView,
-  StatusBar,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
+
+import AppHeader from '../../../../../components/common/AppHeader';
 
 export default function PostRequest() {
   const router = useRouter();
@@ -286,29 +287,16 @@ export default function PostRequest() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#3898B3" />
-      
-      {/* Fixed Header */}
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <View style={styles.headerTop}>
-            <TouchableOpacity 
-              style={styles.backButton}
-              onPress={() => router.back()}
-            >
-              <Ionicons name="arrow-back" size={24} color="#fff" />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>📝 Post Request</Text>
-            <TouchableOpacity 
-              style={styles.helpButton}
-              onPress={() => setShowHelpModal(true)}
-            >
-              <MaterialIcons name="help-outline" size={24} color="#fff" />
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.headerSubtitle}>For undefined, unusual, or custom needs</Text>
-        </View>
-      </View>
+      <AppHeader
+        title={'📝 Post Request'}
+        showBack
+        onBack={() => router.back()}
+        rightElement={
+          <TouchableOpacity style={styles.helpButton} onPress={() => setShowHelpModal(true)}>
+            <MaterialIcons name="help-outline" size={24} color="#fff" />
+          </TouchableOpacity>
+        }
+      />
 
       <ScrollView
         style={styles.scrollContainer}
@@ -578,10 +566,7 @@ const styles = StyleSheet.create({
     marginRight: 40, // Balance the back button
   },
   headerSubtitle: {
-    fontSize: 16,
-    color: '#E8F4F8',
-    textAlign: 'center',
-    opacity: 0.9,
+    // headerSubtitle removed - AppHeader has no subheading
   },
   helpButton: {
     padding: 5,
@@ -590,8 +575,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    padding: 20,
-    paddingBottom: 40,
+  paddingTop: 0,
+  paddingHorizontal: 10,
+  paddingBottom: 40,
   },
   camerasection: {
     marginBottom: 25,
@@ -606,7 +592,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
     elevation: 5,
-    marginTop: screenHeight * 0.17, // Adjusted margin dynamically
+  // spacing adjusted to sit under AppHeader
+  marginTop: 64,
   },
   section: {
     marginBottom: 25,

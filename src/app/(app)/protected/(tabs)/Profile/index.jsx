@@ -1,14 +1,20 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
-import { Alert, Dimensions, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Dimensions, Platform, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import AdvancedOptions from "../../../../../components/Profile/AdvancedOptions";
 import BottomLinks from "../../../../../components/Profile/BottomLinks";
 import ProfileForm from "../../../../../components/Profile/ProfileForm";
 import ProfileHeader from "../../../../../components/Profile/ProfileHeader";
+import AppHeader from '../../../../../components/common/AppHeader';
 import { useAppStates } from "../../../../../context/AppStates";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
+
+// Dynamic header sizing
+const statusBarHeight = Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 20;
+const HEADER_BASE = Math.max(56, screenHeight * 0.09); // base header height (min 56)
+const HEADER_HEIGHT = statusBarHeight + HEADER_BASE;
 
 const ProfilePage = () => {
   const [isGeneral, setIsGeneral] = useState(true);
@@ -42,25 +48,11 @@ const ProfilePage = () => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#3898B3" />
-      
-      {/* Fixed Header */}
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <Ionicons name="arrow-back" size={24} color="#fff" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>My Profile</Text>
-          <View style={styles.placeholder} />
-        </View>
-      </View>
+      <AppHeader title="My Profile" showBack={true} onBack={() => router.back()} />
 
       <ScrollView 
         style={styles.content}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: 16 }]}
         showsVerticalScrollIndicator={false}
       >
         {showWelcomeMessage && (
@@ -119,36 +111,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f8f9fa",
   },
-  header: {
-    width: screenWidth,
-    height: screenHeight * 0.1, // Adjusted height dynamically
-    backgroundColor: "#3898B3",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  headerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-  },
-  backButton: {
-    padding: 5,
-  },
-  headerTitle: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: '#fff',
-    flex: 1,
-    textAlign: 'center',
-    marginHorizontal: 10,
-  },
-  placeholder: {
-    width: 34,
-  },
   content: {
     flex: 1,
-    marginTop: 90,
+    // marginTop is set dynamically in component to HEADER_HEIGHT
   },
   scrollContent: {
     paddingBottom: 30,

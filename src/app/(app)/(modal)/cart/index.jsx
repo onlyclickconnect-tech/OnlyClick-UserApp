@@ -15,6 +15,8 @@ import {
 } from 'react-native';
 import { useAppStates } from '../../../../context/AppStates';
 
+import AppHeader from '../../../../components/common/AppHeader';
+
 export default function Cart() {
   const router = useRouter();
   const { selectedLocation, updateSelectedLocation } = useAppStates();
@@ -1113,28 +1115,12 @@ export default function Cart() {
   return (
     <View style={styles.container}>
       <StatusBar hidden={true} />
-      
-      {/* Fixed Header */}
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <View style={styles.headerTop}>
-            <TouchableOpacity 
-              style={styles.backButton}
-              onPress={() => router.back()}
-            >
-              <Ionicons name="arrow-back" size={24} color="#fff" />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>My Cart</Text>
-            <TouchableOpacity 
-              style={styles.clearButton}
-              onPress={handleClearCart}
-            >
-              <MaterialIcons name="delete" size={24} color="#fff" />
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.headerSubtitle}>Review your selected services</Text>
-        </View>
-      </View>
+
+      <AppHeader
+        title="My Cart"
+        showBack
+        onBack={() => router.back()}
+      />
       
       <ScrollView 
         style={styles.scrollContainer} 
@@ -1265,7 +1251,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingTop: 120, // Height of the fixed header
+  paddingTop: 16,
     paddingHorizontal: 20,
     paddingBottom: 100,
   },
@@ -1307,12 +1293,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginRight: 40, // Balance the back button
   },
-  headerSubtitle: {
-    fontSize: 16,
-    color: '#E8F4F8',
-    textAlign: 'center',
-    opacity: 0.9,
-  },
+  // headerSubtitle removed - AppHeader has no subheading
   clearButton: {
     padding: 5,
   },
