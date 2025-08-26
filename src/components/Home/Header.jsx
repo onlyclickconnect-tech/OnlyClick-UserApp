@@ -20,9 +20,10 @@ import useCurrentUserDetails from "../../hooks/useCurrentUserDetails";
 import useDimension from "../../hooks/useDimensions";
 import headerStyle from "../../styles/Home/headerStyle";
 import Badge from "../common/Badge";
+import PressableScale from '../common/PressableScale';
 
 function Header() {
-  const [hasNotification, setHasNotification] = useState(false);
+  const [hasNotification, setHasNotification] = useState(true);
   const { screenHeight, screenWidth } = useDimension();
   const [search, setSearch] = useState("");
   const [isLocationLoading, setIsLocationLoading] = useState(false);
@@ -175,90 +176,61 @@ function Header() {
         </View>
       </Modal>
 
-    <LinearGradient colors={["#4cb6c9", "#3898b3"]} style={styles.header}>
-      <View style={styles.locationAndNotification}>
-        <View style={styles.location}>
-          <Text style={{ fontSize: 14, color: "white", fontWeight: "500" }}>Location</Text>
-          <TouchableOpacity style={styles.locationText} onPress={changeAddress}>
-            {/*TODO:  */}
-            <Entypo 
-              name="location-pin" 
-              size={21} // Reduced from 24
-              color={isLocationLoading ? "#FFE082" : "#f8bd00"} 
-            />
-            <Text style={{ fontSize: 12, color: "white", flex: 1, fontWeight: "400" }}>
-              {isLocationLoading ? "Getting location..." : selectedLocation || "Tap to set location"}
-            </Text>
-            <AntDesign
-              name="down"
-              size={11} // Reduced from 12
-              style={{ fontWeight: "bold" }}
-              color="#f8bd00"
-            />
-          </TouchableOpacity>
-        </View>
-        <View style={styles.notification}>
-          <Badge
-            pressable={true}
-            onPress={() => {
-              // console.log("Pressed");
-              router.navigate("/protected/Notifications");
-            }}
-            hasBadge={hasNotification}
-            style={{
-              height: screenHeight * 0.18 * 0.25, // Updated for smaller header
-              width: screenWidth * 0.09, // Slightly smaller width
-              backgroundColor: "#56bacc",
-              border: 1,
-              borderRadius: 8, // Increased border radius
-            }}
-            badgeSize={12} // Reduced badge size
-            badgeColor={"red"}
-            badgeTop={-4} // Adjusted position
-            badgeRight={-4} // Adjusted position
-            textColor="white"
-            withNumbers={false}
-            element={<Ionicons name="notifications" size={25} color="white" />} // Reduced icon size
-          />
-        </View>
-      </View>
-
-      {/* search and profile */}
-      <View style={styles.searchAndProfile}>
-        <View style={styles.search}>
-          <View
-            style={{
-              height: 25, // Reduced from 30
-              width: 25, // Reduced from 30
-              position: "absolute",
-              left: 20,
-              zIndex: 1,
-            }}
-          >
-            <FontAwesome name="search" size={18} color="#30a7c8ff" /> {/* Reduced from 24 */}
+      <LinearGradient colors={["#4cb6c9", "#3898b3"]} style={styles.header}>
+        <View style={styles.rowTop}>
+          <View style={styles.locationWrap}>
+            <Text style={styles.locationLabel}>Location</Text>
+            <PressableScale accessibilityRole="button" onPress={changeAddress} style={styles.locationButton}>
+              <Entypo
+                name="location-pin"
+                size={18}
+                color={isLocationLoading ? "#FFD58A" : "#FFEA85"}
+                style={{ marginRight: 8 }}
+              />
+              <Text style={styles.locationText} numberOfLines={1} ellipsizeMode="tail">
+                {isLocationLoading ? "Getting location..." : selectedLocation || "Tap to set location"}
+              </Text>
+              <AntDesign name="down" size={12} color="#FFEA85" style={{ marginLeft: 8 }} />
+            </PressableScale>
           </View>
-          <TextInput
-            placeholder="Search"
-            style={styles.searchText}
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-            }}
-            returnKeyType="search"
-            placeholderTextColor={"grey"}
-            onSubmitEditing={searchService}
-          />
+
+          <View style={styles.iconGroup}>
+      <PressableScale accessibilityRole="button" onPress={() => router.navigate('/protected/Notifications')} style={styles.iconButton}>
+              <Badge
+                pressable={false}
+                hasBadge={hasNotification}
+                badgeSize={10}
+                badgeColor="red"
+                badgeTop={-6}
+                badgeRight={-6}
+        element={<Ionicons name="notifications" size={20} color="white" />}
+              />
+            </PressableScale>
+          </View>
         </View>
-        <TouchableOpacity
-          style={styles.profile}
-          onPress={() => {
-            router.push("/(modal)/cart");
-          }}
-        >
-          <Feather name="shopping-cart" size={28} color="#3898b3" backgroundColor="#ffffffff" padding={5} width={40} height={40} borderRadius={5} />
-        </TouchableOpacity>
-      </View>
-    </LinearGradient>
+
+        <View style={styles.rowBottom}>
+          <View style={styles.searchWrap}>
+            <FontAwesome name="search" size={16} color="#3898B3" style={styles.searchIcon} />
+            <TextInput
+              placeholder="Find services ..."
+              style={styles.searchText}
+              value={search}
+              onChangeText={setSearch}
+              returnKeyType="search"
+              placeholderTextColor={"#9AA8AE"}
+              onSubmitEditing={searchService}
+              accessibilityLabel="Search"
+            />
+          </View>
+
+          <PressableScale accessibilityRole="button" onPress={() => router.push('/(modal)/cart')} style={styles.cartButton}>
+            <View style={styles.cartInner}>
+              <Feather name="shopping-cart" size={20} color="#3898B3" />
+            </View>
+          </PressableScale>
+        </View>
+      </LinearGradient>
     </>
   );
 }

@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router as Router } from 'expo-router';
 import { useEffect, useState } from "react";
 import { Alert, Dimensions, Platform, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import AdvancedOptions from "../../../../../components/Profile/AdvancedOptions";
@@ -8,6 +8,7 @@ import ProfileForm from "../../../../../components/Profile/ProfileForm";
 import ProfileHeader from "../../../../../components/Profile/ProfileHeader";
 import AppHeader from '../../../../../components/common/AppHeader';
 import { useAppStates } from "../../../../../context/AppStates";
+import { useAuth } from "../../../../../context/AuthProvider";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -46,6 +47,25 @@ const ProfilePage = () => {
     }
   };
 
+  const { setUser, setIsLoggedIn } = useAuth();
+  const router = Router;
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Logout', style: 'destructive', onPress: () => {
+          // clear auth state and navigate to sign-in
+          setUser(null);
+          setIsLoggedIn(false);
+          router.replace('/auth/sign-in');
+        } }
+      ]
+    );
+  };
+
   return (
     <View style={styles.container}>
       <AppHeader title="My Profile" showBack={true} onBack={() => router.back()} />
@@ -78,7 +98,21 @@ const ProfilePage = () => {
         <ProfileHeader isGeneral={isGeneral} setIsGeneral={setIsGeneral} />
         
         <View style={styles.formContainer}>
-          {isGeneral ? <ProfileForm /> : <AdvancedOptions />}
+          {isGeneral ? (
+            <>
+              <ProfileForm />
+              <View style={styles.generalActions}>
+                <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.85}>
+                  <View style={styles.logoutContent}>
+                    <Ionicons name="log-out-outline" size={18} color="#fff" style={styles.logoutIcon} />
+                    <Text style={styles.logoutButtonText}>Logout</Text>
+                  </View>
+                </TouchableOpacity>
+              </View>
+            </>
+          ) : (
+            <AdvancedOptions />
+          )}
         </View>
         
         {showWelcomeMessage && isGeneral && (
@@ -230,6 +264,38 @@ const styles = StyleSheet.create({
   },
   skipIcon: {
     opacity: 0.8,
+  },
+  generalActions: {
+    paddingVertical: 20,
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  logoutButton: {
+    backgroundColor: '#FF4D4F',
+    width: screenWidth * 0.9,
+    alignSelf: 'center',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 4,
+    shadowColor: '#FF4D4F',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+  },
+  logoutContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoutIcon: {
+    marginRight: 10,
+  },
+  logoutButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
   },
 });
 

@@ -5,9 +5,9 @@ import {
   StatusBar as RNStatusBar,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View
 } from 'react-native';
+import PressableScale from './PressableScale';
 
 export default function AppHeader({
   title = '',
@@ -32,14 +32,14 @@ export default function AppHeader({
       <View style={styles.headerContent}>
         <View style={styles.headerTop}>
           {showBack ? (
-            <TouchableOpacity
+            <PressableScale
               accessibilityLabel="Go back"
               accessibilityRole="button"
               style={styles.iconButton}
               onPress={onBack}
             >
               <Ionicons name="arrow-back" size={22} color={textColor} />
-            </TouchableOpacity>
+            </PressableScale>
           ) : (
             <View style={styles.placeholder} />
           )}

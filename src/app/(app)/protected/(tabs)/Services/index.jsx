@@ -13,6 +13,7 @@ import {
   View
 } from "react-native";
 import AppHeader from '../../../../../components/common/AppHeader';
+import PressableScale from '../../../../../components/common/PressableScale';
 import {
   allServices,
   getServicesByCategory,
@@ -21,12 +22,13 @@ import {
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
-export default function ServicesPage() {
+function ServicesPage() {
   const router = useRouter();
   const { selectedCategory: categoryParam } = useLocalSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [cartItems, setCartItems] = useState([]);
+  const ITEM_CARD_HEIGHT = 170 + 16; // card height + marginBottom
 
   // Transform service categories for the UI with proper counts
   const categories = [
@@ -164,76 +166,55 @@ export default function ServicesPage() {
   );
 
   // Memoized service card for performance
-  const ServiceCard = React.memo(({ item }) => (
-    <View
-      style={styles.serviceCard}
-      activeOpacity={0.8}
-    >
-      {/* Service Badge
-      {item.tags && item.tags.length > 0 && (
-        <View style={[styles.serviceBadge, { backgroundColor: getBadgeColor(item.tags[0]) }]}>
-          <Text style={styles.badgeText}>{item.tags[0]}</Text>
-        </View>
-      )} */}
-
-      {/* Card Content - Horizontal Layout */}
-      <View style={styles.cardContentHorizontal}>
-        {/* Left Side - Service Details */}
-        <View style={styles.serviceDetailsLeft}>
-          <View style={styles.serviceHeader}>
-            <Text style={styles.serviceName} numberOfLines={1}>{item.title}</Text>
-            <Text style={styles.serviceCategory}>{item.subCategory}</Text>
-          </View>
-
-          <Text style={styles.serviceDescription} numberOfLines={2}>
-            {item.description}
-          </Text>
-
-          {/* Rating and Duration */}
-          <View style={styles.serviceMetrics}>
-            <View style={styles.ratingContainer}>
-              <Ionicons name="star" size={14} color="#FFD700" />
-              <Text style={styles.ratingText}>{item.rating || 0.0}</Text>
-              <Text style={styles.reviewsText}>({item.reviews})</Text>
+  const ServiceCard = React.memo(function ServiceCard({ item }) {
+    return (
+      <PressableScale style={styles.serviceCard} onPress={() => { /* open details if needed */ }}>
+        <View style={styles.cardContentHorizontal}>
+          <View style={styles.serviceDetailsLeft}>
+            <View>
+              <Text style={styles.serviceName} numberOfLines={1}>{item.title}</Text>
+              <Text style={styles.serviceCategory}>{item.subCategory}</Text>
             </View>
-            <View style={styles.durationContainer}>
-              <Ionicons name="time-outline" size={12} color="#666" />
-              <Text style={styles.durationText}>{item.duration}</Text>
+
+            <Text style={styles.serviceDescription} numberOfLines={2}>
+              {item.description}
+            </Text>
+
+            <View style={styles.bottomRow}>
+              <View style={styles.priceRow}>
+                <View style={styles.priceContainer}>
+                  <Text style={styles.currentPrice}>₹{item.price}</Text>
+                  {item.originalPrice && <Text style={styles.originalPrice}>₹{item.originalPrice}</Text>}
+                </View>
+
+                <View style={styles.ratingInline}>
+                  <Ionicons name="star" size={12} color="#FFD700" />
+                  <Text style={styles.ratingTextSmall}>{item.rating || 0.0}</Text>
+                </View>
+              </View>
+
+              <View style={styles.controlsRight}>
+                <PressableScale style={styles.addToCartButton} onPress={() => addToCart(item)}>
+                  <Ionicons name="cart-outline" size={16} color="#fff" />
+                </PressableScale>
+              </View>
             </View>
           </View>
 
-          {/* Price and Add to Cart Button */}
-          <View style={styles.serviceFooter}>
-            <View style={styles.priceContainer}>
-              <Text style={styles.currentPrice}>₹{item.price}</Text>
-            </View>
-            <TouchableOpacity 
-              style={styles.addToCartButton}
-              onPress={() => addToCart(item)}
-            >
-              <Text style={styles.addToCartButtonText}>Add to Cart</Text>
-              <Ionicons name="cart-outline" size={14} color="#fff" />
-            </TouchableOpacity>
+          <View style={styles.serviceImageContainer}>
+            <Image
+              source={item.image || { uri: "https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751596604/ChatGPT_Image_Jul_3_2025_10_18_12_PM_xqu38i.png" }}
+              style={styles.serviceImage}
+              resizeMode="cover"
+              onError={e => console.log(e.nativeEvent?.error)}
+            />
           </View>
         </View>
+      </PressableScale>
+    );
+  });
 
-        {/* Right Side - Service Image */}
-        <View style={styles.serviceImageContainer}>
-          <Image 
-            source={item.image || {uri: "https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751596604/ChatGPT_Image_Jul_3_2025_10_18_12_PM_xqu38i.png"}} 
-            style={styles.serviceImage}
-            resizeMode="cover"
-            onError={e => console.log(e.nativeEvent?.error)}
-          />
-          <View style={styles.imageOverlay}>
-            <TouchableOpacity style={styles.favoriteButton}>
-              <Ionicons name="heart-outline" size={16} color="#fff" />
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </View>
-  ));
+  ServiceCard.displayName = 'ServiceCard';
 
   const getCategoryImage = (categoryId) => {
     const imageMap = {
@@ -247,6 +228,8 @@ export default function ServicesPage() {
     return imageMap[categoryId] || require("../../../../../../assets/images/allServices.png");
   };
 
+  const renderItem = ({ item }) => <ServiceCard item={item} />;
+
   return (
     <View style={styles.container}>
       <StatusBar hidden={true} />
@@ -256,7 +239,7 @@ export default function ServicesPage() {
         showBack
         onBack={() => router.back()}
         rightElement={
-          <TouchableOpacity style={styles.cartButton} onPress={() => router.push('/(modal)/cart')}>
+          <PressableScale style={styles.cartButton} onPress={() => router.push('/(modal)/cart')}>
             <View style={styles.cartIconContainer}>
               <Ionicons name="cart" size={24} color="#fff" />
               {cartItems.length > 0 && (
@@ -265,14 +248,17 @@ export default function ServicesPage() {
                 </View>
               )}
             </View>
-          </TouchableOpacity>
+          </PressableScale>
         }
       />
 
-  <FlatList
+      <FlatList
         data={filteredServices}
-        renderItem={({ item }) => <ServiceCard item={item} />}
+        renderItem={renderItem}
         keyExtractor={item => `service-${item.serviceId}`}
+        getItemLayout={(data, index) => (
+          {length: 170 + 16, offset: (170 + 16) * index, index}
+        )}
         ListHeaderComponent={
           <View>
             {/* Search Bar */}
@@ -333,11 +319,11 @@ export default function ServicesPage() {
             </Text>
           </View>
         }
-        initialNumToRender={6}
-        windowSize={7}
-        removeClippedSubviews={true}
-        maxToRenderPerBatch={8}
-        updateCellsBatchingPeriod={50}
+  initialNumToRender={6}
+  windowSize={5}
+  removeClippedSubviews={false}
+  maxToRenderPerBatch={6}
+  updateCellsBatchingPeriod={50}
   contentContainerStyle={{ paddingBottom: 100, paddingTop: 16 }}
         showsVerticalScrollIndicator={false}
         bounces={true}
@@ -345,6 +331,10 @@ export default function ServicesPage() {
     </View>
   );
 }
+
+ServicesPage.displayName = 'ServicesPage';
+
+export default ServicesPage;
 
 const styles = StyleSheet.create({
   container: {
@@ -526,62 +516,97 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   serviceCard: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    marginBottom: 16,
-    marginHorizontal: 20,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    overflow: 'hidden',
-    height: 170,
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
+  backgroundColor: '#fff',
+  borderRadius: 16,
+  marginBottom: 16,
+  marginHorizontal: 16,
+  height: 170,
+  elevation: 6,
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.08,
+  shadowRadius: 10,
+  overflow: 'hidden',
+  borderWidth: 1,
+  borderColor: '#F0F0F0',
+  padding: 0,
   },
   cardContentHorizontal: {
-    flexDirection: 'row',
-    height: '100%',
+  flexDirection: 'row',
+  alignItems: 'center',
+  minHeight: 140,
   },
   serviceDetailsLeft: {
-    flex: 1,
-    padding: 18,
-    justifyContent: 'space-between',
+  flex: 1,
+  paddingVertical: 14,
+  paddingLeft: 16,
+  justifyContent: 'space-between',
+  paddingRight: 12,
   },
   serviceBadge: {
-    position: 'absolute',
-    top: 8,
-    left: 8,
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 8,
-    zIndex: 1,
+  // removed
   },
   badgeText: {
-    color: '#fff',
-    fontSize: 9,
-    fontWeight: 'bold',
+  // removed
   },
   serviceImageContainer: {
-    position: 'relative',
-    width: 120,
-    height: '100%',
+  position: 'relative',
+  width: 120,
+  height: 165,
+  borderTopRightRadius: 12,
+  borderBottomRightRadius: 12,
+  overflow: 'hidden',
+  alignSelf: 'center',
   },
   serviceImage: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
+  width: '100%',
+  height: '100%',
+  resizeMode: 'cover',
+  borderTopRightRadius: 12,
+  borderBottomRightRadius: 12,
   },
   imageOverlay: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
+  // removed
   },
   favoriteButton: {
-    backgroundColor: 'rgba(0,0,0,0.3)',
+  // removed
+  },
+  bottomRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  controlsRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  ratingInline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 10,
+  },
+  ratingTextSmall: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FF6B35',
+    marginLeft: 6,
+  },
+  metricsCompact: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  addToCartButton: {
+    backgroundColor: '#3898B3',
+    padding: 8,
     borderRadius: 12,
-    padding: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   serviceContent: {
     padding: 16,

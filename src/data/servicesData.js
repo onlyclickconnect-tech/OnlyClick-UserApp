@@ -157,7 +157,7 @@ export const allServices = [
     duration: '1 hour',
     rating: 4.9,
     reviews: 254,
-    image: { uri: 'image_nWsgUrQD_1751513389869_raw_kmtmce.jpg' },
+    image: { uri: 'https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751557087/ChatGPT_Image_Jul_3_2025_10_06_57_AM_zmuowi.png' },
     tags: ['Decorative', 'Same Day'],
     includes: ['Mounting', 'Wiring', 'Testing'],
     professional: 'Certified Electrician'

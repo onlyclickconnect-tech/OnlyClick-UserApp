@@ -1,6 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useRef } from 'react';
-import { Animated, Image, StyleSheet, View } from 'react-native';
+import { Animated, Dimensions, Image, Platform, StyleSheet, View } from 'react-native';
 
 const OnboardingSlide = ({ title, description, image }) => {
   const titleAnim = useRef(new Animated.Value(0)).current;
@@ -100,6 +100,18 @@ const OnboardingSlide = ({ title, description, image }) => {
   );
 };
 
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+
+// Responsive sizing helpers (conservative clamps to preserve layout)
+const IMAGE_AREA = Math.round(screenHeight * 0.48);
+const MODAL_AREA = Math.round(screenHeight * 0.52);
+const IMAGE_WIDTH = Math.round(screenWidth * 0.9);
+const IMAGE_HEIGHT = Math.round(IMAGE_AREA * 0.9);
+const TITLE_FONT = Math.round(Math.max(20, Math.min(34, screenWidth * 0.065)));
+const DESC_FONT = Math.round(Math.max(13, Math.min(18, screenWidth * 0.04)));
+const HORIZONTAL_PADDING = Math.round(Math.max(18, screenWidth * 0.06));
+const BOTTOM_PADDING = Platform.OS === 'ios' ? 34 : 22;
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -110,21 +122,22 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: '50%',
+    height: IMAGE_AREA,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: -30,
+    marginTop: Math.round(-screenHeight * 0.03),
   },
   image: {
-    width: '100%',
-    height: '100%',
+    width: IMAGE_WIDTH,
+    height: IMAGE_HEIGHT,
   },
   modal: {
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
-    padding: 30,
-    paddingBottom: 90,
-    height: '55%',
+    paddingHorizontal: HORIZONTAL_PADDING,
+    paddingTop: 22,
+    paddingBottom: BOTTOM_PADDING + 8,
+    height: MODAL_AREA,
     justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -3 },
@@ -133,19 +146,19 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   title: {
-    fontSize: 31,
+    fontSize: TITLE_FONT,
     fontWeight: '600',
     color: '#1A1A1A',
     textAlign: 'left',
-    marginBottom: 24,
-    lineHeight: 30,
+    marginBottom: 18,
+    lineHeight: Math.round(TITLE_FONT * 1.05),
     letterSpacing: 0.2,
   },
   description: {
-    fontSize: 15,
+    fontSize: DESC_FONT,
     color: '#444',
     textAlign: 'left',
-    lineHeight: 26,
+    lineHeight: Math.round(DESC_FONT * 1.6),
     letterSpacing: 0.2,
   },
 });

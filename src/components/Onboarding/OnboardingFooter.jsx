@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-const OnboardingFooter = forwardRef(({ onNext, onComplete, currentSlide, totalSlides, isLastSlide }, ref) => {
+const OnboardingFooter = forwardRef(function OnboardingFooter({ onNext, onComplete, currentSlide, totalSlides, isLastSlide }, ref) {
   const buttonAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -126,4 +126,5 @@ const styles = StyleSheet.create({
   },
 });
 
+OnboardingFooter.displayName = 'OnboardingFooter';
 export default OnboardingFooter;

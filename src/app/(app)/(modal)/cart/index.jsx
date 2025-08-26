@@ -339,7 +339,7 @@ export default function Cart() {
       </View>
 
       {/* Provider Info */}
-      <View style={styles.providerCard}>
+      {/* <View style={styles.providerCard}>
         <View style={styles.providerHeader}>
           <View style={styles.providerInfo}>
             <Text style={styles.providerName}>{categoryData.provider.name}</Text>
@@ -352,7 +352,7 @@ export default function Cart() {
             <Ionicons name="call" size={16} color="#3898B3" />
           </TouchableOpacity>
         </View>
-      </View>
+      </View> */}
 
       {/* Items List */}
       <View style={styles.itemsList}>
@@ -844,7 +844,7 @@ export default function Cart() {
               
               <View style={styles.savingsBanner}>
                 <Ionicons name="gift" size={18} color="#4CAF50" />
-                <Text style={styles.savingsText}>🎉 You're saving ₹120 on this booking!</Text>
+                <Text style={styles.savingsText}>🎉 You&apos;re saving ₹120 on this booking!</Text>
               </View>
             </View>
 
@@ -1506,6 +1506,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#3898B3',
+  marginLeft: 16,
   },
   policyCard: {
     flexDirection: 'row',

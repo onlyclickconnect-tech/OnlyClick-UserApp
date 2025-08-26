@@ -11,33 +11,36 @@ export default function Info() {
     {
       id: 1,
       subtitle: "First carousel item description",
-      image: require('../../../assets/images/carousal1.png'), // Replace with your actual image
+      image: require('../../../assets/images/carousal1.jpg'), // Replace with your actual image
     },
     {
       id: 2, 
       subtitle: "Second carousel item description",
-      image: require('../../../assets/images/carousal2.png'), // Replace with your actual image
+      image: require('../../../assets/images/carousal2.jpg'), // Replace with your actual image
     },
     {
       id: 3,
       subtitle: "Third carousel item description", 
-      image: require('../../../assets/images/carousal3.png'), // Replace with your actual image
+      image: require('../../../assets/images/carousal3.jpg'), // Replace with your actual image
     },
   ];
   const styles = StyleSheet.create({
     container: {
-      height: screenHeight * 0.25,
+      height: screenHeight * 0.35,
       top: 10,
       width: "100%",
-      paddingHorizontal: 10,
+      paddingHorizontal: 12,
     },
     carouselContainer: {
       marginTop: 15,
-      borderRadius: 15, // Increased border radius for better rounding
       overflow: 'hidden',
-      height: screenHeight * 0.25, // Adjusted height to ensure full visibility
-      width: screenWidth * 0.9, // Adjusted width to fit images
-      alignSelf: 'center', // Centered the carousel
+      height: screenHeight * 0.33,
+      width: '100%',
+      alignSelf: 'center',
+      borderTopLeftRadius: 0,
+      borderTopRightRadius: 0,
+      borderBottomLeftRadius: 16,
+      borderBottomRightRadius: 16,
     },
   });
   const { name, service, userId, profileImage, reviews, ratings } =
@@ -53,6 +56,8 @@ export default function Info() {
           autoPlay={true}
           interval={3000}
           showIndicators={true}
+          imageMode={'cover'}
+          showCaptions={false}
         />
       </View>
     </View>

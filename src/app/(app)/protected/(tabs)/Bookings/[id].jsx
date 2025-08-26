@@ -17,6 +17,9 @@ import {
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
+import AppHeader from '../../../../../components/common/AppHeader';
+import PressableScale from '../../../../../components/common/PressableScale';
+
 export default function BookingDetails() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
@@ -221,7 +224,7 @@ Booked via YourApp 📱`;
               <Ionicons name="close-circle" size={20} color="#F44336" />
               <Text style={styles.ruleText}>
                 <Text style={styles.ruleTitle}>No-Show:</Text> 
-                {'\n'}Full charge if service provider arrives and you're not available
+                {'\n'}Full charge if service provider arrives and you&apos;re not available
               </Text>
             </View>
             
@@ -345,24 +348,22 @@ Booked via YourApp 📱`;
     <View style={styles.container}>
       <StatusBar hidden={true} />
       
-      {/* Fixed Header */}
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <Ionicons name="arrow-back" size={24} color="#fff" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Booking Details</Text>
-          <TouchableOpacity 
-            style={styles.shareButton}
+      {/* Shared App Header */}
+      <AppHeader
+        title="Booking Details"
+        showBack={true}
+        onBack={() => router.back()}
+        rightElement={
+          <PressableScale
+            accessibilityLabel="Share booking"
+            accessibilityRole="button"
             onPress={() => setShowShareModal(true)}
+            style={{ padding: 8 }}
           >
-            <Ionicons name="share-outline" size={24} color="#fff" />
-          </TouchableOpacity>
-        </View>
-      </View>
+            <Ionicons name="share-outline" size={22} color="#fff" />
+          </PressableScale>
+        }
+      />
 
       <ScrollView 
         style={styles.content} 
@@ -607,7 +608,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingTop: 100, // Space for fixed header
+    paddingTop: 16,
   },
   serviceHeader: {
     backgroundColor: '#fff',

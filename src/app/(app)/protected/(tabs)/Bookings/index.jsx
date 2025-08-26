@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   Dimensions,
@@ -19,6 +19,8 @@ export default function Bookings() {
   const [activeTab, setActiveTab] = useState('All');
 
   const tabs = ['All', 'Pending', 'Accepted', 'Completed', 'Cancelled'];
+
+  const { view } = useLocalSearchParams();
 
   // Mock booking data
   const bookings = [
@@ -152,21 +154,19 @@ export default function Bookings() {
     <TouchableOpacity
       style={styles.bookingCard}
     >
-      <View style={styles.cardHeader}>
-        <View style={styles.serviceInfo}>
-          <Text style={styles.serviceName}>{item.serviceName}</Text>
-          <Text style={styles.category}>{item.category}</Text>
-        </View>
-        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-          <Ionicons 
-            name={getStatusIcon(item.status)} 
-            size={14} 
-            color="white" 
-            style={styles.statusIcon}
-          />
-          <Text style={styles.statusText}>{item.status}</Text>
-        </View>
-      </View>
+                        <View style={styles.cardHeader}>
+                          <View style={styles.serviceInfo}>
+                            <View style={styles.serviceTitleRow}>
+                              <View style={[styles.statusDot, { backgroundColor: getStatusColor(item.status) }]} />
+                              <Text style={styles.serviceName}>{item.serviceName}</Text>
+                            </View>
+                            <Text style={styles.category}>{item.category}</Text>
+                          </View>
+                          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
+                            <Ionicons name={getStatusIcon(item.status)} size={14} color="white" style={styles.statusIcon} />
+                            <Text style={styles.statusText}>{item.status}</Text>
+                          </View>
+                        </View>
 
       <View style={styles.cardBody}>
         <View style={styles.infoRow}>
@@ -248,67 +248,125 @@ export default function Bookings() {
 
         {/* Bookings List */}
         <View style={styles.listContainer}>
-          {filteredBookings.length > 0 ? (
-            filteredBookings.map((item) => (
-              <View
-                key={item.id}
-                style={styles.bookingCard}
-              >
-                <View style={styles.cardHeader}>
-                  <View style={styles.serviceInfo}>
-                    <Text style={styles.serviceName}>{item.serviceName}</Text>
-                    <Text style={styles.category}>{item.category}</Text>
-                  </View>
-                  <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-                    <Ionicons 
-                      name={getStatusIcon(item.status)} 
-                      size={14} 
-                      color="white" 
-                      style={styles.statusIcon}
-                    />
-                    <Text style={styles.statusText}>{item.status}</Text>
-                  </View>
-                </View>
+          {view === 'timeline' ? (
+            // Group bookings by date and render timeline
+            (() => {
+              const grouped = filteredBookings.reduce((acc, b) => {
+                acc[b.date] = acc[b.date] || [];
+                acc[b.date].push(b);
+                return acc;
+              }, {});
+              const dates = Object.keys(grouped).sort((a, b) => new Date(b) - new Date(a));
 
-                <View style={styles.cardBody}>
-                  <View style={styles.infoRow}>
-                    <Ionicons name="calendar-outline" size={16} color="#666" />
-                    <Text style={styles.infoText}>{formatDate(item.date)} at {item.time}</Text>
-                  </View>
-                  
-                  <View style={styles.infoRow}>
-                    <Ionicons name="location-outline" size={16} color="#666" />
-                    <Text style={styles.infoText} numberOfLines={1}>{item.location}</Text>
-                  </View>
-                  
-                  <View style={styles.infoRow}>
-                    <Ionicons name="business-outline" size={16} color="#666" />
-                    <Text style={styles.infoText}>{item.provider}</Text>
-                  </View>
+              return dates.map(dateKey => (
+                <View key={dateKey} style={styles.timelineDay}>
+                  <Text style={styles.timelineDate}>{new Date(dateKey).toLocaleDateString()}</Text>
+                  {grouped[dateKey].map(item => (
+                    <View key={item.id} style={styles.timelineItem}>
+                      <View style={styles.timelineMarker} />
+                      <View style={styles.timelineCard}>
+                        <View style={styles.cardHeader}>
+                          <View style={styles.serviceInfo}>
+                            <Text style={styles.serviceName}>{item.serviceName}</Text>
+                            <Text style={styles.category}>{item.category}</Text>
+                          </View>
+                          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
+                            <Ionicons name={getStatusIcon(item.status)} size={14} color="white" style={styles.statusIcon} />
+                            <Text style={styles.statusText}>{item.status}</Text>
+                          </View>
+                        </View>
+                        <View style={styles.cardBody}>
+                          <View style={styles.infoRow}>
+                            <Ionicons name="calendar-outline" size={16} color="#666" />
+                            <Text style={styles.infoText}>{formatDate(item.date)} at {item.time}</Text>
+                          </View>
+                          <View style={styles.infoRow}>
+                            <Ionicons name="location-outline" size={16} color="#666" />
+                            <Text style={styles.infoText} numberOfLines={1}>{item.location}</Text>
+                          </View>
+                        </View>
+                        <View style={styles.cardFooter}>
+                          <Text style={styles.price}>₹{item.price}</Text>
+                          <TouchableOpacity 
+                            style={styles.viewDetailsButton}
+                            onPress={() => router.push(`/protected/(tabs)/Bookings/${item.id}`)}
+                          >
+                            <Text style={styles.viewDetailsText}>View Details</Text>
+                            <Ionicons name="chevron-forward" size={16} color="#3898B3" />
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    </View>
+                  ))}
                 </View>
-
-                <View style={styles.cardFooter}>
-                  <Text style={styles.price}>₹{item.price}</Text>
-                  <TouchableOpacity 
-                    style={styles.viewDetailsButton}
-                    onPress={() => router.push(`/protected/(tabs)/Bookings/${item.id}`)}
-                  >
-                    <Text style={styles.viewDetailsText}>View Details</Text>
-                    <Ionicons name="chevron-forward" size={16} color="#3898B3" />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ))
+              ));
+            })()
           ) : (
-            <View style={styles.emptyContainer}>
-              <Ionicons name="calendar-outline" size={64} color="#DDD" />
-              <Text style={styles.emptyTitle}>No bookings found</Text>
-              <Text style={styles.emptySubtitle}>
-                {activeTab === 'All' 
-                  ? 'You haven\'t made any bookings yet' 
-                  : `No ${activeTab.toLowerCase()} bookings`}
-              </Text>
-            </View>
+            filteredBookings.length > 0 ? (
+              filteredBookings.map((item) => (
+                <View
+                  key={item.id}
+                  style={styles.bookingCard}
+                >
+                  <View style={styles.cardHeader}>
+                    <View style={styles.serviceInfo}>
+                      <View style={styles.serviceTitleRow}>
+                        <View style={[styles.statusDot, { backgroundColor: getStatusColor(item.status) }]} />
+                        <Text style={styles.serviceName}>{item.serviceName}</Text>
+                      </View>
+                      <Text style={styles.category}>{item.category}</Text>
+                    </View>
+                    <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
+                      <Ionicons 
+                        name={getStatusIcon(item.status)} 
+                        size={14} 
+                        color="white" 
+                        style={styles.statusIcon}
+                      />
+                      <Text style={styles.statusText}>{item.status}</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.cardBody}>
+                    <View style={styles.infoRow}>
+                      <Ionicons name="calendar-outline" size={16} color="#666" />
+                      <Text style={styles.infoText}>{formatDate(item.date)} at {item.time}</Text>
+                    </View>
+                    
+                    <View style={styles.infoRow}>
+                      <Ionicons name="location-outline" size={16} color="#666" />
+                      <Text style={styles.infoText} numberOfLines={1}>{item.location}</Text>
+                    </View>
+                    
+                    <View style={styles.infoRow}>
+                      <Ionicons name="business-outline" size={16} color="#666" />
+                      <Text style={styles.infoText}>{item.provider}</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.cardFooter}>
+                    <Text style={styles.price}>₹{item.price}</Text>
+                    <TouchableOpacity 
+                      style={styles.viewDetailsButton}
+                      onPress={() => router.push(`/protected/(tabs)/Bookings/${item.id}`)}
+                    >
+                      <Text style={styles.viewDetailsText}>View Details</Text>
+                      <Ionicons name="chevron-forward" size={16} color="#3898B3" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))
+            ) : (
+              <View style={styles.emptyContainer}>
+                <Ionicons name="calendar-outline" size={64} color="#DDD" />
+                <Text style={styles.emptyTitle}>No bookings found</Text>
+                <Text style={styles.emptySubtitle}>
+                  {activeTab === 'All' 
+                    ? 'You haven\'t made any bookings yet' 
+                    : `No ${activeTab.toLowerCase()} bookings`}
+                </Text>
+              </View>
+            )
           )}
         </View>
       </ScrollView>
@@ -370,6 +428,60 @@ const styles = StyleSheet.create({
   },
   filterButton: {
     padding: 5,
+  },
+  listContainer: {
+    paddingHorizontal: 12,
+    paddingBottom: 40,
+  },
+  timelineDay: {
+    marginBottom: 18,
+  },
+  timelineDate: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#333',
+    marginBottom: 8,
+    paddingHorizontal: 8,
+  },
+  timelineItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 10,
+  },
+  timelineMarker: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#3898B3',
+    marginRight: 12,
+    marginTop: 8,
+  },
+  timelineCard: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#EEE',
+    padding: 12,
+  },
+  serviceTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  statusDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 8,
+  },
+  viewDetailsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  viewDetailsText: {
+    color: '#3898B3',
+    fontWeight: '600',
+    marginRight: 6,
   },
   // otpNoticeContainer: {
   //   backgroundColor: '#fff',

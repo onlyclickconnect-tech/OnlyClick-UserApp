@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { Dimensions, Image, ScrollView, StyleSheet, View } from 'react-native';
+import { Dimensions, Image, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-const { width: screenWidth } = Dimensions.get('window');
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
-export default function Carousel({ data, autoPlay = true, interval = 3000, showIndicators = true }) {
+export default function Carousel({ data, autoPlay = true, interval = 3000, showIndicators = true, imageMode = 'cover', showCaptions = true }) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [containerWidth, setContainerWidth] = useState(screenWidth);
+  const [containerHeight, setContainerHeight] = useState(200);
   const scrollViewRef = useRef(null);
 
   useEffect(() => {
@@ -13,7 +15,7 @@ export default function Carousel({ data, autoPlay = true, interval = 3000, showI
         setCurrentIndex((prevIndex) => {
           const nextIndex = (prevIndex + 1) % data.length;
           scrollViewRef.current?.scrollTo({
-            x: nextIndex * screenWidth,
+            x: nextIndex * containerWidth,
             animated: true,
           });
           return nextIndex;
@@ -31,13 +33,23 @@ export default function Carousel({ data, autoPlay = true, interval = 3000, showI
   };
 
   const renderCarouselItem = (item, index) => (
-    <View key={index} style={styles.slide}>
-      <Image source={item.image} style={styles.carouselImage} resizeMode="cover" />
+    <View key={index} style={[styles.slide, { width: containerWidth, height: containerHeight }]}> 
+      <View style={styles.imageWrapper}>
+        <Image source={item.image} style={[styles.carouselImage, { width: containerWidth, height: containerHeight }]} resizeMode={imageMode} />
+        {showCaptions && item.subtitle ? (
+          <View style={styles.overlay} pointerEvents="none">
+            <View>
+              <Text style={styles.carouselTitle}>{item.title || ''}</Text>
+              <Text style={styles.carouselSubtitle}>{item.subtitle}</Text>
+            </View>
+          </View>
+        ) : null}
+      </View>
     </View>
   );
 
   const renderIndicators = () => (
-    <View style={styles.indicatorContainer}>
+    <View style={styles.indicatorContainerAbsolute} pointerEvents="none">
       {data.map((_, index) => (
         <View
           key={index}
@@ -53,14 +65,21 @@ export default function Carousel({ data, autoPlay = true, interval = 3000, showI
   );
 
   return (
-    <View style={styles.container}>
+    <View
+      style={[styles.container, { width: containerWidth }]}
+      onLayout={(e) => {
+        const { width, height } = e.nativeEvent.layout;
+        if (width && width !== containerWidth) setContainerWidth(width);
+        if (height && height !== containerHeight) setContainerHeight(height);
+      }}
+    >
       <ScrollView
         ref={scrollViewRef}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         onMomentumScrollEnd={handleScroll}
-        style={styles.scrollView}
+        style={[styles.scrollView, { width: containerWidth }]}
       >
         {data.map((item, index) => renderCarouselItem(item, index))}
       </ScrollView>
@@ -71,20 +90,25 @@ export default function Carousel({ data, autoPlay = true, interval = 3000, showI
 
 const styles = StyleSheet.create({
   container: {
-    width: screenWidth,
+  width: screenWidth,
   },
   scrollView: {
-    width: screenWidth,
+  width: screenWidth,
   },
   slide: {
-    width: screenWidth,
-    height: 200,
-    position: 'relative',
+  position: 'relative',
   },
-  carouselImage: {
+  imageWrapper: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
     width: '100%',
     height: '100%',
-    borderRadius: 10,
+  },
+  carouselImage: {
+  width: '100%',
+  height: '100%',
   },
   overlay: {
     position: 'absolute',
@@ -112,10 +136,39 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 10,
   },
+  indicatorContainerAbsolute: {
+    position: 'absolute',
+    bottom: -22,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   indicator: {
     width: 8,
     height: 8,
     borderRadius: 4,
     marginHorizontal: 4,
+  },
+  overlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    padding: 12,
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
+  },
+  carouselTitle: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  carouselSubtitle: {
+    color: 'white',
+    fontSize: 13,
   },
 });
