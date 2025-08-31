@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Only Click - User",
+    "name": "Only Click",
     "slug": "only-click-user",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -59,9 +59,8 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "b9304d1f-b471-4063-952b-dd50e9fd4e27"
+        "projectId": "5fd6e9e6-d947-4fd3-89f1-1ce43fd009bd"
       }
-    },
-    "owner": "pokemon_070"
+    }
   }
 }

@@ -1,6 +1,7 @@
 import { Poppins_400Regular, Poppins_600SemiBold, Poppins_700Bold, useFonts } from '@expo-google-fonts/poppins';
-import AppLoading from 'expo-app-loading';
 import { Stack } from "expo-router";
+import * as SplashScreen from 'expo-splash-screen';
+import { useEffect } from 'react';
 import { Text, View } from "react-native";
 import { AppStatesProvider } from "../context/AppStates";
 import AuthProvider from "../context/AuthProvider";
@@ -9,8 +10,21 @@ import ModalProvider from "../context/ModalProvider";
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({ Poppins_400Regular, Poppins_600SemiBold, Poppins_700Bold });
 
+  useEffect(() => {
+    async function prepare() {
+      await SplashScreen.preventAutoHideAsync();
+    }
+    prepare();
+  }, []);
+
+  useEffect(() => {
+    if (fontsLoaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded]);
+
   if (!fontsLoaded) {
-    return <AppLoading />;
+    return null;
   }
 
   // Create a custom Text component to apply the default font family

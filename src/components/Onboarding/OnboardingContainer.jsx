@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { Animated, Dimensions, PanResponder, StyleSheet, View } from 'react-native';
 import OnboardingFooter from './OnboardingFooter';
@@ -25,6 +26,7 @@ const slides = [
 ];
 
 const OnboardingContainer = ({ onComplete }) => {
+  const router = useRouter();
   const [currentSlide, setCurrentSlide] = useState(0);
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
@@ -44,7 +46,7 @@ const OnboardingContainer = ({ onComplete }) => {
         useNativeDriver: true,
       })
     ]).start(() => {
-      onComplete();
+      router.push('/(app)/auth/terms-privacy'); // Navigate to TermsPrivacy screen
     });
   };
 

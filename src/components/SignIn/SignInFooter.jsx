@@ -3,11 +3,8 @@ import { TouchableOpacity, Text, View, StyleSheet } from 'react-native';
 
 const SignInFooter = () => {
     return (
-        <Link href="/protected/" asChild>
-            <TouchableOpacity style={styles.skipContainer}>
-                <Text style={styles.skipText}>Continue without login</Text>
-            </TouchableOpacity>
-        </Link>
+        <Text></Text>
+
     );
 };
 

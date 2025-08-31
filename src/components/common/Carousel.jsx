@@ -6,7 +6,7 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 export default function Carousel({ data, autoPlay = true, interval = 3000, showIndicators = true, imageMode = 'cover', showCaptions = true }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [containerWidth, setContainerWidth] = useState(screenWidth);
-  const [containerHeight, setContainerHeight] = useState(200);
+  const [containerHeight, setContainerHeight] = useState(200); // Keep it big
   const scrollViewRef = useRef(null);
 
   useEffect(() => {
@@ -35,7 +35,7 @@ export default function Carousel({ data, autoPlay = true, interval = 3000, showI
   const renderCarouselItem = (item, index) => (
     <View key={index} style={[styles.slide, { width: containerWidth, height: containerHeight }]}> 
       <View style={styles.imageWrapper}>
-        <Image source={item.image} style={[styles.carouselImage, { width: containerWidth, height: containerHeight }]} resizeMode={imageMode} />
+        <Image source={item.image} style={[styles.carouselImage, { width: containerWidth, height: containerHeight, borderRadius: 20 }]} resizeMode={imageMode} />
         {showCaptions && item.subtitle ? (
           <View style={styles.overlay} pointerEvents="none">
             <View>
@@ -90,13 +90,15 @@ export default function Carousel({ data, autoPlay = true, interval = 3000, showI
 
 const styles = StyleSheet.create({
   container: {
-  width: screenWidth,
+    width: screenWidth,
+    paddingHorizontal: 15, // Use padding for full visibility
   },
   scrollView: {
   width: screenWidth,
   },
   slide: {
-  position: 'relative',
+    position: 'relative',
+    borderRadius: 20,
   },
   imageWrapper: {
     flex: 1,
@@ -105,6 +107,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     width: '100%',
     height: '100%',
+    borderRadius: 20, // More rounded corners
+    elevation: 5, // Add shadow for better visibility
   },
   carouselImage: {
   width: '100%',
@@ -115,51 +119,10 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.2)',
-    padding: 10,
-    borderBottomLeftRadius: 10,
-    borderBottomRightRadius: 10,
-  },
-  carouselTitle: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 5,
-  },
-  carouselSubtitle: {
-    color: 'white',
-    fontSize: 14,
-  },
-  indicatorContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  indicatorContainerAbsolute: {
-    position: 'absolute',
-    bottom: -22,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  indicator: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginHorizontal: 4,
-  },
-  overlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.35)',
     padding: 12,
-    borderBottomLeftRadius: 16,
-    borderBottomRightRadius: 16,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
   },
   carouselTitle: {
     color: 'white',

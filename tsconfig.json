@@ -16,5 +16,5 @@
     "src/app/intro/index.jsx",
     "src/components/Contact/Contact.jsx",
     "nativewind-env.d.ts"
-  ]
+, "src/app/(app)/auth/terms-privacy.jsx"  ]
 }

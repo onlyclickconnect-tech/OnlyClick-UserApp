@@ -1,10 +1,13 @@
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Alert,
+  Animated,
+  Dimensions,
   Modal,
+  PanResponder,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -14,6 +17,8 @@ import {
   View
 } from 'react-native';
 import { useAppStates } from '../../../../context/AppStates';
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 import AppHeader from '../../../../components/common/AppHeader';
 
@@ -30,6 +35,84 @@ export default function Cart() {
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedDateItem, setSelectedDateItem] = useState(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState(null);
+
+  // Gesture handling for modals
+  const modalY = useRef(new Animated.Value(0)).current;
+  const modalOpacity = useRef(new Animated.Value(1)).current;
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: (evt, gestureState) => {
+        // Only respond to vertical gestures at the top of the modal
+        return Math.abs(gestureState.dy) > 5 && gestureState.y0 < 100;
+      },
+      onMoveShouldSetPanResponder: (evt, gestureState) => {
+        // Only respond to vertical gestures
+        return Math.abs(gestureState.dy) > Math.abs(gestureState.dx) && 
+               Math.abs(gestureState.dy) > 10;
+      },
+      onPanResponderMove: (evt, gestureState) => {
+        if (gestureState.dy > 0) {
+          modalY.setValue(gestureState.dy);
+          modalOpacity.setValue(1 - gestureState.dy / 300);
+        }
+      },
+      onPanResponderRelease: (evt, gestureState) => {
+        if (gestureState.dy > 100 || gestureState.vy > 0.5) {
+          // Close modal with animation
+          Animated.parallel([
+            Animated.timing(modalY, {
+              toValue: screenHeight,
+              duration: 300,
+              useNativeDriver: true,
+            }),
+            Animated.timing(modalOpacity, {
+              toValue: 0,
+              duration: 300,
+              useNativeDriver: true,
+            }),
+          ]).start(() => {
+            setShowLocationModal(false);
+            setShowCancellationPolicy(false);
+            setShowPaymentModal(false);
+            setShowDateTimeModal(false);
+            setShowMobileModal(false);
+            modalY.setValue(0);
+            modalOpacity.setValue(1);
+          });
+        } else {
+          // Reset position with animation
+          Animated.parallel([
+            Animated.timing(modalY, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+            Animated.timing(modalOpacity, {
+              toValue: 1,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+          ]).start();
+        }
+      },
+      onPanResponderTerminate: (evt, gestureState) => {
+        // Reset if gesture is terminated
+        Animated.parallel([
+          Animated.timing(modalY, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+          Animated.timing(modalOpacity, {
+            toValue: 1,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      },
+    })
+  ).current;
   
   // Location state management
   const [isLocationLoading, setIsLocationLoading] = useState(false);
@@ -364,9 +447,21 @@ export default function Cart() {
   );
 
   const LocationModal = () => (
-    <Modal visible={showLocationModal} transparent animationType="slide">
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
+    <Modal visible={showLocationModal} transparent animationType="none">
+      <Animated.View style={[styles.modalOverlay, { opacity: modalOpacity }]}>
+        <Animated.View 
+          style={[styles.modalContent, { transform: [{ translateY: modalY }] }]}
+          {...panResponder.panHandlers}
+        >
+          {/* Gesture Indicator Bar */}
+          <TouchableOpacity 
+            style={styles.gestureIndicator}
+            activeOpacity={0.7}
+            onPress={() => {}}
+          >
+            <View style={styles.indicatorBar} />
+          </TouchableOpacity>
+          
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>📍 Update Location</Text>
             <TouchableOpacity onPress={() => {
@@ -449,8 +544,8 @@ export default function Cart() {
               <Text style={styles.saveButtonText}>Save Location</Text>
             </TouchableOpacity>
           </View>
-        </View>
-      </View>
+        </Animated.View>
+      </Animated.View>
     </Modal>
   );
 
@@ -458,11 +553,23 @@ export default function Cart() {
     <Modal 
       visible={showMobileModal} 
       transparent 
-      animationType="slide"
+      animationType="none"
       onRequestClose={cancelMobileEdit}
     >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContainer}>
+      <Animated.View style={[styles.modalOverlay, { opacity: modalOpacity }]}>
+        <Animated.View 
+          style={[styles.modalContainer, { transform: [{ translateY: modalY }] }]}
+          {...panResponder.panHandlers}
+        >
+          {/* Gesture Indicator Bar */}
+          <TouchableOpacity 
+            style={styles.gestureIndicator}
+            activeOpacity={0.7}
+            onPress={() => {}}
+          >
+            <View style={styles.indicatorBar} />
+          </TouchableOpacity>
+          
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>📱 Update Mobile Number</Text>
             <TouchableOpacity 
@@ -516,15 +623,27 @@ export default function Cart() {
               </TouchableOpacity>
             </View>
           </View>
-        </View>
-      </View>
+        </Animated.View>
+      </Animated.View>
     </Modal>
   );
 
   const CancellationPolicyModal = () => (
-    <Modal visible={showCancellationPolicy} transparent animationType="slide">
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
+    <Modal visible={showCancellationPolicy} transparent animationType="none">
+      <Animated.View style={[styles.modalOverlay, { opacity: modalOpacity }]}>
+        <Animated.View 
+          style={[styles.modalContent, { transform: [{ translateY: modalY }] }]}
+          {...panResponder.panHandlers}
+        >
+          {/* Gesture Indicator Bar */}
+          <TouchableOpacity 
+            style={styles.gestureIndicator}
+            activeOpacity={0.7}
+            onPress={() => {}}
+          >
+            <View style={styles.indicatorBar} />
+          </TouchableOpacity>
+          
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Cancellation Policy</Text>
             <TouchableOpacity onPress={() => setShowCancellationPolicy(false)}>
@@ -532,13 +651,104 @@ export default function Cart() {
             </TouchableOpacity>
           </View>
           
-          <ScrollView style={styles.policyContent}>
+          <ScrollView 
+            style={styles.policyContent}
+            showsVerticalScrollIndicator={false}
+            bounces={false}
+            scrollEventThrottle={16}
+            onScrollBeginDrag={() => {
+              // Disable scroll when gesture is detected
+              return false;
+            }}
+          >
+            <Text style={styles.policyIntro}>
+              At Only Click, we strive to provide seamless and professional service at all times. However, we understand that sometimes cancellations are necessary. Our cancellation policy is designed to be fair to both our valued customers and our service providers.
+            </Text>
+            
+            <Text style={styles.sectionTitle}>1. Cancellation by Customer</Text>
+            <View style={styles.policyItem}>
+              <Text style={styles.bulletPoint}>•</Text>
+              <Text style={styles.policyText}>
+                <Text style={styles.boldText}>Free Cancellation:</Text> You can cancel your service appointment free of charge up to 2 hours before the scheduled service time.
+              </Text>
+            </View>
+            <View style={styles.policyItem}>
+              <Text style={styles.bulletPoint}>•</Text>
+              <Text style={styles.policyText}>
+                <Text style={styles.boldText}>Late Cancellations:</Text> If you cancel within 2 hours of the scheduled appointment, a cancellation fee of 50% of the total service fee will be charged. This helps us cover the costs incurred by the service provider's time and travel.
+              </Text>
+            </View>
+            <View style={styles.policyItem}>
+              <Text style={styles.bulletPoint}>•</Text>
+              <Text style={styles.policyText}>
+                <Text style={styles.boldText}>No-Show:</Text> If you fail to be present at the scheduled appointment time or do not inform us of your cancellation in advance, a full cancellation fee (100% of the service cost) will apply.
+              </Text>
+            </View>
+            <View style={styles.policyItem}>
+              <Text style={styles.bulletPoint}>•</Text>
+              <Text style={styles.policyText}>
+                <Text style={styles.boldText}>Emergency Situations:</Text> In case of an emergency or unforeseen event (e.g., hospitalization, urgent personal matters), please inform us as soon as possible. We will assess each case on an individual basis and make necessary accommodations.
+              </Text>
+            </View>
+            
+            <Text style={styles.sectionTitle}>2. Cancellation by Only Click or Service Provider</Text>
+            <View style={styles.policyItem}>
+              <Text style={styles.bulletPoint}>•</Text>
+              <Text style={styles.policyText}>
+                <Text style={styles.boldText}>Service Provider Unavailability:</Text> If a service provider is unable to attend to the scheduled task due to personal reasons, bad weather, or any other unforeseeable situation, Only Click will promptly inform you and offer an alternative time slot or a different provider, subject to availability.
+              </Text>
+            </View>
+            <View style={styles.policyItem}>
+              <Text style={styles.bulletPoint}>•</Text>
+              <Text style={styles.boldText}>Right to Cancel:</Text>
+              <Text style={styles.policyText}> Only Click reserves the right to cancel or reschedule the service if the provider cannot reach the location due to unforeseen circumstances like traffic, roadblocks, etc., after prior communication with the customer.</Text>
+            </View>
+            <View style={styles.policyItem}>
+              <Text style={styles.bulletPoint}>•</Text>
+              <Text style={styles.policyText}>
+                <Text style={styles.boldText}>Refunds:</Text> In case the service is canceled by us or the service provider, full refunds will be issued to the customer within 7 working days.
+              </Text>
+            </View>
+            
+            <Text style={styles.sectionTitle}>3. How to Cancel</Text>
             <Text style={styles.policyText}>
-              • Free cancellation up to 2 hours before service time{'\n\n'}
-              • 50% charge for cancellation within 2 hours{'\n\n'}
-              • No refund for same-day cancellations{'\n\n'}
-              • Emergency cancellations will be reviewed case by case{'\n\n'}
-              • Refunds will be processed within 3-5 business days
+              You can cancel your appointment via the Only Click app, or by calling our customer support team at <Text style={styles.contactText}>+91-9121377419</Text> or emailing <Text style={styles.contactText}>onlyclick.connect@gmail.com</Text>.
+            </Text>
+            <Text style={styles.policyText}>
+              For cancellations made via customer support, please provide your booking details, including the service type, provider name, and scheduled time.
+            </Text>
+            
+            <Text style={styles.sectionTitle}>4. Refunds</Text>
+            <View style={styles.policyItem}>
+              <Text style={styles.bulletPoint}>•</Text>
+              <Text style={styles.policyText}>Refunds for cancellations made before the 2-hour cutoff will be processed immediately.</Text>
+            </View>
+            <View style={styles.policyItem}>
+              <Text style={styles.bulletPoint}>•</Text>
+              <Text style={styles.policyText}>For late cancellations or no-shows, refunds will not be applicable, and the cancellation fee will be charged.</Text>
+            </View>
+            
+            <Text style={styles.sectionTitle}>5. Special Cases</Text>
+            <View style={styles.policyItem}>
+              <Text style={styles.bulletPoint}>•</Text>
+              <Text style={styles.policyText}>
+                <Text style={styles.boldText}>Bulk Bookings & B2B Services:</Text> For bulk bookings (gated communities, commercial spaces, etc.), cancellations must be made at least 48 hours prior to the scheduled service, failing which a 20% cancellation fee will be applied.
+              </Text>
+            </View>
+            <View style={styles.policyItem}>
+              <Text style={styles.bulletPoint}>•</Text>
+              <Text style={styles.policyText}>
+                <Text style={styles.boldText}>Holiday/Peak Time Bookings:</Text> During high-demand periods (holidays, special events, etc.), a higher cancellation fee may be applicable due to increased demand and scheduling complexity.
+              </Text>
+            </View>
+            
+            <Text style={styles.sectionTitle}>6. Customer Support</Text>
+            <Text style={styles.policyText}>
+              For any questions or concerns about the cancellation policy or if you require assistance with rescheduling, please contact our customer support team via the app or at <Text style={styles.contactText}>+91-9121377419</Text>.
+            </Text>
+            
+            <Text style={styles.policyFooter}>
+              By placing a booking, you agree to adhere to this cancellation policy. We appreciate your understanding and cooperation.
             </Text>
           </ScrollView>
           
@@ -548,15 +758,27 @@ export default function Cart() {
           >
             <Text style={styles.confirmButtonText}>I Understand</Text>
           </TouchableOpacity>
-        </View>
-      </View>
+        </Animated.View>
+      </Animated.View>
     </Modal>
   );
 
   const DateTimeModal = () => (
-    <Modal visible={showDateTimeModal} transparent animationType="slide">
-      <View style={styles.modalOverlay}>
-        <View style={[styles.modalContent, styles.dateTimeModalContent]}>
+    <Modal visible={showDateTimeModal} transparent animationType="none">
+      <Animated.View style={[styles.modalOverlay, { opacity: modalOpacity }]}>
+        <Animated.View 
+          style={[styles.modalContent, styles.dateTimeModalContent, { transform: [{ translateY: modalY }] }]}
+          {...panResponder.panHandlers}
+        >
+          {/* Gesture Indicator Bar */}
+          <TouchableOpacity 
+            style={styles.gestureIndicator}
+            activeOpacity={0.7}
+            onPress={() => {}}
+          >
+            <View style={styles.indicatorBar} />
+          </TouchableOpacity>
+          
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Select Date & Time</Text>
             <TouchableOpacity onPress={() => setShowDateTimeModal(false)}>
@@ -564,7 +786,16 @@ export default function Cart() {
             </TouchableOpacity>
           </View>
           
-          <ScrollView style={styles.dateTimeScrollView} showsVerticalScrollIndicator={false}>
+          <ScrollView 
+            style={styles.dateTimeScrollView} 
+            showsVerticalScrollIndicator={false}
+            bounces={false}
+            scrollEventThrottle={16}
+            onScrollBeginDrag={() => {
+              // Disable scroll when gesture is detected
+              return false;
+            }}
+          >
             {/* Date Selection */}
             <View style={styles.sectionCard}>
               <Text style={styles.sectionTitle}>Choose Date</Text>
@@ -700,15 +931,27 @@ export default function Cart() {
               <Text style={styles.confirmDateTimeText}>Continue to Payment</Text>
             </TouchableOpacity>
           </View>
-        </View>
-      </View>
+        </Animated.View>
+      </Animated.View>
     </Modal>
   );
 
   const PaymentModal = () => (
-    <Modal visible={showPaymentModal} transparent animationType="slide">
-      <View style={styles.modalOverlay}>
-        <View style={[styles.modalContent, styles.paymentModalContent]}>
+    <Modal visible={showPaymentModal} transparent animationType="none">
+      <Animated.View style={[styles.modalOverlay, { opacity: modalOpacity }]}>
+        <Animated.View 
+          style={[styles.modalContent, styles.paymentModalContent, { transform: [{ translateY: modalY }] }]}
+          {...panResponder.panHandlers}
+        >
+          {/* Gesture Indicator Bar */}
+          <TouchableOpacity 
+            style={styles.gestureIndicator}
+            activeOpacity={0.7}
+            onPress={() => {}}
+          >
+            <View style={styles.indicatorBar} />
+          </TouchableOpacity>
+          
           {/* Enhanced Header */}
           <View style={styles.paymentModalHeader}>
             <View style={styles.paymentHeaderLeft}>
@@ -728,7 +971,16 @@ export default function Cart() {
             </TouchableOpacity>
           </View>
           
-          <ScrollView style={styles.paymentScrollView} showsVerticalScrollIndicator={false}>
+          <ScrollView 
+            style={styles.paymentScrollView} 
+            showsVerticalScrollIndicator={false}
+            bounces={false}
+            scrollEventThrottle={16}
+            onScrollBeginDrag={() => {
+              // Disable scroll when gesture is detected
+              return false;
+            }}
+          >
             {/* Booking Summary Card */}
             <View style={styles.bookingSummaryCard}>
               <View style={styles.bookingSummaryHeader}>
@@ -1107,8 +1359,8 @@ export default function Cart() {
               </View>
             </TouchableOpacity>
           </View>
-        </View>
-      </View>
+        </Animated.View>
+      </Animated.View>
     </Modal>
   );
 
@@ -2755,5 +3007,79 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#fff',
+  },
+  // Cancellation Policy Modal Styles
+  modalContent: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    maxHeight: '90%',
+    minHeight: '70%',
+  },
+  gestureIndicator: {
+    alignItems: 'center',
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+    marginTop: -10,
+    marginBottom: 10,
+  },
+  indicatorBar: {
+    width: 100,
+    height: 5,
+    marginTop: -20,
+    backgroundColor: '#ddd',
+    borderRadius: 3,
+  },
+  policyContent: {
+    maxHeight: 400,
+    marginBottom: 20,
+  },
+  policyIntro: {
+    fontSize: 14,
+    lineHeight: 22,
+    color: '#666',
+    marginBottom: 20,
+    fontStyle: 'italic',
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#3898B3',
+    marginTop: 15,
+    marginBottom: 10,
+  },
+  policyItem: {
+    flexDirection: 'row',
+    marginBottom: 12,
+    paddingLeft: 5,
+  },
+  bulletPoint: {
+    fontSize: 16,
+    color: '#3898B3',
+    marginRight: 8,
+    marginTop: 2,
+  },
+  policyText: {
+    fontSize: 14,
+    lineHeight: 22,
+    color: '#333',
+    flex: 1,
+  },
+  boldText: {
+    fontWeight: 'bold',
+    color: '#1A1A1A',
+  },
+  contactText: {
+    color: '#3898B3',
+    textDecorationLine: 'underline',
+  },
+  policyFooter: {
+    fontSize: 13,
+    lineHeight: 20,
+    color: '#666',
+    marginTop: 20,
+    fontStyle: 'italic',
+    textAlign: 'center',
   },
 });
