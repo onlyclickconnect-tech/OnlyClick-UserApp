@@ -1,5 +1,4 @@
-import { useState, useContext, createContext, useEffect, useMemo } from "react";
-import { getUserDetails, setUserDetails } from "../utils/storage";
+import { createContext, useContext, useMemo, useState } from "react";
 
 // import axios from "axios";
 const AuthContext = createContext();
@@ -17,7 +16,7 @@ export default function AuthProvider({ children }) {
     name: "Vivek",
     address: "Vijayawada,Andhra Pradesh",
     phone: "1234567890",
-    email: "vivek",
+    email: "",
     _id: "123abc",
     taskMasterId: "123abc",
     service: "Electrician",

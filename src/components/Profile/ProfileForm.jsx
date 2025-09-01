@@ -1,5 +1,5 @@
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert, Dimensions, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import useCurrentUserDetails from "../../hooks/useCurrentUserDetails";
 
@@ -13,33 +13,42 @@ const ProfileForm = ({ onValidationChange, onSave }) => {
     email: email || '',
     phone: phone || '',
     address: userAddress || '',
-    city: '',
-    state: '',
-    pinCode: '',
   });
 
   const [isEditing, setIsEditing] = useState(false);
   const [errors, setErrors] = useState({});
   const [isSaving, setIsSaving] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
 
   const validateForm = () => {
     const newErrors = {};
 
     if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required';
-    if (!formData.email.trim()) newErrors.email = 'Email is required';
-    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email is invalid';
+    if (formData.email.trim() && !/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email is invalid';
     if (!formData.phone.trim()) newErrors.phone = 'Phone number is required';
     if (!formData.address.trim()) newErrors.address = 'Address is required';
-    if (!formData.city.trim()) newErrors.city = 'City is required';
-    if (!formData.state.trim()) newErrors.state = 'State is required';
-    if (!formData.pinCode.trim()) newErrors.pinCode = 'Pin code is required';
-    else if (formData.pinCode.length !== 6) newErrors.pinCode = 'Pin code must be 6 digits';
 
     setErrors(newErrors);
     const isValid = Object.keys(newErrors).length === 0;
     onValidationChange && onValidationChange(isValid);
     return isValid;
   };
+
+  // Only validate after user has interacted with the form
+  useEffect(() => {
+    if (hasInteracted) {
+      validateForm();
+    }
+  }, [formData, hasInteracted]);
+
+  // Check if form is initially valid (for first-time users)
+  useEffect(() => {
+    const isInitiallyValid = formData.fullName.trim() && 
+                           (formData.email.trim() === '' || /\S+@\S+\.\S+/.test(formData.email)) && 
+                           formData.phone.trim() && 
+                           formData.address.trim();
+    onValidationChange && onValidationChange(isInitiallyValid);
+  }, []);
 
   const animateLabel = (fieldName, toValue) => {
     // Simplified - no animation needed
@@ -54,6 +63,7 @@ const ProfileForm = ({ onValidationChange, onSave }) => {
   };
 
   const handleInputChange = (name, value) => {
+    setHasInteracted(true); // Mark that user has interacted with the form
     setFormData((prev) => {
       const updatedForm = { ...prev, [name]: value };
       if (errors[name]) {
@@ -77,9 +87,6 @@ const ProfileForm = ({ onValidationChange, onSave }) => {
       email: email || '',
       phone: phone || '',
       address: userAddress || '',
-      city: '',
-      state: '',
-      pinCode: '',
     });
     setErrors({});
     setIsEditing(false);
@@ -93,13 +100,14 @@ const ProfileForm = ({ onValidationChange, onSave }) => {
           style={[styles.input, errors[name] && styles.inputError]}
           value={formData[name]}
           onChangeText={(text) => handleInputChange(name, text)}
+          onFocus={() => setHasInteracted(true)} // Mark interaction on focus
           keyboardType={keyboardType}
           placeholder={placeholder}
           placeholderTextColor="#808080"
           editable={isEditing}
           {...additionalProps}
         />
-        {errors[name] && <Text style={styles.errorText}>{errors[name]}</Text>}
+        {hasInteracted && errors[name] && <Text style={styles.errorText}>{errors[name]}</Text>}
       </View>
     </View>
   );
@@ -129,15 +137,12 @@ const ProfileForm = ({ onValidationChange, onSave }) => {
         {/* Personal Information */}
         <Text style={styles.sectionTitle}>Personal Information</Text>
         {renderInputField('fullName', 'user', 'Full Name')}
-        {renderInputField('email', 'envelope', 'Email Address', 'email-address', { autoCapitalize: 'none' })}
+        {renderInputField('email', 'envelope', 'Email Address (Optional)', 'email-address', { autoCapitalize: 'none' })}
         {renderInputField('phone', 'phone', 'Phone Number', 'phone-pad')}
 
         {/* Address Information */}
         <Text style={styles.sectionTitle}>Address Information</Text>
-        {renderInputField('address', 'map-marker', 'Street Address', 'default', { multiline: true })}
-        {renderInputField('city', 'building', 'City')}
-        {renderInputField('state', 'flag', 'State')}
-        {renderInputField('pinCode', 'lock', 'Pin Code', 'number-pad', { maxLength: 6 })}
+        {renderInputField('address', 'map-marker', 'Complete Address', 'default', { multiline: true })}
       </View>
     </View>
   );
