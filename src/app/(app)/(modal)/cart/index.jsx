@@ -3,18 +3,18 @@ import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
-  Alert,
-  Animated,
-  Dimensions,
-  Modal,
-  PanResponder,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
+    Alert,
+    Animated,
+    Dimensions,
+    Modal,
+    PanResponder,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { useAppStates } from '../../../../context/AppStates';
 
@@ -454,13 +454,9 @@ export default function Cart() {
           {...panResponder.panHandlers}
         >
           {/* Gesture Indicator Bar */}
-          <TouchableOpacity 
-            style={styles.gestureIndicator}
-            activeOpacity={0.7}
-            onPress={() => {}}
-          >
+          <View style={styles.gestureIndicator}>
             <View style={styles.indicatorBar} />
-          </TouchableOpacity>
+          </View>
           
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>📍 Update Location</Text>
@@ -562,13 +558,9 @@ export default function Cart() {
           {...panResponder.panHandlers}
         >
           {/* Gesture Indicator Bar */}
-          <TouchableOpacity 
-            style={styles.gestureIndicator}
-            activeOpacity={0.7}
-            onPress={() => {}}
-          >
+          <View style={styles.gestureIndicator}>
             <View style={styles.indicatorBar} />
-          </TouchableOpacity>
+          </View>
           
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>📱 Update Mobile Number</Text>
@@ -636,13 +628,9 @@ export default function Cart() {
           {...panResponder.panHandlers}
         >
           {/* Gesture Indicator Bar */}
-          <TouchableOpacity 
-            style={styles.gestureIndicator}
-            activeOpacity={0.7}
-            onPress={() => {}}
-          >
+          <View style={styles.gestureIndicator}>
             <View style={styles.indicatorBar} />
-          </TouchableOpacity>
+          </View>
           
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Cancellation Policy</Text>
@@ -771,13 +759,9 @@ export default function Cart() {
           {...panResponder.panHandlers}
         >
           {/* Gesture Indicator Bar */}
-          <TouchableOpacity 
-            style={styles.gestureIndicator}
-            activeOpacity={0.7}
-            onPress={() => {}}
-          >
+          <View style={styles.gestureIndicator}>
             <View style={styles.indicatorBar} />
-          </TouchableOpacity>
+          </View>
           
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Select Date & Time</Text>
@@ -944,13 +928,9 @@ export default function Cart() {
           {...panResponder.panHandlers}
         >
           {/* Gesture Indicator Bar */}
-          <TouchableOpacity 
-            style={styles.gestureIndicator}
-            activeOpacity={0.7}
-            onPress={() => {}}
-          >
+          <View style={styles.gestureIndicator}>
             <View style={styles.indicatorBar} />
-          </TouchableOpacity>
+          </View>
           
           {/* Enhanced Header */}
           <View style={styles.paymentModalHeader}>
@@ -3019,15 +2999,14 @@ const styles = StyleSheet.create({
   },
   gestureIndicator: {
     alignItems: 'center',
-    paddingVertical: 20,
+    paddingVertical: 16,
     paddingHorizontal: 20,
     marginTop: -10,
     marginBottom: 10,
   },
   indicatorBar: {
-    width: 100,
+    width: 50,
     height: 5,
-    marginTop: -20,
     backgroundColor: '#ddd',
     borderRadius: 3,
   },

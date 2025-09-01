@@ -29,16 +29,18 @@ const ProfilePage = () => {
     }
   }, [isProfileCompleted]);
 
-  const handleSaveProfile = async () => {
+  const handleSaveProfile = async (formData) => {
     try {
+      // Here you would typically save to backend
+      console.log('Saving profile data:', formData);
       await markProfileCompleted();
       Alert.alert(
         "Profile Saved!",
-        "Your profile has been completed successfully.",
+        "Your profile has been updated successfully.",
         [
           {
-            text: "Continue to App",
-            onPress: () => router.replace("/(app)/protected/(tabs)/Home")
+            text: "Continue",
+            onPress: () => console.log("Profile saved")
           }
         ]
       );
@@ -79,18 +81,18 @@ const ProfilePage = () => {
           <View style={styles.welcomeContainer}>
             <View style={styles.welcomeHeader}>
               <View style={styles.welcomeIconContainer}>
-                <Ionicons name="sparkles" size={24} color="#3898B3" />
+                <Ionicons name="person-circle" size={24} color="#3898B3" />
               </View>
               <Text style={styles.welcomeTitle}>Complete Your Profile</Text>
             </View>
             <Text style={styles.welcomeText}>
-              Help us personalize your TaskMaster experience by completing your profile details
+              Help us personalize your experience by filling out your profile details. You can edit all information anytime.
             </Text>
             <View style={styles.progressIndicator}>
               <View style={styles.progressBar}>
                 <View style={styles.progressFill} />
               </View>
-              <Text style={styles.progressText}>Just a few steps away!</Text>
+              <Text style={styles.progressText}>Your information is secure</Text>
             </View>
           </View>
         )}
@@ -100,7 +102,7 @@ const ProfilePage = () => {
         <View style={styles.formContainer}>
           {isGeneral ? (
             <>
-              <ProfileForm />
+              <ProfileForm onSave={handleSaveProfile} />
               <View style={styles.generalActions}>
                 <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.85}>
                   <View style={styles.logoutContent}>

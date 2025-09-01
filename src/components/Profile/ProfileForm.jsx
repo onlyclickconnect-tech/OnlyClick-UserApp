@@ -1,118 +1,260 @@
-import { FontAwesome } from '@expo/vector-icons';
-import { useRef, useState } from "react";
-import { Animated, Dimensions, Easing, StyleSheet, Text, TextInput, View } from "react-native";
+import { FontAwesome, Ionicons } from '@expo/vector-icons';
+import { useState } from "react";
+import { Alert, Dimensions, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import useCurrentUserDetails from "../../hooks/useCurrentUserDetails";
 
 const screenWidth = Dimensions.get("window").width;
 
-const ProfileForm = ({ onValidationChange }) => {
-  const { phone, address, email } = useCurrentUserDetails();
+const ProfileForm = ({ onValidationChange, onSave }) => {
+  const { name, email, userAddress, phone, profileImage, _id, reviews, ratings, userId, service } = useCurrentUserDetails();
+
   const [formData, setFormData] = useState({
-    PhoneNumber: phone || '',
-    PinCode: '',
-    Address: address || '',
-    Email: email || '',
-    Username: '', // Added username field
+    fullName: name || '',
+    email: email || '',
+    phone: phone || '',
+    address: userAddress || '',
+    city: '',
+    state: '',
+    pinCode: '',
   });
 
-  const animValues = {
-    PhoneNumber: useRef(new Animated.Value(0)).current,
-    PinCode: useRef(new Animated.Value(0)).current,
-    Address: useRef(new Animated.Value(0)).current,
-    Email: useRef(new Animated.Value(0)).current,
-    Username: useRef(new Animated.Value(0)).current, // Added animation for username
-  };
+  const [isEditing, setIsEditing] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [isSaving, setIsSaving] = useState(false);
 
   const validateForm = () => {
-    const isValid =
-      formData.Username.trim() !== '' &&
-      formData.PhoneNumber.trim() !== '' &&
-      formData.PinCode.trim() !== '' &&
-      formData.Address.trim() !== '' &&
-      formData.Email.trim() !== '';
-    onValidationChange(isValid);
+    const newErrors = {};
+
+    if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required';
+    if (!formData.email.trim()) newErrors.email = 'Email is required';
+    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email is invalid';
+    if (!formData.phone.trim()) newErrors.phone = 'Phone number is required';
+    if (!formData.address.trim()) newErrors.address = 'Address is required';
+    if (!formData.city.trim()) newErrors.city = 'City is required';
+    if (!formData.state.trim()) newErrors.state = 'State is required';
+    if (!formData.pinCode.trim()) newErrors.pinCode = 'Pin code is required';
+    else if (formData.pinCode.length !== 6) newErrors.pinCode = 'Pin code must be 6 digits';
+
+    setErrors(newErrors);
+    const isValid = Object.keys(newErrors).length === 0;
+    onValidationChange && onValidationChange(isValid);
+    return isValid;
   };
 
   const animateLabel = (fieldName, toValue) => {
-    Animated.timing(animValues[fieldName], {
-      toValue,
-      duration: 200,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: false
-    }).start();
+    // Simplified - no animation needed
   };
 
   const handleInputFocus = (name) => {
-    animateLabel(name, 1);
+    // Simplified - no animation needed
   };
 
   const handleInputBlur = (name) => {
-    if (!formData[name]) {
-      animateLabel(name, 0);
-    }
+    // Simplified - no animation needed
   };
 
   const handleInputChange = (name, value) => {
     setFormData((prev) => {
       const updatedForm = { ...prev, [name]: value };
-      validateForm();
+      if (errors[name]) {
+        setErrors(prev => ({ ...prev, [name]: '' }));
+      }
       return updatedForm;
     });
+  };
+
+  const handleSave = () => {
+    if (validateForm()) {
+      onSave && onSave(formData);
+      setIsEditing(false);
+      Alert.alert('Success', 'Profile updated successfully!');
+    }
+  };
+
+  const handleCancel = () => {
+    setFormData({
+      fullName: name || '',
+      email: email || '',
+      phone: phone || '',
+      address: userAddress || '',
+      city: '',
+      state: '',
+      pinCode: '',
+    });
+    setErrors({});
+    setIsEditing(false);
   };
 
   const renderInputField = (name, icon, placeholder, keyboardType = 'default', additionalProps = {}) => (
     <View style={styles.inputGroup}>
       <FontAwesome name={icon} size={18} color="#0097B3" style={styles.icon} />
-      <TextInput
-        style={styles.input}
-        value={formData[name]}
-        onChangeText={(text) => handleInputChange(name, text)}
-        onFocus={() => handleInputFocus(name)}
-        onBlur={() => handleInputBlur(name)}
-        keyboardType={keyboardType}
-        placeholder={placeholder}
-        placeholderTextColor="#808080"
-        {...additionalProps}
-      />
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={[styles.input, errors[name] && styles.inputError]}
+          value={formData[name]}
+          onChangeText={(text) => handleInputChange(name, text)}
+          keyboardType={keyboardType}
+          placeholder={placeholder}
+          placeholderTextColor="#808080"
+          editable={isEditing}
+          {...additionalProps}
+        />
+        {errors[name] && <Text style={styles.errorText}>{errors[name]}</Text>}
+      </View>
     </View>
   );
 
   return (
-    <View>
-      <Text style={styles.header}>Profile Details</Text>
-      {renderInputField('Username', 'user', 'Username')} {/* Added username input */}
-      {renderInputField('PhoneNumber', 'phone', 'Phone Number', 'phone-pad')}
-      {renderInputField('PinCode', 'lock', 'Pin Code', 'number-pad', { maxLength: 6 })}
-      {renderInputField('Address', 'map-marker', 'Address', 'default', { multiline: true })}
-      {renderInputField('Email', 'envelope', 'Enter your email', 'email-address', { autoCapitalize: 'none' })}
+    <View style={styles.container}>
+      <View style={styles.headerContainer}>
+        <Text style={styles.header}>Profile Details</Text>
+        {!isEditing ? (
+          <TouchableOpacity style={styles.editButton} onPress={() => setIsEditing(true)}>
+            <Ionicons name="pencil" size={20} color="#0097B3" />
+            <Text style={styles.editButtonText}>Edit</Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.actionButtons}>
+            <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+              <Text style={styles.saveButtonText}>Save</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+
+      <View style={styles.formContainer}>
+        {/* Personal Information */}
+        <Text style={styles.sectionTitle}>Personal Information</Text>
+        {renderInputField('fullName', 'user', 'Full Name')}
+        {renderInputField('email', 'envelope', 'Email Address', 'email-address', { autoCapitalize: 'none' })}
+        {renderInputField('phone', 'phone', 'Phone Number', 'phone-pad')}
+
+        {/* Address Information */}
+        <Text style={styles.sectionTitle}>Address Information</Text>
+        {renderInputField('address', 'map-marker', 'Street Address', 'default', { multiline: true })}
+        {renderInputField('city', 'building', 'City')}
+        {renderInputField('state', 'flag', 'State')}
+        {renderInputField('pinCode', 'lock', 'Pin Code', 'number-pad', { maxLength: 6 })}
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    margin: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
   header: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: 20,
-    textAlign: 'left',
+  },
+  editButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E3F2FD',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  editButtonText: {
+    color: '#0097B3',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  cancelButton: {
+    backgroundColor: '#F5F5F5',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  cancelButtonText: {
+    color: '#666',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  saveButton: {
+    backgroundColor: '#0097B3',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  formContainer: {
+    gap: 8,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    marginTop: 24,
+    marginBottom: 16,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
   },
   inputGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderBottomWidth: 1,
-    borderColor: '#ccc',
-    marginBottom: 20,
-    paddingHorizontal: 10,
-    paddingBottom: 5,
+    marginBottom: 16,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    overflow: 'hidden',
   },
   icon: {
-    marginRight: 10,
+    marginLeft: 16,
+    marginRight: 12,
+  },
+  inputContainer: {
+    flex: 1,
   },
   input: {
-    flex: 1,
     fontSize: 16,
     color: '#333',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  inputError: {
+    borderColor: '#FF4D4F',
+    backgroundColor: '#FFF5F5',
+  },
+  errorText: {
+    color: '#FF4D4F',
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 16,
   },
 });
 
