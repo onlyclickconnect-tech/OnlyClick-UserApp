@@ -2,12 +2,8 @@ import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
 import LoadingSpinner from '../../../components/common/LoadingSpinner';
-import { useAppStates } from '../../../context/AppStates';
-import { useAuth } from '../../../context/AuthProvider';
 
 export default function LoadingScreen() {
-  const { user } = useAuth();
-  const { isProfileCompleted } = useAppStates();
   const [loadingText, setLoadingText] = useState('Please wait while we verify your account...');
   const [progress, setProgress] = useState('25%');
   const [currentAnimation, setCurrentAnimation] = useState(1);

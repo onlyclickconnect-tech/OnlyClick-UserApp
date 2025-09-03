@@ -1,28 +1,30 @@
-import axios from "axios";
+import supabase from "../../data/supabaseClient.js"
 
-const api = axios.create({
-  baseURL: "https://tidy-cases-work.loca.lt",
-  timeout: 10000, // 10 sec timeout
-});
 
-export const sendOtp = async(phone) => {
+export const sendOtp = async (phone) => {
     try {
-        const response = await api.post("/send-otp", { phone });
-        return response.data;
+
+        const { error } = await supabase.auth.signInWithOtp({ phone: `+91${phone}` })
+        if (error) throw error
+        return true
     } catch (error) {
         console.error("Send OTP Error:", error.response?.data || error.message);
         throw error;
     }
 }
 
-export const verifyOtp = async (phone, token) => {
+export const verifyOtp = async (phone, otp) => {
     try {
-        const response = await api.post("/verify-otp", { phone, token });
-        return response.data;
+        const { data, error } = await supabase.auth.verifyOtp({
+            phone: `+91${phone}`,
+            token: otp,
+            type: "sms",
+        })
+        if (error) throw error
+
+        return data.session
     } catch (error) {
         console.error("Verify OTP Error:", error.response?.data || error.message);
         throw error;
     }
 };
-
-export default api;
