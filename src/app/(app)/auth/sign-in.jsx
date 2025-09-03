@@ -6,6 +6,9 @@ import SignInForm from '../../../components/SignIn/SignInForm';
 import SignInHeader from '../../../components/SignIn/SignInHeader';
 import SignInIllustration from '../../../components/SignIn/SignInIllustration';
 
+//  api imports
+import { sendOtp } from '../../../services/api/api.js';
+
 export default function SignIn() {
     const [phone, setPhone] = useState('');
     const [error, setError] = useState('');
@@ -25,13 +28,18 @@ export default function SignIn() {
         if (error) setError('');
     };
 
-    const handleSignIn = () => {
+    const handleSignIn = async () => {
         const rawPhone = phone.replace(/\s/g, '');
         if (rawPhone.length < 10) {
             setError('Please enter a complete 10-digit mobile number');
             return;
         }
-        router.push('/auth/otp');
+        try {
+            await sendOtp(rawPhone);
+            router.push({ pathname: '/auth/otp', params: { phone: rawPhone } });
+        } catch (err) {
+            setError('Failed to send OTP. Please try again.');
+        }
     };
 
     return (

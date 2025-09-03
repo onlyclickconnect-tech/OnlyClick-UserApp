@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { View } from 'react-native';
 import OTPButton from '../../../components/OTP/OTPButton';
@@ -6,11 +6,15 @@ import OTPDisplay from '../../../components/OTP/OTPDisplay';
 import OTPHeader from '../../../components/OTP/OTPHeader';
 import OTPResend from '../../../components/OTP/OTPResend';
 
+import { sendOtp, verifyOtp } from '../../../services/api/api.js';
+
 export default function OTP() {
   const [otp, setOtp] = useState('');
   const [countdown, setCountdown] = useState(39);
   const [activeIndex, setActiveIndex] = useState(0);
   const otpInputRef = useRef(null);
+
+  const { phone } = useLocalSearchParams();
 
   useEffect(() => {
     const focusTimeout = setTimeout(() => {
@@ -21,15 +25,23 @@ export default function OTP() {
       setCountdown(prev => prev > 0 ? prev - 1 : 0);
     }, 1000);
 
+    
+
     return () => {
       clearInterval(timer);
       clearTimeout(focusTimeout);
     };
   }, []);
 
-  const handleSubmit = () => {
-    if (otp.length === 4) {
-      router.replace('/auth/loading');
+  const handleSubmit = async () => {
+    if (otp.length === 4 && phone) {
+      try {
+        await verifyOtp(phone, otp);
+        router.replace('/auth/loading');
+      } catch (err) {
+        // Optionally show error to user
+        console.error('OTP verification failed:', err);
+      }
     }
   };
 
@@ -41,13 +53,19 @@ export default function OTP() {
     if (cleanedText.length === 4) {
       setTimeout(() => {
         handleSubmit();
-      }, 100);
+      }, 300);
     }
   };
 
-  const handleResend = () => {
-    if (countdown === 0) {
-      setCountdown(39);
+  const handleResend = async () => {
+    if (countdown === 0 && phone) {
+      try {
+        await sendOtp(phone);
+        setCountdown(39);
+      } catch (err) {
+        // Optionally show error to user
+        console.error('Failed to resend OTP:', err);
+      }
     }
   };
 
