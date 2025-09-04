@@ -1,8 +1,16 @@
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import React from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { Text, TouchableOpacity, View, Linking } from 'react-native';
 
 const Contact = () => {
+
+  
+  const handleWhatsApp = () => {
+    const phone = '919121377419';
+    const url = `https://wa.me/${phone}`;
+    Linking.openURL(url);
+  };
+
   return (
     <View style={{
       position: 'absolute', 
@@ -26,7 +34,7 @@ const Contact = () => {
           shadowOpacity: 0.3,
           shadowRadius: 6,
         }}
-        onPress={() => {}}
+        onPress={handleWhatsApp}
       >
         <FontAwesome5 name="headset" size={24} color="white" />
       </TouchableOpacity>
