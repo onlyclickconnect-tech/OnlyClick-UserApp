@@ -192,7 +192,7 @@ function ServicesPage() {
     >
       <View style={[styles.categoryIconContainer]}>
         <Image
-          source={item.image_url ? { uri: item.image_url } : getCategoryImage(item.id)}
+          source={getCategoryImage(item.id)}
           style={{ width: 84, height: 84 }}
           resizeMode="contain"
         />
@@ -277,6 +277,8 @@ function ServicesPage() {
   const getCategoryImage = (categoryId) => {
     return categoryImages[categoryId] || categoryImages.all;
   };
+
+
 
   const renderItem = ({ item }) => <ServiceCard item={item} />;
 
