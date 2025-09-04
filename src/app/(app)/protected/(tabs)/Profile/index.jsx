@@ -8,7 +8,7 @@ import ProfileForm from "../../../../../components/Profile/ProfileForm";
 import ProfileHeader from "../../../../../components/Profile/ProfileHeader";
 import AppHeader from '../../../../../components/common/AppHeader';
 import { useAppStates } from "../../../../../context/AppStates";
-import supabase from "../../../../../services/api/data/supabaseClient";
+import supabase from "../../../../../data/supabaseClient";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
