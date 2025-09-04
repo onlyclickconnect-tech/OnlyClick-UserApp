@@ -14,11 +14,7 @@ import {
 } from "react-native";
 import AppHeader from '../../../../../components/common/AppHeader';
 import PressableScale from '../../../../../components/common/PressableScale';
-import {
-  allServices,
-  getServicesByCategory,
-  serviceCategories
-} from "../../../../../data/servicesData";
+import { allCategories, allServices, categoryImages } from "../../../../../data/servicesData";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -28,62 +24,88 @@ function ServicesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [cartItems, setCartItems] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [services, setServices] = useState([]);
   const ITEM_CARD_HEIGHT = 170 + 16; // card height + marginBottom
 
-  // Transform service categories for the UI with proper counts
-  const categories = [
-    { id: 'all', name: 'All', icon: 'apps', count: allServices.length, color: '#3898B3' },
-    ...serviceCategories.map((cat, index) => ({
-      id: cat.id,
-      name: cat.name,
-      icon: cat.icon,
-      count: getServicesByCategory(cat.id).length,
-      color: cat.color
-    }))
-  ];
+  useEffect(() => {
+    const fetchServices = async () => {
+      const data = await allServices();
+      console.log('Services:', data);
+      console.log('Categories in services:', [...new Set(data.map(s => s.category))]);
+      setServices(data || []);
+    };
+    fetchServices();
+
+    const fetchCategories = async () => {
+      const cats = await allCategories();
+      console.log('Categories from DB:', cats);
+      setCategories([
+        {
+          id: "all",
+          name: "All",
+          icon: "apps",
+          count: 0,
+          color: "#3898B3",
+        },
+        ...(Array.isArray(cats) ? cats : []),
+      ]);
+    };
+    fetchCategories();
+  }, []);
 
   // Filter categories to show only those with services available
-  const filteredCategories = categories.filter(category => category.count > 0);
+  const categoriesWithCounts = (categories || []).map((cat) => ({
+    ...cat,
+    count:
+      cat.id === "all"
+        ? (services || []).length
+        : (services || []).filter((s) => {
+            // Try multiple matching strategies
+            return s.category === cat.id || 
+                   s.category === cat.name ||
+                   s.category?.toLowerCase() === cat.id?.toLowerCase() ||
+                   s.category?.toLowerCase().replace(/\s+/g, "_") === cat.id?.toLowerCase();
+          }).length,
+  }));
+  const filteredCategories = categoriesWithCounts.filter(
+    (category) => category.count > 0
+  );
 
   // Handle category selection from navigation params
   useEffect(() => {
-    if (categoryParam) {
-      // Find the category by ID and set its name
-      const category = serviceCategories.find(cat => cat.id === categoryParam);
-      if (category) {
-        setSelectedCategory(category.name);
-      }
+    if (categoryParam && categories.length > 0) {
+      const category = categories.find((cat) => cat.id === categoryParam);
+      if (category) setSelectedCategory(category.name);
     }
-  }, [categoryParam]);
+  }, [categoryParam, categories]);
 
-  // Use imported services data
-  const services = allServices;
 
   // Filter services based on search and category
-  const filteredServices = services.filter(service => {
-    const matchesSearch = service.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         service.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         service.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         service.subCategory.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    // Handle category filtering - convert category names to match our data structure
+
+  const filteredServices = (services || []).filter((service) => {
+    const matchesSearch =
+      service.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      service.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      service.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      service.sub_category?.toLowerCase().includes(searchQuery.toLowerCase());
+
     let categoryMatches = false;
-    if (selectedCategory === 'All') {
+    if (selectedCategory === "All") {
       categoryMatches = true;
     } else {
-      // Map UI category names to our data structure
-      const categoryMapping = {
-        'Electrical': 'electrical',
-        'Plumbing': 'plumbing', 
-        'Carpentry': 'carpentry',
-        'Cleaning': 'cleaning',
-        'AC Service': 'ac_service',
-        'Consultation': 'consultation'
-      };
-      const mappedCategory = categoryMapping[selectedCategory] || selectedCategory.toLowerCase();
-      categoryMatches = service.category === mappedCategory;
+      // Find the category object to get its id
+      const categoryObj = categories.find(
+        (cat) => cat.name === selectedCategory
+      );
+      if (categoryObj) {
+        categoryMatches =
+          service.category === categoryObj.id ||
+          service.category.toLowerCase().replace(/\s+/g, "_") ===
+            categoryObj.id;
+      }
     }
-    
+
     return matchesSearch && categoryMatches;
   });
 
@@ -97,44 +119,66 @@ function ServicesPage() {
 
   const addToCart = (service) => {
     // Check if item already exists in cart
-    const existingItem = cartItems.find(item => item.serviceId === service.serviceId);
-    
+    const existingItem = cartItems.find(
+      (item) => item.serviceId === service.serviceId
+    );
+
     if (existingItem) {
       // Update quantity if item exists
-      setCartItems(cartItems.map(item => 
-        item.serviceId === service.serviceId 
-          ? { ...item, quantity: item.quantity + 1 }
-          : item
-      ));
+      setCartItems(
+        cartItems.map((item) =>
+          item.serviceId === service.serviceId
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        )
+      );
     } else {
       // Add new item to cart
       setCartItems([...cartItems, { ...service, quantity: 1 }]);
     }
-    
+
     // Show success feedback (you can customize this)
     alert(`${service.title} added to cart!`);
   };
 
   const getBadgeColor = (badge) => {
     switch (badge) {
-      case 'Popular': return '#FF6B35';
-      case 'Best Seller': return '#28A745';
-      case 'Trusted': return '#3898B3';
-      case 'New': return '#DC3545';
-      case 'Quick': return '#FFC107';
-      case 'Premium': return '#6F42C1';
-      case 'Same Day': return '#17A2B8';
-      case 'Emergency': return '#DC3545';
-      case 'Quick Service': return '#FFC107';
-      case 'Quick Fix': return '#FD7E14';
-      case 'Professional': return '#6610F2';
-      case 'Essential': return '#198754';
-      case 'Modern': return '#0D6EFD';
-      case 'Space Saver': return '#6F42C1';
-      case 'Weather Resistant': return '#0DCAF0';
-      case 'Decorative': return '#D63384';
-      case 'Repair': return '#FD7E14';
-      default: return '#6C757D';
+      case "Popular":
+        return "#FF6B35";
+      case "Best Seller":
+        return "#28A745";
+      case "Trusted":
+        return "#3898B3";
+      case "New":
+        return "#DC3545";
+      case "Quick":
+        return "#FFC107";
+      case "Premium":
+        return "#6F42C1";
+      case "Same Day":
+        return "#17A2B8";
+      case "Emergency":
+        return "#DC3545";
+      case "Quick Service":
+        return "#FFC107";
+      case "Quick Fix":
+        return "#FD7E14";
+      case "Professional":
+        return "#6610F2";
+      case "Essential":
+        return "#198754";
+      case "Modern":
+        return "#0D6EFD";
+      case "Space Saver":
+        return "#6F42C1";
+      case "Weather Resistant":
+        return "#0DCAF0";
+      case "Decorative":
+        return "#D63384";
+      case "Repair":
+        return "#FD7E14";
+      default:
+        return "#6C757D";
     }
   };
 
@@ -142,37 +186,37 @@ function ServicesPage() {
     <TouchableOpacity
       style={[
         styles.categoryCard,
-        selectedCategory === item.name && styles.selectedCategoryCard
+        selectedCategory === item.name && styles.selectedCategoryCard,
       ]}
       onPress={() => handleCategoryPress(item)}
     >
       <View style={[styles.categoryIconContainer]}>
         <Image
-          source={getCategoryImage(item.id)}
+          source={item.image_url ? { uri: item.image_url } : getCategoryImage(item.id)}
           style={{ width: 84, height: 84 }}
           resizeMode="contain"
         />
       </View>
-      {/* <Text style={[
-        styles.categoryName,
-        selectedCategory === item.name && styles.selectedCategoryName
-      ]}>
-        {item.name}
-      </Text> */}
-      <Text style={styles.categoryCount}>
-        {item.count} services
-      </Text>
+      
+      <Text style={styles.categoryCount}>{item.count} services</Text>
     </TouchableOpacity>
   );
 
   // Memoized service card for performance
   const ServiceCard = React.memo(function ServiceCard({ item }) {
     return (
-      <PressableScale style={styles.serviceCard} onPress={() => { /* open details if needed */ }}>
+      <PressableScale
+        style={styles.serviceCard}
+        onPress={() => {
+          /* open details if needed */
+        }}
+      >
         <View style={styles.cardContentHorizontal}>
           <View style={styles.serviceDetailsLeft}>
             <View>
-              <Text style={styles.serviceName} numberOfLines={1}>{item.title}</Text>
+              <Text style={styles.serviceName} numberOfLines={1}>
+                {item.title}
+              </Text>
               <Text style={styles.serviceCategory}>{item.subCategory}</Text>
             </View>
 
@@ -184,17 +228,26 @@ function ServicesPage() {
               <View style={styles.priceRow}>
                 <View style={styles.priceContainer}>
                   <Text style={styles.currentPrice}>₹{item.price}</Text>
-                  {item.originalPrice && <Text style={styles.originalPrice}>₹{item.originalPrice}</Text>}
+                  {item.originalPrice && (
+                    <Text style={styles.originalPrice}>
+                      ₹{item.originalPrice}
+                    </Text>
+                  )}
                 </View>
 
                 <View style={styles.ratingInline}>
                   <Ionicons name="star" size={12} color="#FFD700" />
-                  <Text style={styles.ratingTextSmall}>{item.rating || 0.0}</Text>
+                  <Text style={styles.ratingTextSmall}>
+                    {item.rating || 0.0}
+                  </Text>
                 </View>
               </View>
 
               <View style={styles.controlsRight}>
-                <PressableScale style={styles.addToCartButton} onPress={() => addToCart(item)}>
+                <PressableScale
+                  style={styles.addToCartButton}
+                  onPress={() => addToCart(item)}
+                >
                   <Ionicons name="cart-outline" size={16} color="#fff" />
                 </PressableScale>
               </View>
@@ -203,10 +256,15 @@ function ServicesPage() {
 
           <View style={styles.serviceImageContainer}>
             <Image
-              source={item.image || { uri: "https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751596604/ChatGPT_Image_Jul_3_2025_10_18_12_PM_xqu38i.png" }}
+              source={
+                item.image_url ? { uri: item.image_url } : 
+                item.image ? item.image : {
+                  uri: "https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751596604/ChatGPT_Image_Jul_3_2025_10_18_12_PM_xqu38i.png",
+                }
+              }
               style={styles.serviceImage}
               resizeMode="cover"
-              onError={e => console.log(e.nativeEvent?.error)}
+              onError={(e) => console.log('Image error:', e.nativeEvent?.error, 'for item:', item.title)}
             />
           </View>
         </View>
@@ -214,18 +272,10 @@ function ServicesPage() {
     );
   });
 
-  ServiceCard.displayName = 'ServiceCard';
+  ServiceCard.displayName = "ServiceCard";
 
   const getCategoryImage = (categoryId) => {
-    const imageMap = {
-      'electrical': require("../../../../../../assets/images/electrical.png"),
-      'plumbing': require("../../../../../../assets/images/plumbing.png"),
-      'carpentry': require("../../../../../../assets/images/carpentry.png"),
-      'cleaning': require("../../../../../../assets/images/cleaning.png"),
-      'ac_service': require("../../../../../../assets/images/ACservices.png"),
-      'consultation': require("../../../../../../assets/images/painting.png"),
-    };
-    return imageMap[categoryId] || require("../../../../../../assets/images/allServices.png");
+    return categoryImages[categoryId] || categoryImages.all;
   };
 
   const renderItem = ({ item }) => <ServiceCard item={item} />;
@@ -234,12 +284,16 @@ function ServicesPage() {
     <View style={styles.container}>
       <StatusBar hidden={true} />
 
+      {/* Header */}
       <AppHeader
         title="Services"
         showBack
         onBack={() => router.back()}
         rightElement={
-          <PressableScale style={styles.cartButton} onPress={() => router.push('/(modal)/cart')}>
+          <PressableScale
+            style={styles.cartButton}
+            onPress={() => router.push("/(modal)/cart")}
+          >
             <View style={styles.cartIconContainer}>
               <Ionicons name="cart" size={24} color="#fff" />
               {cartItems.length > 0 && (
@@ -252,13 +306,16 @@ function ServicesPage() {
         }
       />
 
+      {/* Services List */}
       <FlatList
         data={filteredServices}
-        renderItem={renderItem}
-        keyExtractor={(item, index) => `service-${item.serviceId}-${index}`}
-        getItemLayout={(data, index) => (
-          {length: 170 + 16, offset: (170 + 16) * index, index}
-        )}
+        renderItem={renderItem} // each service card
+        keyExtractor={(item, index) => `service-${item.service_id}-${index}`}
+        getItemLayout={(data, index) => ({
+          length: ITEM_CARD_HEIGHT,
+          offset: ITEM_CARD_HEIGHT * index,
+          index,
+        })}
         ListHeaderComponent={
           <View>
             {/* Search Bar */}
@@ -273,7 +330,7 @@ function ServicesPage() {
                   placeholderTextColor="#999"
                 />
                 {searchQuery ? (
-                  <TouchableOpacity onPress={() => setSearchQuery('')}>
+                  <TouchableOpacity onPress={() => setSearchQuery("")}>
                     <Ionicons name="close-circle" size={20} color="#666" />
                   </TouchableOpacity>
                 ) : (
@@ -301,7 +358,9 @@ function ServicesPage() {
             <View style={styles.servicesSection}>
               <View style={styles.servicesSectionHeader}>
                 <Text style={styles.sectionTitle}>
-                  {selectedCategory === 'All' ? 'All Services' : `${selectedCategory} Services`}
+                  {selectedCategory === "All"
+                    ? "All Services"
+                    : `${selectedCategory} Services`}
                 </Text>
                 <TouchableOpacity>
                   <Text style={styles.seeAllText}>See All</Text>
@@ -319,12 +378,12 @@ function ServicesPage() {
             </Text>
           </View>
         }
-  initialNumToRender={6}
-  windowSize={5}
-  removeClippedSubviews={false}
-  maxToRenderPerBatch={6}
-  updateCellsBatchingPeriod={50}
-  contentContainerStyle={{ paddingBottom: 100, paddingTop: 16 }}
+        initialNumToRender={6}
+        windowSize={5}
+        removeClippedSubviews={false}
+        maxToRenderPerBatch={6}
+        updateCellsBatchingPeriod={50}
+        contentContainerStyle={{ paddingBottom: 100, paddingTop: 16 }}
         showsVerticalScrollIndicator={false}
         bounces={true}
       />

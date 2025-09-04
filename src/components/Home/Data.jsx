@@ -40,7 +40,7 @@ export default function Data() {
   };
 
   // Use categories from servicesData.js - no need to redefine them
-  const categories = serviceCategories.map((cat, index) => ({
+  const categories = (serviceCategories || []).map((cat, index) => ({
         id: cat.id,
         name: cat.name,
         icon: cat.icon,
