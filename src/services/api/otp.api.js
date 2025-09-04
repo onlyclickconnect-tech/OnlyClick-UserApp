@@ -1,4 +1,4 @@
-import supabase from "../../data/supabaseClient.js"
+import supabase from "./data/supabaseClient.js"
 
 
 export const sendOtp = async (phone) => {

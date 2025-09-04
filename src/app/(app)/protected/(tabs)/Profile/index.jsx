@@ -8,7 +8,7 @@ import ProfileForm from "../../../../../components/Profile/ProfileForm";
 import ProfileHeader from "../../../../../components/Profile/ProfileHeader";
 import AppHeader from '../../../../../components/common/AppHeader';
 import { useAppStates } from "../../../../../context/AppStates";
-import { useAuth } from "../../../../../context/AuthProvider";
+import supabase from "../../../../../services/api/data/supabaseClient";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -49,7 +49,6 @@ const ProfilePage = () => {
     }
   };
 
-  const { setUser, setIsLoggedIn } = useAuth();
   const router = Router;
 
   const handleLogout = () => {
@@ -58,11 +57,11 @@ const ProfilePage = () => {
       'Are you sure you want to logout?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Logout', style: 'destructive', onPress: () => {
+        { text: 'Logout', style: 'destructive', onPress: async () => {
           // clear auth state and navigate to sign-in
-          setUser(null);
-          setIsLoggedIn(false);
+          await supabase.auth.signOut()
           router.replace('/auth/sign-in');
+          return
         } }
       ]
     );

@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Dimensions, PanResponder, StyleSheet, View } from 'react-native';
-import supabase from '../../data/supabaseClient.js';
+import supabase from '../../services/api/data/supabaseClient.js';
 import LoadingScreen from "../common/LoadingScreen.jsx";
 import OnboardingFooter from './OnboardingFooter';
 import OnboardingHeader from './OnboardingHeader';
