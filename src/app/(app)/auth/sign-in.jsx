@@ -7,7 +7,7 @@ import SignInHeader from '../../../components/SignIn/SignInHeader';
 import SignInIllustration from '../../../components/SignIn/SignInIllustration';
 
 //  api imports
-import { sendOtp } from '../../../services/api/api.js';
+import { sendOtp } from '../../../services/api/otp.api.js';
 
 export default function SignIn() {
     const [phone, setPhone] = useState('');

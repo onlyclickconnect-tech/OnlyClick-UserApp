@@ -6,7 +6,7 @@ import OTPDisplay from '../../../components/OTP/OTPDisplay';
 import OTPHeader from '../../../components/OTP/OTPHeader';
 import OTPResend from '../../../components/OTP/OTPResend';
 
-import { sendOtp, verifyOtp } from '../../../services/api/api.js';
+import { sendOtp, verifyOtp } from '../../../services/api/otp.api.js';
 
 export default function OTP() {
   const [otp, setOtp] = useState('');

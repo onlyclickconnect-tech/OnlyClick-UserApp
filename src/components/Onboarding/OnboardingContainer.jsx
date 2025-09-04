@@ -38,24 +38,25 @@ const OnboardingContainer = ({ onComplete }) => {
 
   useEffect(() => {
     const checkAuth = async () => {
+      // await supabase.auth.signOut()   // to signout everytime when login uncomment this
       try {
-        // 1. Get stored session
+        // Get stored session
         const { data: { session } } = await supabase.auth.getSession();
 
         if (!session) {
-          // ❌ No session stored
+          //No session stored
           return
         }
 
-        // 2. Verify with Supabase using access token
+        // Verify with Supabase using access token
         const { data: { user }, error } = await supabase.auth.getUser()
 
         if (error || !user) {
-          // ❌ Session invalid/expired
+          // if Session invalid/expired
           await supabase.auth.signOut()
           return
         } else {
-          // ✅ Session is valid
+          // if Session is valid
           router.replace("/(app)/protected/(tabs)/Home")
         }
       } catch (err) {
