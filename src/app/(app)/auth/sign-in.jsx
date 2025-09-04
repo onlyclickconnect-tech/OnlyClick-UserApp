@@ -12,6 +12,7 @@ import { sendOtp } from '../../../services/api/api.js';
 export default function SignIn() {
     const [phone, setPhone] = useState('');
     const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
     const formatPhoneNumber = (text) => {
         const digits = text.replace(/\D/g, '');
@@ -34,11 +35,14 @@ export default function SignIn() {
             setError('Please enter a complete 10-digit mobile number');
             return;
         }
+        setIsLoading(true);
         try {
             await sendOtp(rawPhone);
             router.push({ pathname: '/auth/otp', params: { phone: rawPhone } });
         } catch (err) {
             setError('Failed to send OTP. Please try again.');
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -52,6 +56,7 @@ export default function SignIn() {
                 error={error}
                 onPhoneChange={handlePhoneChange}
                 onSignIn={handleSignIn}
+                loading={isLoading}
             />
             <SignInFooter />
         </View>

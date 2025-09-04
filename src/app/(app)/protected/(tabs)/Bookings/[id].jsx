@@ -624,7 +624,7 @@ Booked via YourApp 📱`;
           </View>
 
           <View style={styles.infoRow}>
-            <Ionicons name="business" size={20} color="#3898B3" />
+            <Ionicons name="construct" size={20} color="#3898B3" />
             <View style={styles.infoContent}>
               <Text style={styles.infoLabel}>Service Provider</Text>
               <Text style={styles.infoValue}>{booking.provider}</Text>
@@ -696,7 +696,7 @@ Booked via YourApp 📱`;
           </TouchableOpacity>
           
           <Text style={styles.cancellationHighlight}>
-            ⛔ Free cancellation up to 2 hours before service time
+            Free cancellation up to 2 hours before scheduled time
           </Text>
         </View>
 

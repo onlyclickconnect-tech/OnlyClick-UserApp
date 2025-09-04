@@ -12,6 +12,8 @@ export default function OTP() {
   const [otp, setOtp] = useState('');
   const [countdown, setCountdown] = useState(39);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+
   const otpInputRef = useRef(null);
 
   const { phone } = useLocalSearchParams();
@@ -35,6 +37,7 @@ export default function OTP() {
 
   const handleSubmit = async () => {
     if (otp.length === 4 && phone) {
+      setIsLoading(true);
       try {
         const data = await verifyOtp(phone, otp);
         console.log(data);
@@ -42,6 +45,8 @@ export default function OTP() {
       } catch (err) {
         // Optionally show error to user
         console.error('OTP verification failed:', err);
+      }finally {
+        setIsLoading(false);
       }
     }
   };
@@ -90,6 +95,7 @@ export default function OTP() {
         <OTPButton 
           otpLength={otp.length}
           onSubmit={handleSubmit}
+          loading={isLoading}
         />
       </View>
     </View>
