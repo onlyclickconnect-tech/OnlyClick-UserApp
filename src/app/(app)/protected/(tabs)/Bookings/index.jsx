@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dimensions,
   ScrollView,
@@ -12,11 +12,14 @@ import {
 
 import AppHeader from '../../../../../components/common/AppHeader';
 
+import getbookings from '../../../../../data/getdata/getbookings';
+
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 export default function Bookings() {
   const router = useRouter();
   const { view } = useLocalSearchParams();
+  const [bookings, setbookings] = useState([])
 
   // Default to timeline view if no view parameter or view=timeline is passed
   const isTimelineView = !view || view === 'timeline';
@@ -26,74 +29,21 @@ export default function Bookings() {
     ? ['Timeline', 'All', 'Pending', 'Accepted', 'Completed', 'Cancelled']
     : ['All', 'Pending', 'Accepted', 'Completed', 'Cancelled'];
 
-  // Mock booking data
-  const bookings = [
-    {
-      id: 1,
-      serviceName: 'Plumbing Repair',
-      date: '2025-08-08',
-      time: '10:00 AM',
-      location: '123 Main Street, Downtown',
-      status: 'Pending',
-      provider: 'AquaFix Services',
-      price: 299,
-      category: 'Plumbing',
-      bookingTime: '2025-08-06 14:30',
-      maskedContact: '+91 *****43210'
-    },
-    {
-      id: 2,
-      serviceName: 'Electrical Installation',
-      date: '2025-08-09',
-      time: '2:00 PM',
-      location: '456 Oak Avenue, Uptown',
-      status: 'Accepted',
-      provider: 'PowerPro Electricians',
-      price: 599,
-      category: 'Electrical',
-      bookingTime: '2025-08-05 11:15',
-      maskedContact: '+91 *****32109'
-    },
-    {
-      id: 3,
-      serviceName: 'AC Maintenance',
-      date: '2025-08-05',
-      time: '9:00 AM',
-      location: '789 Pine Street, Midtown',
-      status: 'Completed',
-      provider: 'CoolAir Services',
-      price: 450,
-      category: 'AC Repair',
-      bookingTime: '2025-08-03 16:45', // Fixed syntax issue by ensuring proper property assignment
-      maskedContact: '+91 *****67890'
-    },
-    {
-      id: 4,
-      serviceName: 'Cleaning Service',
-      date: '2025-08-07',
-      time: '11:00 AM',
-      location: '321 Elm Drive, Southside',
-      status: 'Cancelled',
-      provider: 'SparkleClean Co.',
-      price: 200,
-      category: 'Cleaning',
-      bookingTime: '2025-08-04 09:20',
-      maskedContact: '+91 *****54321'
-    },
-    {
-      id: 5,
-      serviceName: 'Garden Maintenance',
-      date: '2025-08-10',
-      time: '8:00 AM',
-      location: '654 Maple Road, Northside',
-      status: 'Pending',
-      provider: 'GreenThumb Gardens',
-      price: 350,
-      category: 'Gardening',
-      bookingTime: '2025-08-06 13:10',
-      maskedContact: '+91 *****98765'
-    }
-  ];
+
+
+  useEffect(() => {
+    const getbookingsdata = async () => {
+      const { arr, error } = await getbookings(); // ✅ use arr, not data
+      if (error) {
+        console.error(error);
+        return;
+      }
+      setbookings(arr); // ✅ directly set array
+    };
+
+    getbookingsdata();
+  }, []);
+
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -118,21 +68,21 @@ export default function Bookings() {
   const filteredBookings = activeTab === 'All'
     ? bookings
     : activeTab === 'Timeline'
-    ? [...bookings].sort((a, b) => new Date(b.bookingTime) - new Date(a.bookingTime))
-    : bookings.filter(booking => booking.status === activeTab);
+      ? [...bookings].sort((a, b) => new Date(b.bookingTime) - new Date(a.bookingTime))
+      : bookings.filter(booking => booking.status === activeTab);
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      weekday: 'short', 
-      month: 'short', 
-      day: 'numeric' 
+    return date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric'
     });
   };
 
   const renderTabButton = (tab, index) => {
     const isActive = activeTab === tab;
-    
+
     return (
       <View key={tab} style={styles.tabContainer}>
         <TouchableOpacity
@@ -164,7 +114,7 @@ export default function Bookings() {
         <View style={styles.serviceInfo}>
           <View style={styles.serviceTitleRow}>
             <View style={[styles.statusDot, { backgroundColor: getStatusColor(item.status) }]} />
-            <Text style={styles.serviceName}>{item.serviceName}</Text>
+            <Text style={styles.service_name}>{item.service_name}</Text>
           </View>
           <Text style={styles.category}>{item.category}</Text>
         </View>
@@ -211,8 +161,8 @@ export default function Bookings() {
       <View style={styles.cardFooter}>
         <Text style={styles.price}>₹{item.price}</Text>
         <TouchableOpacity
-        style={styles.viewDetailsButton}
-        onPress={() => router.push(`/protected/(tabs)/Bookings/${item.id}`)}>
+          style={styles.viewDetailsButton}
+          onPress={() => router.push(`/protected/(tabs)/Bookings/${item.id}`)}>
           <Text style={styles.viewDetailsText}>View Details</Text>
           <Ionicons name="chevron-forward" size={16} color="#3898B3" />
         </TouchableOpacity>
@@ -229,7 +179,7 @@ export default function Bookings() {
         rightElement={null}
       />
 
-      <ScrollView 
+      <ScrollView
         style={styles.scrollContainer}
         contentContainerStyle={[styles.scrollContent, { paddingTop: 4 }]}
         showsVerticalScrollIndicator={false}
@@ -260,8 +210,8 @@ export default function Bookings() {
 
         {/* Tabs */}
         <View style={styles.tabsContainer}>
-          <ScrollView 
-            horizontal 
+          <ScrollView
+            horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.tabsContent}
           >
@@ -290,7 +240,7 @@ export default function Bookings() {
                       <View style={styles.timelineCard}>
                         <View style={styles.cardHeader}>
                           <View style={styles.serviceInfo}>
-                            <Text style={styles.serviceName}>{item.serviceName}</Text>
+                            <Text style={styles.service_name}>{item.service_name}</Text>
                             <Text style={styles.category}>{item.category}</Text>
                           </View>
                           <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
@@ -310,7 +260,7 @@ export default function Bookings() {
                         </View>
                         <View style={styles.cardFooter}>
                           <Text style={styles.price}>₹{item.price}</Text>
-                          <TouchableOpacity 
+                          <TouchableOpacity
                             style={styles.viewDetailsButton}
                             onPress={() => router.push(`/protected/(tabs)/Bookings/${item.id}`)}
                           >
@@ -335,15 +285,15 @@ export default function Bookings() {
                     <View style={styles.serviceInfo}>
                       <View style={styles.serviceTitleRow}>
                         <View style={[styles.statusDot, { backgroundColor: getStatusColor(item.status) }]} />
-                        <Text style={styles.serviceName}>{item.serviceName}</Text>
+                        <Text style={styles.service_name}>{item.service_name}</Text>
                       </View>
                       <Text style={styles.category}>{item.category}</Text>
                     </View>
                     <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-                      <Ionicons 
-                        name={getStatusIcon(item.status)} 
-                        size={14} 
-                        color="white" 
+                      <Ionicons
+                        name={getStatusIcon(item.status)}
+                        size={14}
+                        color="white"
                         style={styles.statusIcon}
                       />
                       <Text style={styles.statusText}>{item.status}</Text>
@@ -355,12 +305,12 @@ export default function Bookings() {
                       <Ionicons name="calendar-outline" size={16} color="#666" />
                       <Text style={styles.infoText}>{formatDate(item.date)} at {item.time}</Text>
                     </View>
-                    
+
                     <View style={styles.infoRow}>
                       <Ionicons name="location-outline" size={16} color="#666" />
                       <Text style={styles.infoText} numberOfLines={1}>{item.location}</Text>
                     </View>
-                    
+
                     <View style={styles.infoRow}>
                       <Ionicons name="construct-outline" size={16} color="#666" />
                       <Text style={styles.infoText}>{item.provider}</Text>
@@ -369,7 +319,7 @@ export default function Bookings() {
 
                   <View style={styles.cardFooter}>
                     <Text style={styles.price}>₹{item.price}</Text>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       style={styles.viewDetailsButton}
                       onPress={() => router.push(`/protected/(tabs)/Bookings/${item.id}`)}
                     >
@@ -384,8 +334,8 @@ export default function Bookings() {
                 <Ionicons name="calendar-outline" size={64} color="#DDD" />
                 <Text style={styles.emptyTitle}>No bookings found</Text>
                 <Text style={styles.emptySubtitle}>
-                  {activeTab === 'All' 
-                    ? 'You haven\'t made any bookings yet' 
+                  {activeTab === 'All'
+                    ? 'You haven\'t made any bookings yet'
                     : `No ${activeTab.toLowerCase()} bookings`}
                 </Text>
               </View>
@@ -629,7 +579,7 @@ const styles = StyleSheet.create({
   serviceInfo: {
     flex: 1,
   },
-  serviceName: {
+  service_name: {
     fontSize: 16,
     fontWeight: '600',
     color: '#1A1A1A',

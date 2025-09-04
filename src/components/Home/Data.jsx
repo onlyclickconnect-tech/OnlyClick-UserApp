@@ -1,5 +1,7 @@
 import { useRouter } from "expo-router";
+
 import { useEffect, useState } from "react";
+
 import {
   ActivityIndicator,
   FlatList,
@@ -10,7 +12,9 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
+
 import { allCategories, categoryImages } from "../../data/servicesData";
+import gettestimonials from "../../data/getdata/gettestimonials";
 
 export default function Data() {
   const router = useRouter();
@@ -35,62 +39,79 @@ export default function Data() {
     };
     loadCategories();
   }, []);
+  const [testimonials, settestimonials] = useState([])
+
+
 
   // Popular services data
   const popularServices = [
-  {
-    id: 1,
-    title: 'MCB/Fuse Replacement',
-    rating: 4.8,
-    reviews: 156,
-    price: '₹299',
-    image: require("../../../assets/images/mcbReplacement.jpg"), // Fixed - correct syntax
-    discount: '20% OFF'
-  },
-  {
-    id: 2,
-    title: 'Car Washing',
-    rating: 4.6,
-    reviews: 89,
-    price: '₹199',
-    image: require("../../../assets/images/carWashing.jpg"), // Fixed - correct syntax
-    discount: '15% OFF'
-  },
-];
+    {
+      id: 1,
+      title: 'MCB/Fuse Replacement',
+      rating: 4.8,
+      reviews: 156,
+      price: '₹299',
+      image: require("../../../assets/images/mcbReplacement.jpg"), // Fixed - correct syntax
+      discount: '20% OFF'
+    },
+    {
+      id: 2,
+      title: 'Car Washing',
+      rating: 4.6,
+      reviews: 89,
+      price: '₹199',
+      image: require("../../../assets/images/carWashing.jpg"), // Fixed - correct syntax
+      discount: '15% OFF'
+    },
+  ];
 
-// Testimonials data
-const testimonials = [
-  {
-    id: 1,
-    name: 'A. Shahul',
-    rating: 5,
-    comment: 'Amazing service! The plumber arrived on time and fixed my issue quickly. Highly recommended!',
-    avatar: require("../../../assets/images/defaultAvatar.png"), // This is correct
-  },
-  {
-    id: 2,
-    name: 'S. Priyanka',
-    rating: 5,
-    comment: 'Excellent cleaning service. Very professional and thorough. Will definitely book again.',
-    avatar: require("../../../assets/images/defaultAvatar.png"), // This is correct
-  },
-];
+  // Testimonials data
+  // const testimonials = [
+  //   {
+  //     id: 1,
+  //     name: 'A. Shahul',
 
-// Book again services - FIXED THE SYNTAX ERRORS
-const bookAgainServices = [
-  {
-    id: 1,
-    title: 'MCB/Fuse Replacement',
-    image: require("../../../assets/images/mcbReplacement.jpg"), // FIXED - removed extra quotes and parentheses
-    lastBooked: 'Last booked: 2 weeks ago'
-  },
-  {
-    id: 2,
-    title: 'Car Washing',
-    image: require("../../../assets/images/carWashing.jpg"), // FIXED - removed extra quotes and parentheses
-    lastBooked: 'Last booked: 1 month ago'
-  },
-];
+  //     comment: 'Amazing service! The plumber arrived on time and fixed my issue quickly. Highly recommended!',
+  //     avatar: require("../../../assets/images/defaultAvatar.png"), // This is correct
+  //   },
+  //   {
+  //     id: 2,
+  //     name: 'S. Priyanka',
+  //     rating: 5,
+  //     comment: 'Excellent cleaning service. Very professional and thorough. Will definitely book again.',
+  //     avatar: require("../../../assets/images/defaultAvatar.png"), // This is correct
+  //   },
+  // ];
+  useEffect(() => {
+    const fetchTestimonials = async () => {
+      const { arr, error } = await gettestimonials();
+      if (error) {
+        console.error("Error fetching testimonials:", error);
+        return;
+      }
+
+      settestimonials(arr); // set the state with formatted array
+    };
+
+    fetchTestimonials();
+  }, []);
+
+
+  // Book again services - FIXED THE SYNTAX ERRORS
+  const bookAgainServices = [
+    {
+      id: 1,
+      title: 'MCB/Fuse Replacement',
+      image: require("../../../assets/images/mcbReplacement.jpg"), // FIXED - removed extra quotes and parentheses
+      lastBooked: 'Last booked: 2 weeks ago'
+    },
+    {
+      id: 2,
+      title: 'Car Washing',
+      image: require("../../../assets/images/carWashing.jpg"), // FIXED - removed extra quotes and parentheses
+      lastBooked: 'Last booked: 1 month ago'
+    },
+  ];
 
   const handleSeeAll = () => {
     if(loading) return; // Prevent multiple navigations
@@ -120,8 +141,8 @@ const bookAgainServices = [
     };
 
     return (
-      <TouchableOpacity 
-        style={styles.categoryItem} 
+      <TouchableOpacity
+        style={styles.categoryItem}
         onPress={() => {
           if (categoryLoading === null) {
             handleCategory(item.id);
@@ -142,7 +163,7 @@ const bookAgainServices = [
   };
 
   const renderPopularServiceItem = ({ item }) => (
-    <TouchableOpacity style={styles.serviceCard} onPress={() => {}}>
+    <TouchableOpacity style={styles.serviceCard} onPress={() => { }}>
       <View style={styles.serviceImageContainer}>
         <Image source={item.image} style={styles.serviceImage} />
         {item.discount && (
@@ -164,24 +185,22 @@ const bookAgainServices = [
   );
 
   const renderTestimonialItem = ({ item }) => (
-  <View style={styles.testimonialCard}>
-    <View style={styles.testimonialHeader}>
-      <Image source={item.avatar} style={styles.avatar} />
-      <View style={styles.testimonialInfo}>
-        <Text style={styles.testimonialName}>{item.name}</Text>
-        <View style={styles.starsContainer}>
-          {[...Array(item.rating)].map((_, index) => (
-            <Image key={index} name="star" size={14} color="#FFD700" />
-          ))}
+    <View style={styles.testimonialCard}>
+      <View style={styles.testimonialHeader}>
+        <Image src={item.avatar} style={styles.avatar} />
+        <View style={styles.testimonialInfo}>
+          <Text style={styles.testimonialName}>{item.name}</Text>
+          <View style={styles.starsContainer}>
+    
+          </View>
         </View>
       </View>
+      <Text style={styles.testimonialComment}>{item.comment}</Text>
     </View>
-    <Text style={styles.testimonialComment}>{item.comment}</Text>
-  </View>
-);
+  );
 
   const renderBookAgainItem = ({ item }) => (
-    <TouchableOpacity style={styles.bookAgainCard} onPress={() => {}}>
+    <TouchableOpacity style={styles.bookAgainCard} onPress={() => { }}>
       <Image source={item.image} style={styles.bookAgainImage} />
       <View style={styles.bookAgainInfo}>
         <Text style={styles.bookAgainTitle}>{item.title}</Text>
@@ -195,6 +214,7 @@ const bookAgainServices = [
       {/* Categories Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Categories</Text>
+
         {categoriesLoading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#007AFF" />
@@ -213,6 +233,7 @@ const bookAgainServices = [
         
         <TouchableOpacity 
           style={styles.seeMoreContainer} 
+
           onPress={() => {
             handleAllServices();
           }}
@@ -243,16 +264,16 @@ const bookAgainServices = [
 
       {/* Customer Testimonials Section */}
       <View style={styles.section}>
-  <Text style={styles.sectionTitle}>Customer Testimonials</Text>
-  <FlatList
-    data={testimonials}
-    renderItem={renderTestimonialItem}
-    keyExtractor={(item) => item.id.toString()}
-    horizontal                              // Enable horizontal scrolling
-    showsHorizontalScrollIndicator={false}  // Hide scroll indicator
-    contentContainerStyle={styles.testimonialsContainer}  // Add container style
-  />
-</View>
+        <Text style={styles.sectionTitle}>Customer Testimonials</Text>
+        <FlatList
+          data={testimonials}
+          renderItem={renderTestimonialItem}
+          keyExtractor={(item) => item.id.toString()}
+          horizontal                              // Enable horizontal scrolling
+          showsHorizontalScrollIndicator={false}  // Hide scroll indicator
+          contentContainerStyle={styles.testimonialsContainer}  // Add container style
+        />
+      </View>
 
       {/* Book These Again Section */}
       <View style={styles.section}>
@@ -296,7 +317,7 @@ const styles = StyleSheet.create({
     color: '#007AFF',
     fontWeight: '500',
   },
-  
+
   // Categories Styles
   categoriesContainer: {
     gap: 16,
@@ -314,7 +335,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 4,
-    
+
   },
   categoryText: {
     fontSize: 14,
