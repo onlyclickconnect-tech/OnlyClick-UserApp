@@ -31,6 +31,11 @@ function Header() {
   const [manualLocation, setManualLocation] = useState("");
   const { userAddress } = useCurrentUserDetails();
   const { selectedLocation, updateSelectedLocation } = useAppStates();
+
+  const [cartLoading, setCartLoading] = useState(false);
+  const [notificationLoading, setNotificationLoading] = useState(false);
+
+
   const router = useRouter();
   const styles = headerStyle();
   
@@ -85,6 +90,20 @@ function Header() {
   const changeAddress = () => {
     setShowLocationModal(true);
   };
+
+  const handleCart = () => {
+    if (cartLoading) return;
+    setCartLoading(true);
+    router.push('/(modal)/cart');
+    setTimeout(() => setCartLoading(false), 1000); // Simulate loading
+  };
+
+  const handleNotifications = () => {
+    if (notificationLoading) return;
+    setNotificationLoading(true);
+    router.push('/protected/Notifications');
+    setTimeout(() => setNotificationLoading(false), 1000); // Simulate loading
+  }
   
   return (
     <>
@@ -195,7 +214,7 @@ function Header() {
           </View>
 
           <View style={styles.iconGroup}>
-      <PressableScale accessibilityRole="button" onPress={() => router.navigate('/protected/Notifications')} style={styles.iconButton}>
+      <PressableScale accessibilityRole="button" onPress={handleNotifications} style={styles.iconButton}>
               <Badge
                 pressable={false}
                 hasBadge={hasNotification}
@@ -224,7 +243,7 @@ function Header() {
             />
           </View>
 
-          <PressableScale accessibilityRole="button" onPress={() => router.push('/(modal)/cart')} style={styles.cartButton}>
+          <PressableScale accessibilityRole="button" onPress={handleCart} style={styles.cartButton}>
             <View style={styles.cartInner}>
               <Feather name="shopping-cart" size={20} color="#3898B3" />
             </View>
