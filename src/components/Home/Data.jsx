@@ -9,9 +9,35 @@ import {
   View
 } from "react-native";
 import { getServicesByCategory, serviceCategories } from "../../data/servicesData";
+import { useState } from "react";
 
 export default function Data() {
   const router = useRouter();
+
+  const [loading, setLoading] = useState(false);
+  const [allServicesLoading, setAllServicesLoading] = useState(false);
+  const [categoryLoading, setCategoryLoading] = useState(null);
+
+  const handleSeeAll = () => {
+    if(loading) return; // Prevent multiple navigations
+    setLoading(true);
+    router.push('/(app)/protected/(tabs)/Services');
+    setTimeout(() => setLoading(false), 1000); // Simulate loading for 1 second
+  }
+  const handleAllServices = () => {
+    if (allServicesLoading) return;
+    setAllServicesLoading(true);
+    router.push('/(app)/protected/(tabs)/Services');
+    setTimeout(() => setAllServicesLoading(false), 1000); // Simulate loading for 1 second
+  };
+
+  // Handler for each category button
+  const handleCategory = (categoryId) => {
+    if (categoryLoading !== null) return;
+    setCategoryLoading(categoryId);
+    router.push(`/(app)/protected/(tabs)/Services?selectedCategory=${categoryId}`);
+    setTimeout(() => setCategoryLoading(null), 1000); // Simulate loading for 1 second
+  };
 
   // Use categories from servicesData.js - no need to redefine them
   const categories = serviceCategories.map((cat, index) => ({
@@ -80,18 +106,6 @@ const bookAgainServices = [
 ];
 
   const renderCategoryItem = ({ item }) => {
-    // Handle different icon naming conventions
-    const getIconName = (iconName) => {
-      const iconMap = {
-        'flash': 'flash-outline',
-        'water': 'water-outline', 
-        'hammer': 'hammer-outline',
-        'home': 'home-outline',
-        'snow': 'snow-outline',
-        'clipboard': 'clipboard-outline'
-      };
-      return iconMap[iconName] || `${iconName}-outline`;
-    };
 
     const getCategoryImage = (categoryId) => {
       const imageMap = {
@@ -109,8 +123,7 @@ const bookAgainServices = [
       <TouchableOpacity 
         style={styles.categoryItem} 
         onPress={() => {
-          // Navigate to Services page with selected category
-          router.push(`/(app)/protected/(tabs)/Services?selectedCategory=${item.id}`);
+          handleCategory(item.id);
         }}
       >
         <View style={[styles.categoryIcon]}>
@@ -191,8 +204,7 @@ const bookAgainServices = [
         <TouchableOpacity 
           style={styles.seeMoreContainer} 
           onPress={() => {
-            // Navigate to Services page without category filter
-            router.push('/(app)/protected/(tabs)/Services');
+            handleAllServices();
           }}
         >
           <Text style={styles.seeMoreText}>All Services</Text>
@@ -204,8 +216,7 @@ const bookAgainServices = [
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Popular Services</Text>
           <TouchableOpacity onPress={() => {
-            // Navigate to Services page
-            router.push('/(app)/protected/(tabs)/Services');
+            handleSeeAll();
           }}>
             <Text style={styles.seeAllText}>See All</Text>
           </TouchableOpacity>
