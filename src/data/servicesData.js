@@ -1,7 +1,6 @@
 // Services Data - Only Click User App
 // Complete service catalog with all services
-import supabase from './supabaseClient.js';
-
+import supabase from "./supabaseClient.js";
 
 // get unique categories from services
 const categoryMeta = {
@@ -50,7 +49,10 @@ export const categoryImages = {
 
 // Merge metadata with categories fetched from DB
 export const allCategories = async () => {
-  const { data, error } = await supabase.schema("oneclick").from("services").select("category");
+  const { data, error } = await supabase
+    .schema("oneclick")
+    .from("services")
+    .select("category");
 
   if (error) {
     console.error(error);
@@ -66,18 +68,18 @@ export const allCategories = async () => {
   }));
 };
 
-  export const allServices = async () => {
-    const { data, error } = await supabase.schema("oneclick").from("services").select("*");
+export const allServices = async () => {
+  const { data, error } = await supabase
+    .schema("oneclick")
+    .from("services")
+    .select("*");
 
-    if (error) {
-      console.error(error);
-      return [];
-    }
-    return data;
-  };
-
-
-
+  if (error) {
+    console.error(error);
+    return [];
+  }
+  return data;
+};
 
 export const getServicesByCategory = async (categoryId) => {
   const { data, error } = await supabase
@@ -108,7 +110,6 @@ export const getServiceById = async (serviceId) => {
   return data;
 };
 
-
 // search services
 export const searchServices = async (query) => {
   const { data, error } = await supabase
@@ -126,7 +127,35 @@ export const searchServices = async (query) => {
   return data;
 };
 
+export const getpopularServices = async () => {
+  const { data, error } = await supabase
+    .schema("oneclick")
+    .from("services")
+    .select("*")
+    .order("count", { ascending: false }) // sort by count in descending order
+    .limit(2);
 
+  if (error) {
+    return [];
+  }
+
+  const formatdata = (element) => {
+    return {
+      id: element.id,
+      title: element.title,
+      reviews: "",
+      rating: element.ratings,
+      price: element.price,
+      image: element.image_url, 
+      discount: element.discount,
+    };
+  };
+
+  
+  
+  const arr = data.map(formatdata);
+  return { arr, error: null };
+};
 
 export default {
   // serviceCategories,
@@ -134,5 +163,6 @@ export default {
   allServices,
   getServicesByCategory,
   getServiceById,
-  searchServices
+  searchServices,
+  getpopularServices,
 };
