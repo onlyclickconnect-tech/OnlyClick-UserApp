@@ -9,6 +9,8 @@ import {
 } from 'react-native';
 import PressableScale from './PressableScale';
 
+import { useState } from 'react';
+
 export default function AppHeader({
   title = '',
   showBack = false,
@@ -17,13 +19,20 @@ export default function AppHeader({
   accentColor = '#3898B3',
   backgroundColor,
   textColor = '#ffffff',
-  profileImage,
   hideStatusBar = true,
   rightElement = null, // optional node rendered on the right
 }) {
   const headerBg = backgroundColor || (variant === 'transparent' ? 'transparent' : accentColor);
   const topInset = hideStatusBar ? 8 : (Platform.OS === 'android' ? (RNStatusBar.currentHeight || 24) : 44);
   const hasRight = !!rightElement;
+  const [backLoading, setBackLoading] = useState(false);
+
+  const handleBack = async () => {
+    if (backLoading) return;
+    setBackLoading(true);
+    await Promise.resolve(onBack());
+    setTimeout(() => setBackLoading(false), 1000); // Prevent double click for 1s
+  };
 
   return (
     <View style={[styles.header, { backgroundColor: headerBg, paddingTop: topInset + 8 }]}> 
@@ -35,8 +44,9 @@ export default function AppHeader({
             <PressableScale
               accessibilityLabel="Go back"
               accessibilityRole="button"
-              style={styles.iconButton}
-              onPress={onBack}
+              style={[styles.iconButton, backLoading && { opacity: 0.6 }]}
+              onPress={handleBack}
+              disabled={backLoading}
             >
               <Ionicons name="arrow-back" size={22} color={textColor} />
             </PressableScale>
