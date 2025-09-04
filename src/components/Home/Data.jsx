@@ -1,6 +1,9 @@
 import { useRouter } from "expo-router";
-import { useEffect } from "react";
+
+import { useEffect, useState } from "react";
+
 import {
+  ActivityIndicator,
   FlatList,
   Image,
   ScrollView,
@@ -9,8 +12,8 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
-import { getServicesByCategory, serviceCategories } from "../../data/servicesData";
-import { useState } from "react";
+
+import { allCategories, categoryImages } from "../../data/servicesData";
 import gettestimonials from "../../data/getdata/gettestimonials";
 
 export default function Data() {
@@ -19,40 +22,26 @@ export default function Data() {
   const [loading, setLoading] = useState(false);
   const [allServicesLoading, setAllServicesLoading] = useState(false);
   const [categoryLoading, setCategoryLoading] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
 
+  // Load categories on component mount
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const fetchedCategories = await allCategories();
+        setCategories(fetchedCategories);
+      } catch (error) {
+        console.error('Error loading categories:', error);
+      } finally {
+        setCategoriesLoading(false);
+      }
+    };
+    loadCategories();
+  }, []);
   const [testimonials, settestimonials] = useState([])
 
-  const handleSeeAll = () => {
-    if (loading) return; // Prevent multiple navigations
-    setLoading(true);
-    router.push('/(app)/protected/(tabs)/Services');
-    setTimeout(() => setLoading(false), 1000); // Simulate loading for 1 second
-  }
-  const handleAllServices = () => {
-    if (allServicesLoading) return;
-    setAllServicesLoading(true);
-    router.push('/(app)/protected/(tabs)/Services');
-    setTimeout(() => setAllServicesLoading(false), 1000); // Simulate loading for 1 second
-  };
 
-  // Handler for each category button
-  const handleCategory = (categoryId) => {
-    if (categoryLoading !== null) return;
-    setCategoryLoading(categoryId);
-    router.push(`/(app)/protected/(tabs)/Services?selectedCategory=${categoryId}`);
-    setTimeout(() => setCategoryLoading(null), 1000); // Simulate loading for 1 second
-  };
-
-  // Use categories from servicesData.js - no need to redefine them
-
-  const categories = (serviceCategories || []).map((cat, index) => ({
-        id: cat.id,
-        name: cat.name,
-        icon: cat.icon,
-        count: getServicesByCategory(cat.id).length,
-        color: cat.color
-      }));
-  const filteredCategories = categories.filter(category => category.count > 0);
 
   // Popular services data
   const popularServices = [
@@ -124,26 +113,42 @@ export default function Data() {
     },
   ];
 
-  const renderCategoryItem = ({ item }) => {
+  const handleSeeAll = () => {
+    if(loading) return; // Prevent multiple navigations
+    setLoading(true);
+    router.push('/(app)/protected/(tabs)/Services');
+    setTimeout(() => setLoading(false), 1000); // Simulate loading for 1 second
+  };
 
+  const handleAllServices = () => {
+    if (allServicesLoading) return;
+    setAllServicesLoading(true);
+    router.push('/(app)/protected/(tabs)/Services');
+    setTimeout(() => setAllServicesLoading(false), 1000); // Simulate loading for 1 second
+  };
+
+  // Handler for each category button
+  const handleCategory = (categoryId) => {
+    if (categoryLoading !== null) return;
+    setCategoryLoading(categoryId);
+    router.push(`/(app)/protected/(tabs)/Services?selectedCategory=${categoryId}`);
+    setTimeout(() => setCategoryLoading(null), 1000); // Simulate loading for 1 second
+  };
+
+  const renderCategoryItem = ({ item }) => {
     const getCategoryImage = (categoryId) => {
-      const imageMap = {
-        'electrical': require("../../../assets/images/electrical.png"),
-        'plumbing': require("../../../assets/images/plumbing.png"),
-        'carpentry': require("../../../assets/images/carpentry.png"),
-        'cleaning': require("../../../assets/images/cleaning.png"),
-        'ac_service': require("../../../assets/images/ACservices.png"),
-        'consultation': require("../../../assets/images/painting.png"),
-      };
-      return imageMap[categoryId] || require("../../../assets/images/cleaning.png");
+      return categoryImages[categoryId] || categoryImages['all'];
     };
 
     return (
       <TouchableOpacity
         style={styles.categoryItem}
         onPress={() => {
-          handleCategory(item.id);
+          if (categoryLoading === null) {
+            handleCategory(item.id);
+          }
         }}
+        disabled={categoryLoading !== null}
       >
         <View style={[styles.categoryIcon]}>
           <Image
@@ -209,17 +214,26 @@ export default function Data() {
       {/* Categories Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Categories</Text>
-        <FlatList
-          data={filteredCategories}
-          renderItem={renderCategoryItem}
-          keyExtractor={(item) => item.id}
-          numColumns={3}
-          scrollEnabled={false}
-          contentContainerStyle={styles.categoriesContainer}
-        />
 
-        <TouchableOpacity
-          style={styles.seeMoreContainer}
+        {categoriesLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#007AFF" />
+            <Text style={styles.loadingText}>Loading categories...</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={categories}
+            renderItem={renderCategoryItem}
+            keyExtractor={(item) => item.id}
+            numColumns={3}
+            scrollEnabled={false}
+            contentContainerStyle={styles.categoriesContainer}
+          />
+        )}
+        
+        <TouchableOpacity 
+          style={styles.seeMoreContainer} 
+
           onPress={() => {
             handleAllServices();
           }}
@@ -487,6 +501,17 @@ const styles = StyleSheet.create({
   },
   bookAgainDate: {
     fontSize: 14,
+    color: '#666666',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
     color: '#666666',
   },
 });
