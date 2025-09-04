@@ -21,6 +21,7 @@ const ProfilePage = () => {
   const [isGeneral, setIsGeneral] = useState(true);
   const { isProfileCompleted, markProfileCompleted } = useAppStates();
   const [showWelcomeMessage, setShowWelcomeMessage] = useState(false);
+  
 
   useEffect(() => {
     // Show welcome message if profile is not completed
