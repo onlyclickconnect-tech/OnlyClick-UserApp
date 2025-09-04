@@ -44,13 +44,14 @@ export default function Data() {
   };
 
   // Use categories from servicesData.js - no need to redefine them
-  const categories = serviceCategories.map((cat, index) => ({
-    id: cat.id,
-    name: cat.name,
-    icon: cat.icon,
-    count: getServicesByCategory(cat.id).length,
-    color: cat.color
-  }));
+
+  const categories = (serviceCategories || []).map((cat, index) => ({
+        id: cat.id,
+        name: cat.name,
+        icon: cat.icon,
+        count: getServicesByCategory(cat.id).length,
+        color: cat.color
+      }));
   const filteredCategories = categories.filter(category => category.count > 0);
 
   // Popular services data
