@@ -1,17 +1,22 @@
 import { StyleSheet, Text, TouchableOpacity } from 'react-native';
 
-const OTPButton = ({ otpLength, onSubmit }) => {
+const OTPButton = ({ otpLength, onSubmit, loading }) => {
   return (
     <TouchableOpacity
       style={[
         styles.proceedButton,
         otpLength < 4 && styles.disabledButton,
+        loading && { opacity: 0.7 },
       ]}
       onPress={onSubmit}
       disabled={otpLength < 4}
       activeOpacity={0.8}
     >
-      <Text style={styles.proceedButtonText}>PROCEED</Text>
+      {loading ? (
+        <ActivityIndicator color="#fff" />
+      ) : (
+        <Text style={styles.proceedButtonText}>PROCEED</Text>
+      )}
     </TouchableOpacity>
   );
 };

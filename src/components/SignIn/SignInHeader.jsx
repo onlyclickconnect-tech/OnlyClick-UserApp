@@ -7,17 +7,13 @@ const SignInHeader = () => {
 
     return (
         <View style={styles.header}>
-            <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-                <Ionicons name="chevron-back" size={24} color="#666" />
-            </TouchableOpacity>
+            
             <Image
                 source={require('../../../assets/images/logo.png')}
                 style={styles.logo}
                 resizeMode="contain"
             />
-            <TouchableOpacity style={styles.infoButton}>
-                <Ionicons name="information-circle-outline" size={24} color="#666" />
-            </TouchableOpacity>
+            
         </View>
     );
 };
@@ -37,6 +33,7 @@ const styles = StyleSheet.create({
     logo: {
         width: 150,
         height: 50,
+        marginLeft: 100,
     },
     infoButton: {
         padding: 8,

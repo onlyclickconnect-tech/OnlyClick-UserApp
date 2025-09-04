@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
-import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-const OnboardingFooter = forwardRef(function OnboardingFooter({ onNext, onComplete, currentSlide, totalSlides, isLastSlide }, ref) {
+const OnboardingFooter = forwardRef(function OnboardingFooter({ onNext, onComplete, currentSlide, totalSlides, isLastSlide, isTransitioning, isCompleting }, ref) {
   const buttonAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -13,6 +13,11 @@ const OnboardingFooter = forwardRef(function OnboardingFooter({ onNext, onComple
   }, []);
 
   const handleButtonPress = () => {
+    // Prevent button press during transition or completion
+    if (isTransitioning || isCompleting) {
+      return;
+    }
+
     if (isLastSlide) {
       onComplete();
     } else {
@@ -65,13 +70,24 @@ const OnboardingFooter = forwardRef(function OnboardingFooter({ onNext, onComple
       <TouchableOpacity 
         style={[
           styles.nextButton,
-          isLastSlide && styles.getStartedButton // Add special styling for last slide button
+          isLastSlide && styles.getStartedButton, // Add special styling for last slide button
+          (isTransitioning || isCompleting) && styles.disabledButton // Add disabled styling
         ]} 
         onPress={handleButtonPress}
+        disabled={isTransitioning || isCompleting}
       >
-        <Text style={styles.nextButtonText}>
-          {isLastSlide ? 'Get Started' : 'Next'}
-        </Text>
+        {(isTransitioning || isCompleting) ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="small" color="#fff" />
+            <Text style={[styles.nextButtonText, styles.loadingText]}>
+              {isCompleting ? 'Starting...' : 'Loading...'}
+            </Text>
+          </View>
+        ) : (
+          <Text style={styles.nextButtonText}>
+            {isLastSlide ? 'Get Started' : 'Next'}
+          </Text>
+        )}
       </TouchableOpacity>
     </Animated.View>
   );
@@ -118,6 +134,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 50, // Wider button for "Get Started"
     paddingVertical: 18, // Slightly taller
     minWidth: 160, // Wider minimum width
+  },
+  disabledButton: {
+    opacity: 0.6, // Make button appear disabled
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    marginLeft: 8, // Space between spinner and text
   },
   nextButtonText: {
     color: '#fff',

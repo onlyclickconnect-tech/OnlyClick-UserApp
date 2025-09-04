@@ -186,7 +186,7 @@ export default function Bookings() {
         </View>
 
         <View style={styles.infoRow}>
-          <Ionicons name="business-outline" size={16} color="#666" />
+          <Ionicons name="construct-outline" size={16} color="#666" />
           <Text style={styles.infoText}>{item.provider}</Text>
         </View>
 
@@ -362,7 +362,7 @@ export default function Bookings() {
                     </View>
                     
                     <View style={styles.infoRow}>
-                      <Ionicons name="business-outline" size={16} color="#666" />
+                      <Ionicons name="construct-outline" size={16} color="#666" />
                       <Text style={styles.infoText}>{item.provider}</Text>
                     </View>
                   </View>

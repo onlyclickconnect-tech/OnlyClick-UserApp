@@ -1,11 +1,11 @@
 import { useRouter } from 'expo-router';
-import { useMemo, useRef, useState, useEffect } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Dimensions, PanResponder, StyleSheet, View } from 'react-native';
+import supabase from '../../data/supabaseClient.js';
+import LoadingScreen from "../common/LoadingScreen.jsx";
 import OnboardingFooter from './OnboardingFooter';
 import OnboardingHeader from './OnboardingHeader';
 import OnboardingSlide from './OnboardingSlide';
-import supabase from '../../data/supabaseClient.js'
-import LoadingScreen from "../common/LoadingScreen.jsx"
 
 const { width, height } = Dimensions.get('window');
 
@@ -30,6 +30,8 @@ const slides = [
 const OnboardingContainer = ({ onComplete }) => {
   const router = useRouter();
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
   const footerRef = useRef(null);
@@ -74,6 +76,13 @@ const OnboardingContainer = ({ onComplete }) => {
 
   // Unified completion function
   const handleComplete = () => {
+    // Prevent multiple completion calls
+    if (isCompleting) {
+      return;
+    }
+
+    setIsCompleting(true);
+
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 0,
@@ -86,7 +95,10 @@ const OnboardingContainer = ({ onComplete }) => {
         useNativeDriver: true,
       })
     ]).start(() => {
-      router.push('/(app)/auth/terms-privacy'); // Navigate to TermsPrivacy screen
+      // Add a small delay before navigation to ensure smooth transition
+      setTimeout(() => {
+        router.push('/(app)/auth/terms-privacy'); // Navigate to TermsPrivacy screen
+      }, 100);
     });
   };
 
@@ -95,6 +107,19 @@ const OnboardingContainer = ({ onComplete }) => {
       handleComplete();
       return;
     }
+
+    // Prevent multiple transitions
+    if (isTransitioning) {
+      return;
+    }
+
+    // Additional safety check
+    if (currentSlide < 0 || currentSlide >= slides.length) {
+      console.warn('Invalid currentSlide index:', currentSlide);
+      return;
+    }
+
+    setIsTransitioning(true);
 
     Animated.parallel([
       Animated.timing(fadeAnim, {
@@ -124,12 +149,30 @@ const OnboardingContainer = ({ onComplete }) => {
           duration: 300,
           useNativeDriver: true,
         })
-      ]).start();
+      ]).start(() => {
+        // Small delay to ensure slide is fully rendered
+        setTimeout(() => {
+          setIsTransitioning(false);
+        }, 50);
+      });
     });
   };
 
   const handlePrevious = () => {
     if (currentSlide === 0) return;
+
+    // Prevent multiple transitions
+    if (isTransitioning) {
+      return;
+    }
+
+    // Additional safety check
+    if (currentSlide < 0 || currentSlide >= slides.length) {
+      console.warn('Invalid currentSlide index:', currentSlide);
+      return;
+    }
+
+    setIsTransitioning(true);
 
     Animated.parallel([
       Animated.timing(fadeAnim, {
@@ -159,7 +202,12 @@ const OnboardingContainer = ({ onComplete }) => {
           duration: 300,
           useNativeDriver: true,
         })
-      ]).start();
+      ]).start(() => {
+        // Small delay to ensure slide is fully rendered
+        setTimeout(() => {
+          setIsTransitioning(false);
+        }, 50);
+      });
     });
   };
 
@@ -167,8 +215,8 @@ const OnboardingContainer = ({ onComplete }) => {
   const panResponder = useMemo(() =>
     PanResponder.create({
       onMoveShouldSetPanResponder: (evt, gestureState) => {
-        // Disable swiping completely on the last slide
-        if (currentSlide === slides.length - 1) {
+        // Disable swiping completely on the last slide or during transition
+        if (currentSlide === slides.length - 1 || isTransitioning) {
           return false;
         }
         return Math.abs(gestureState.dx) > 20 && Math.abs(gestureState.dy) < 100;
@@ -177,6 +225,11 @@ const OnboardingContainer = ({ onComplete }) => {
         // Optional: Add visual feedback during swipe
       },
       onPanResponderRelease: (evt, gestureState) => {
+        // Don't respond to gestures during transition
+        if (isTransitioning) {
+          return;
+        }
+
         const { dx } = gestureState;
 
         // Swipe left (next slide)
@@ -188,7 +241,7 @@ const OnboardingContainer = ({ onComplete }) => {
           handlePrevious();
         }
       },
-    }), [currentSlide, handleNext, handlePrevious]);
+    }), [currentSlide, handleNext, handlePrevious, isTransitioning]);
 
   if (loading) return <LoadingScreen />
   return (
@@ -206,9 +259,10 @@ const OnboardingContainer = ({ onComplete }) => {
         {...panResponder.panHandlers}
       >
         <OnboardingSlide
-          title={slides[currentSlide].title}
-          description={slides[currentSlide].description}
-          image={slides[currentSlide].image}
+          key={`slide-${currentSlide}`}
+          title={slides[currentSlide]?.title || ''}
+          description={slides[currentSlide]?.description || ''}
+          image={slides[currentSlide]?.image}
         />
       </Animated.View>
 
@@ -219,6 +273,8 @@ const OnboardingContainer = ({ onComplete }) => {
         currentSlide={currentSlide}
         totalSlides={slides.length}
         isLastSlide={currentSlide === slides.length - 1}
+        isTransitioning={isTransitioning}
+        isCompleting={isCompleting}
       />
     </View>
   );

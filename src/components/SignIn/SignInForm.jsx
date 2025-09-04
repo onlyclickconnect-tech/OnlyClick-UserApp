@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TextInput, TouchableOpacity, View, ActivityIndicator} from 'react-native';
 
-const SignInForm = ({ phone, error, onPhoneChange, onSignIn }) => {
+const SignInForm = ({ phone, error, onPhoneChange, onSignIn, loading }) => {
     return (
         <View style={styles.content}>
             <Text style={styles.title}>Login to your account</Text>
@@ -19,6 +19,7 @@ const SignInForm = ({ phone, error, onPhoneChange, onSignIn }) => {
                         keyboardType="phone-pad"
                         value={phone}
                         onChangeText={onPhoneChange}
+                        editable={!loading}
                     />
                 </View>
                 {error ? (
@@ -29,8 +30,16 @@ const SignInForm = ({ phone, error, onPhoneChange, onSignIn }) => {
                 ) : null}
             </View>
 
-            <TouchableOpacity style={styles.signInButton} onPress={onSignIn}>
-                <Text style={styles.signInButtonText}>Sign In</Text>
+            <TouchableOpacity
+                style={[styles.signInButton, loading && { opacity: 0.7 }]}
+                onPress={onSignIn}
+                disabled={loading}
+            >
+                {loading ? (
+                    <ActivityIndicator color="#fff" />
+                ) : (
+                    <Text style={styles.signInButtonText}>Sign In</Text>
+                )}
             </TouchableOpacity>
         </View>
     );

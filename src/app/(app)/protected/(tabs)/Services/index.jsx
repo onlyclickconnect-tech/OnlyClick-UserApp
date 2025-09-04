@@ -255,7 +255,7 @@ function ServicesPage() {
       <FlatList
         data={filteredServices}
         renderItem={renderItem}
-        keyExtractor={item => `service-${item.serviceId}`}
+        keyExtractor={(item, index) => `service-${item.serviceId}-${index}`}
         getItemLayout={(data, index) => (
           {length: 170 + 16, offset: (170 + 16) * index, index}
         )}
