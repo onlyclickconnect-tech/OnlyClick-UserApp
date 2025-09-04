@@ -31,15 +31,12 @@ function ServicesPage() {
   useEffect(() => {
     const fetchServices = async () => {
       const data = await allServices();
-      console.log('Services:', data);
-      console.log('Categories in services:', [...new Set(data.map(s => s.category))]);
       setServices(data || []);
     };
     fetchServices();
 
     const fetchCategories = async () => {
       const cats = await allCategories();
-      console.log('Categories from DB:', cats);
       setCategories([
         {
           id: "all",
@@ -141,46 +138,7 @@ function ServicesPage() {
     alert(`${service.title} added to cart!`);
   };
 
-  const getBadgeColor = (badge) => {
-    switch (badge) {
-      case "Popular":
-        return "#FF6B35";
-      case "Best Seller":
-        return "#28A745";
-      case "Trusted":
-        return "#3898B3";
-      case "New":
-        return "#DC3545";
-      case "Quick":
-        return "#FFC107";
-      case "Premium":
-        return "#6F42C1";
-      case "Same Day":
-        return "#17A2B8";
-      case "Emergency":
-        return "#DC3545";
-      case "Quick Service":
-        return "#FFC107";
-      case "Quick Fix":
-        return "#FD7E14";
-      case "Professional":
-        return "#6610F2";
-      case "Essential":
-        return "#198754";
-      case "Modern":
-        return "#0D6EFD";
-      case "Space Saver":
-        return "#6F42C1";
-      case "Weather Resistant":
-        return "#0DCAF0";
-      case "Decorative":
-        return "#D63384";
-      case "Repair":
-        return "#FD7E14";
-      default:
-        return "#6C757D";
-    }
-  };
+  
 
   const renderCategoryCard = ({ item }) => (
     <TouchableOpacity

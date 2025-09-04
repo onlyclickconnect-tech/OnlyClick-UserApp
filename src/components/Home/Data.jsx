@@ -1,5 +1,6 @@
 import { useRouter } from "expo-router";
 
+import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 
 import {
@@ -13,8 +14,8 @@ import {
   View
 } from "react-native";
 
-import { allCategories, categoryImages } from "../../data/servicesData";
 import gettestimonials from "../../data/getdata/gettestimonials";
+import { allCategories, categoryImages, getpopularServices } from "../../data/servicesData";
 
 export default function Data() {
   const router = useRouter();
@@ -43,27 +44,21 @@ export default function Data() {
 
 
 
-  // Popular services data
-  const popularServices = [
-    {
-      id: 1,
-      title: 'MCB/Fuse Replacement',
-      rating: 4.8,
-      reviews: 156,
-      price: '₹299',
-      image: require("../../../assets/images/mcbReplacement.jpg"), // Fixed - correct syntax
-      discount: '20% OFF'
-    },
-    {
-      id: 2,
-      title: 'Car Washing',
-      rating: 4.6,
-      reviews: 89,
-      price: '₹199',
-      image: require("../../../assets/images/carWashing.jpg"), // Fixed - correct syntax
-      discount: '15% OFF'
-    },
-  ];
+
+  const [popularServices, setPopularServices] = useState([]);
+  useEffect(() => {
+    const fetchPopularService = async () => {
+      const { arr, error } = await getpopularServices();
+      if (error) {
+        console.error("Error fetching testimonials:", error);
+        return;
+      }
+
+      setPopularServices(arr); // set the state with formatted array
+    };
+
+    fetchPopularService();
+  }, []);
 
   // Testimonials data
   // const testimonials = [
@@ -163,23 +158,24 @@ export default function Data() {
   };
 
   const renderPopularServiceItem = ({ item }) => (
-    <TouchableOpacity style={styles.serviceCard} onPress={() => { }}>
+    <TouchableOpacity style={styles.serviceCard} onPress={() => {}}>
       <View style={styles.serviceImageContainer}>
-        <Image source={item.image} style={styles.serviceImage} />
+        <Image src={item.image} style={styles.serviceImage} />
         {item.discount && (
           <View style={styles.discountBadge}>
-            <Text style={styles.discountText}>{item.discount}</Text>
+            <Text style={styles.discountText}>{`${item.discount}% off`}</Text>
           </View>
         )}
       </View>
       <View style={styles.serviceInfo}>
         <Text style={styles.serviceTitle}>{item.title}</Text>
         <View style={styles.ratingContainer}>
-          <Image name="star" size={16} color="#FFD700" />
+          <Ionicons name="star" size={16} color="#FFD700" />
           <Text style={styles.ratingText}>{item.rating}</Text>
-          <Text style={styles.reviewsText}>({item.reviews})</Text>
         </View>
-        <Text style={styles.servicePrice}>{item.price}</Text>
+        <Text
+          style={styles.servicePrice}
+        >{`₹${item.price}`}</Text>
       </View>
     </TouchableOpacity>
   );
