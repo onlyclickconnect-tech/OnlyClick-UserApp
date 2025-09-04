@@ -50,7 +50,7 @@ export const categoryImages = {
 
 // Merge metadata with categories fetched from DB
 export const allCategories = async () => {
-  const { data, error } = await supabase.from("services").select("category");
+  const { data, error } = await supabase.schema("oneclick").from("services").select("category");
 
   if (error) {
     console.error(error);
@@ -67,7 +67,7 @@ export const allCategories = async () => {
 };
 
   export const allServices = async () => {
-    const { data, error } = await supabase.from("services").select("*");
+    const { data, error } = await supabase.schema("oneclick").from("services").select("*");
 
     if (error) {
       console.error(error);
@@ -95,6 +95,7 @@ export const getServicesByCategory = async (categoryId) => {
 // get service by ID
 export const getServiceById = async (serviceId) => {
   const { data, error } = await supabase
+    .schema("oneclick")
     .from("services")
     .select("*")
     .eq("service_id", serviceId)
@@ -111,6 +112,7 @@ export const getServiceById = async (serviceId) => {
 // search services
 export const searchServices = async (query) => {
   const { data, error } = await supabase
+    .schema("oneclick")
     .from("services")
     .select("*")
     .or(
