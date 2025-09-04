@@ -36,7 +36,8 @@ export default function OTP() {
   const handleSubmit = async () => {
     if (otp.length === 4 && phone) {
       try {
-        await verifyOtp(phone, otp);
+        const data = await verifyOtp(phone, otp);
+        console.log(data);
         router.replace('/auth/loading');
       } catch (err) {
         // Optionally show error to user

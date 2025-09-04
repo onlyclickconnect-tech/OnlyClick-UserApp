@@ -1,9 +1,11 @@
 import { useRouter } from 'expo-router';
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState, useEffect } from 'react';
 import { Animated, Dimensions, PanResponder, StyleSheet, View } from 'react-native';
 import OnboardingFooter from './OnboardingFooter';
 import OnboardingHeader from './OnboardingHeader';
 import OnboardingSlide from './OnboardingSlide';
+import supabase from '../../data/supabaseClient.js'
+import LoadingScreen from "../common/LoadingScreen.jsx"
 
 const { width, height } = Dimensions.get('window');
 
@@ -31,6 +33,43 @@ const OnboardingContainer = ({ onComplete }) => {
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const slideAnim = useRef(new Animated.Value(0)).current;
   const footerRef = useRef(null);
+
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        // 1. Get stored session
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!session) {
+          // ❌ No session stored
+          return
+        }
+
+        // 2. Verify with Supabase using access token
+        const { data: { user }, error } = await supabase.auth.getUser()
+
+        if (error || !user) {
+          // ❌ Session invalid/expired
+          await supabase.auth.signOut()
+          return
+        } else {
+          // ✅ Session is valid
+          router.replace("/(app)/protected/(tabs)/Home")
+        }
+      } catch (err) {
+        console.error("Auth check failed:", err)
+        return
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    checkAuth()
+  }, [])
+
+
 
   // Unified completion function
   const handleComplete = () => {
@@ -69,10 +108,10 @@ const OnboardingContainer = ({ onComplete }) => {
       })
     ]).start(() => {
       setCurrentSlide(prev => prev + 1);
-      
+
       fadeAnim.setValue(0);
       slideAnim.setValue(50);
-      
+
       Animated.parallel([
         Animated.timing(fadeAnim, {
           toValue: 1,
@@ -104,10 +143,10 @@ const OnboardingContainer = ({ onComplete }) => {
       })
     ]).start(() => {
       setCurrentSlide(prev => prev - 1);
-      
+
       fadeAnim.setValue(0);
       slideAnim.setValue(-50);
-      
+
       Animated.parallel([
         Animated.timing(fadeAnim, {
           toValue: 1,
@@ -124,7 +163,7 @@ const OnboardingContainer = ({ onComplete }) => {
   };
 
   // Create PanResponder for swipe gestures - recreate when currentSlide changes
-  const panResponder = useMemo(() => 
+  const panResponder = useMemo(() =>
     PanResponder.create({
       onMoveShouldSetPanResponder: (evt, gestureState) => {
         // Disable swiping completely on the last slide
@@ -138,7 +177,7 @@ const OnboardingContainer = ({ onComplete }) => {
       },
       onPanResponderRelease: (evt, gestureState) => {
         const { dx } = gestureState;
-        
+
         // Swipe left (next slide)
         if (dx < -50) {
           handleNext();
@@ -150,11 +189,12 @@ const OnboardingContainer = ({ onComplete }) => {
       },
     }), [currentSlide, handleNext, handlePrevious]);
 
+  if (loading) return <LoadingScreen />
   return (
     <View style={styles.container}>
       <OnboardingHeader />
-      
-      <Animated.View 
+
+      <Animated.View
         style={[
           styles.content,
           {
@@ -164,14 +204,14 @@ const OnboardingContainer = ({ onComplete }) => {
         ]}
         {...panResponder.panHandlers}
       >
-        <OnboardingSlide 
+        <OnboardingSlide
           title={slides[currentSlide].title}
           description={slides[currentSlide].description}
           image={slides[currentSlide].image}
         />
       </Animated.View>
-      
-      <OnboardingFooter 
+
+      <OnboardingFooter
         ref={footerRef}
         onNext={handleNext}
         onComplete={handleComplete}
