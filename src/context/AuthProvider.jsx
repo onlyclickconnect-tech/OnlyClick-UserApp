@@ -1,5 +1,13 @@
+//AuthPRovider
+
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { getEmail, getFullName, getProfileImage } from "../data/getdata/getProfile";
+import {
+  getAddress,
+  getEmail,
+  getFullName,
+  getPhone,
+  getProfileImage,
+} from "../data/getdata/getProfile";
 import supabase from "../data/supabaseClient";
 
 const AuthContext = createContext();
@@ -42,17 +50,19 @@ export default function AuthProvider({ children }) {
       }
 
       const currentUser = session.user;
-      const userId = currentUser.id; 
+      const userId = currentUser.id;
 
       const fullName = await getFullName(userId);
       const avatar = await getProfileImage(userId);
       const email = await getEmail(userId);
+      const phone = await getPhone(userId);
+      const address = await getAddress(userId);
 
       setUser({
         name: fullName || "",
-        address: "Vijayawada, Andhra Pradesh",
-        phone: "",
-        email: email|| "",
+        address: address,
+        phone: phone,
+        email: email || "",
         _id: userId,
         taskMasterId: "",
         service: "",
@@ -75,7 +85,6 @@ export default function AuthProvider({ children }) {
 
     fetchUser();
   }, []);
-
 
   const value = useMemo(
     () => ({

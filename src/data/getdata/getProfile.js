@@ -28,22 +28,47 @@ export const getProfileImage = async (userId) => {
   }
   return data.avatar_url || "";
 };
-export const getEmail = async(userId)=>{
-    const {data, error} = await supabase
+export const getEmail = async (userId) => {
+  const { data, error } = await supabase
     .schema("oneclick")
     .from("users")
     .select("email")
     .eq("user_id", userId)
     .single();
 
-    if(error){
-        console.log(error);
-        return [];
-    }
-    return data.email || "";
-}
+  if (error) {
+    console.log(error);
+    return [];
+  }
+  return data.email || "";
+};
 
-export default{
-    getFullName,
-    getProfileImage
-}
+export const getPhone = async (userId) => {
+  const { data, error } = await supabase
+    .schema("oneclick")
+    .from("users")
+    .select("ph_no")
+    .eq("user_id", userId)
+    .single();
+
+  if (error) {
+    console.log(error);
+    return [];
+  }
+  return String(data.ph_no) || "";
+};
+
+export const getAddress = async (userId) => {
+  const { data, error } = await supabase
+    .schema("oneclick")
+    .from("users")
+    .select("address")
+    .eq("user_id", userId)
+    .single();
+
+  if (error) {
+    console.log(error);
+    return [];
+  }
+  return data.address || "";
+};
