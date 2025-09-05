@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Dimensions,
   ScrollView,
   StyleSheet,
@@ -20,14 +21,11 @@ export default function Bookings() {
   const router = useRouter();
   const { view } = useLocalSearchParams();
   const [bookings, setbookings] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  // Default to timeline view if no view parameter or view=timeline is passed
-  const isTimelineView = !view || view === 'timeline';
-  const [activeTab, setActiveTab] = useState(isTimelineView ? 'Timeline' : 'All');
+  const [activeTab, setActiveTab] = useState('All');
 
-  const tabs = isTimelineView
-    ? ['Timeline', 'All', 'Pending', 'Accepted', 'Completed', 'Cancelled']
-    : ['All', 'Pending', 'Accepted', 'Completed', 'Cancelled'];
+  const tabs = ['All', 'Pending', 'Accepted', 'Completed', 'Cancelled'];
 
 
 
@@ -36,9 +34,11 @@ export default function Bookings() {
       const { arr, error } = await getbookings(); // ✅ use arr, not data
       if (error) {
         console.error(error);
+        setLoading(false);
         return;
       }
       setbookings(arr); // ✅ directly set array
+      setLoading(false);
     };
 
     getbookingsdata();
@@ -66,10 +66,8 @@ export default function Bookings() {
   };
 
   const filteredBookings = activeTab === 'All'
-    ? bookings
-    : activeTab === 'Timeline'
-      ? [...bookings].sort((a, b) => new Date(b.bookingTime) - new Date(a.bookingTime))
-      : bookings.filter(booking => booking.status === activeTab);
+    ? [...bookings].sort((a, b) => new Date(b.bookingTime) - new Date(a.bookingTime))
+    : bookings.filter(booking => booking.status === activeTab).sort((a, b) => new Date(b.bookingTime) - new Date(a.bookingTime));
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -105,70 +103,6 @@ export default function Bookings() {
       </View>
     );
   };
-
-  const renderBookingCard = ({ item }) => (
-    <TouchableOpacity
-      style={styles.bookingCard}
-    >
-      <View style={styles.cardHeader}>
-        <View style={styles.serviceInfo}>
-          <View style={styles.serviceTitleRow}>
-            <View style={[styles.statusDot, { backgroundColor: getStatusColor(item.status) }]} />
-            <Text style={styles.service_name}>{item.service_name}</Text>
-          </View>
-          <Text style={styles.category}>{item.category}</Text>
-        </View>
-        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-          <Ionicons name={getStatusIcon(item.status)} size={14} color="white" style={styles.statusIcon} />
-          <Text style={styles.statusText}>{item.status}</Text>
-        </View>
-      </View>
-
-      <View style={styles.cardBody}>
-        <View style={styles.infoRow}>
-          <Ionicons name="calendar-outline" size={16} color="#666" />
-          <Text style={styles.infoText}>{formatDate(item.date)} at {item.time}</Text>
-        </View>
-
-        <View style={styles.infoRow}>
-          <Ionicons name="location-outline" size={16} color="#666" />
-          <Text style={styles.infoText} numberOfLines={1}>{item.location}</Text>
-        </View>
-
-        <View style={styles.infoRow}>
-          <Ionicons name="construct-outline" size={16} color="#666" />
-          <Text style={styles.infoText}>{item.provider}</Text>
-        </View>
-
-        {activeTab === 'Timeline' && (
-          <View style={styles.timelineInfo}>
-            <View style={styles.timelineRow}>
-              <Ionicons name="time-outline" size={14} color="#666" />
-              <Text style={styles.timelineText}>
-                Booked on {new Date(item.bookingTime).toLocaleDateString('en-US', {
-                  weekday: 'short',
-                  month: 'short',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}
-              </Text>
-            </View>
-          </View>
-        )}
-      </View>
-
-      <View style={styles.cardFooter}>
-        <Text style={styles.price}>₹{item.price}</Text>
-        <TouchableOpacity
-          style={styles.viewDetailsButton}
-          onPress={() => router.push(`/protected/(tabs)/Bookings/${item.id}`)}>
-          <Text style={styles.viewDetailsText}>View Details</Text>
-          <Ionicons name="chevron-forward" size={16} color="#3898B3" />
-        </TouchableOpacity>
-      </View>
-    </TouchableOpacity>
-  );
 
   return (
     <View style={styles.container}>
@@ -221,62 +155,13 @@ export default function Bookings() {
 
         {/* Bookings List */}
         <View style={styles.listContainer}>
-          {view === 'timeline' ? (
-            // Group bookings by date and render timeline
-            (() => {
-              const grouped = filteredBookings.reduce((acc, b) => {
-                acc[b.date] = acc[b.date] || [];
-                acc[b.date].push(b);
-                return acc;
-              }, {});
-              const dates = Object.keys(grouped).sort((a, b) => new Date(b) - new Date(a));
-
-              return dates.map(dateKey => (
-                <View key={dateKey} style={styles.timelineDay}>
-                  <Text style={styles.timelineDate}>{new Date(dateKey).toLocaleDateString()}</Text>
-                  {grouped[dateKey].map(item => (
-                    <View key={item.id} style={styles.timelineItem}>
-                      <View style={styles.timelineMarker} />
-                      <View style={styles.timelineCard}>
-                        <View style={styles.cardHeader}>
-                          <View style={styles.serviceInfo}>
-                            <Text style={styles.service_name}>{item.service_name}</Text>
-                            <Text style={styles.category}>{item.category}</Text>
-                          </View>
-                          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-                            <Ionicons name={getStatusIcon(item.status)} size={14} color="white" style={styles.statusIcon} />
-                            <Text style={styles.statusText}>{item.status}</Text>
-                          </View>
-                        </View>
-                        <View style={styles.cardBody}>
-                          <View style={styles.infoRow}>
-                            <Ionicons name="calendar-outline" size={16} color="#666" />
-                            <Text style={styles.infoText}>{formatDate(item.date)} at {item.time}</Text>
-                          </View>
-                          <View style={styles.infoRow}>
-                            <Ionicons name="location-outline" size={16} color="#666" />
-                            <Text style={styles.infoText} numberOfLines={1}>{item.location}</Text>
-                          </View>
-                        </View>
-                        <View style={styles.cardFooter}>
-                          <Text style={styles.price}>₹{item.price}</Text>
-                          <TouchableOpacity
-                            style={styles.viewDetailsButton}
-                            onPress={() => router.push(`/protected/(tabs)/Bookings/${item.id}`)}
-                          >
-                            <Text style={styles.viewDetailsText}>View Details</Text>
-                            <Ionicons name="chevron-forward" size={16} color="#3898B3" />
-                          </TouchableOpacity>
-                        </View>
-                      </View>
-                    </View>
-                  ))}
-                </View>
-              ));
-            })()
-          ) : (
-            filteredBookings.length > 0 ? (
-              filteredBookings.map((item) => (
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#3898B3" />
+              <Text style={styles.loadingText}>Loading bookings...</Text>
+            </View>
+          ) : filteredBookings.length > 0 ? (
+            filteredBookings.map((item) => (
                 <View
                   key={item.id}
                   style={styles.bookingCard}
@@ -321,7 +206,31 @@ export default function Bookings() {
                     <Text style={styles.price}>₹{item.price}</Text>
                     <TouchableOpacity
                       style={styles.viewDetailsButton}
-                      onPress={() => router.push(`/protected/(tabs)/Bookings/${item.id}`)}
+                      onPress={() => {
+                        // Pass complete booking data as navigation params (excluding id since it's in pathname)
+                        const params = {
+                          serviceName: item.serviceName || item.service_name,
+                          date: item.date,
+                          time: item.time,
+                          location: item.location,
+                          status: item.status,
+                          provider: item.provider,
+                          price: item.price,
+                          category: item.category,
+                          contact: item.contact || item.Contact,
+                          description: item.description,
+                          otp: item.otp,
+                          taskMaster: JSON.stringify(item.taskMaster),
+                          estimatedDuration: item.estimatedDuration,
+                          paymentMethod: item.paymentMethod,
+                          bookingId: item.bookingId,
+                          serviceNotes: item.serviceNotes
+                        };
+                        router.push({
+                          pathname: `/protected/(tabs)/Bookings/${item.id}`,
+                          params
+                        });
+                      }}
                     >
                       <Text style={styles.viewDetailsText}>View Details</Text>
                       <Ionicons name="chevron-forward" size={16} color="#3898B3" />
@@ -340,7 +249,7 @@ export default function Bookings() {
                 </Text>
               </View>
             )
-          )}
+}
         </View>
       </ScrollView>
     </View>
@@ -456,65 +365,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginRight: 6,
   },
-  // otpNoticeContainer: {
-  //   backgroundColor: '#fff',
-  //   paddingHorizontal: 20,
-  //   paddingVertical: 15,
-  //   borderBottomWidth: 1,
-  //   borderBottomColor: '#E5E5E5',
-  //   marginTop: 20,
-  // },
-  // otpNoticeCard: {
-  //   backgroundColor: 'linear-gradient(135deg, #4A90E2 0%, #3898B3 100%)',
-  //   backgroundColor: '#4A90E2',
-  //   borderRadius: 12,
-  //   padding: 16,
-  //   elevation: 3,
-  //   shadowColor: '#000',
-  //   shadowOffset: { width: 0, height: 2 },
-  //   shadowOpacity: 0.15,
-  //   shadowRadius: 6,
-  // },
-  // otpNoticeHeader: {
-  //   flexDirection: 'row',
-  //   alignItems: 'flex-start',
-  //   marginBottom: 12,
-  // },
-  // otpNoticeIconContainer: {
-  //   backgroundColor: 'rgba(255, 255, 255, 0.2)',
-  //   borderRadius: 20,
-  //   padding: 8,
-  //   marginRight: 12,
-  // },
-  // otpNoticeContent: {
-  //   flex: 1,
-  // },
-  // otpNoticeTitle: {
-  //   fontSize: 16,
-  //   fontWeight: '600',
-  //   color: '#fff',
-  //   marginBottom: 6,
-  // },
-  // otpNoticeText: {
-  //   fontSize: 14,
-  //   color: '#fff',
-  //   lineHeight: 20,
-  //   opacity: 0.9,
-  // },
-  // otpNoticeFooter: {
-  //   flexDirection: 'row',
-  //   alignItems: 'center',
-  //   paddingTop: 12,
-  //   borderTopWidth: 1,
-  //   borderTopColor: 'rgba(255, 255, 255, 0.2)',
-  // },
-  // otpNoticeFooterText: {
-  //   fontSize: 12,
-  //   color: '#fff',
-  //   marginLeft: 6,
-  //   fontWeight: '500',
-  //   opacity: 0.8,
-  // },
   tabsContainer: {
     backgroundColor: '#fff',
     borderBottomWidth: 1,
@@ -663,21 +513,16 @@ const styles = StyleSheet.create({
     color: '#999',
     textAlign: 'center',
   },
-  timelineInfo: {
-    marginTop: 8,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
-  },
-  timelineRow: {
-    flexDirection: 'row',
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 4,
+    paddingVertical: 100,
   },
-  timelineText: {
-    fontSize: 12,
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
     color: '#666',
-    marginLeft: 6,
-    fontStyle: 'italic',
+    textAlign: 'center',
   },
 });

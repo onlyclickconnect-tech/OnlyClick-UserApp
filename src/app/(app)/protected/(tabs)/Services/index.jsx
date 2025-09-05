@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Dimensions,
   FlatList,
   Image,
@@ -26,27 +27,44 @@ function ServicesPage() {
   const [cartItems, setCartItems] = useState([]);
   const [categories, setCategories] = useState([]);
   const [services, setServices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+
   const ITEM_CARD_HEIGHT = 170 + 16; // card height + marginBottom
 
   useEffect(() => {
     const fetchServices = async () => {
-      const data = await allServices();
-      setServices(data || []);
+      try {
+        setLoading(true);
+        const data = await allServices();
+        setServices(data || []);
+      } catch (error) {
+        console.error('Error fetching services:', error);
+      } finally {
+        setLoading(false);
+      }
     };
     fetchServices();
 
     const fetchCategories = async () => {
-      const cats = await allCategories();
-      setCategories([
-        {
-          id: "all",
-          name: "All",
-          icon: "apps",
-          count: 0,
-          color: "#3898B3",
-        },
-        ...(Array.isArray(cats) ? cats : []),
-      ]);
+      try {
+        setCategoriesLoading(true);
+        const cats = await allCategories();
+        setCategories([
+          {
+            id: "all",
+            name: "All",
+            icon: "apps",
+            count: 0,
+            color: "#3898B3",
+          },
+          ...(Array.isArray(cats) ? cats : []),
+        ]);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      } finally {
+        setCategoriesLoading(false);
+      }
     };
     fetchCategories();
   }, []);
@@ -289,13 +307,9 @@ function ServicesPage() {
                   onChangeText={setSearchQuery}
                   placeholderTextColor="#999"
                 />
-                {searchQuery ? (
+                {searchQuery && (
                   <TouchableOpacity onPress={() => setSearchQuery("")}>
                     <Ionicons name="close-circle" size={20} color="#666" />
-                  </TouchableOpacity>
-                ) : (
-                  <TouchableOpacity>
-                    <Ionicons name="filter" size={20} color="#3898B3" />
                   </TouchableOpacity>
                 )}
               </View>
@@ -322,21 +336,25 @@ function ServicesPage() {
                     ? "All Services"
                     : `${selectedCategory} Services`}
                 </Text>
-                <TouchableOpacity>
-                  <Text style={styles.seeAllText}>See All</Text>
-                </TouchableOpacity>
               </View>
             </View>
           </View>
         }
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Ionicons name="search-outline" size={64} color="#DDD" />
-            <Text style={styles.emptyTitle}>No services found</Text>
-            <Text style={styles.emptySubtitle}>
-              Try searching with different keywords
-            </Text>
-          </View>
+          loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#3898B3" />
+              <Text style={styles.loadingText}>Loading services...</Text>
+            </View>
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="search-outline" size={64} color="#DDD" />
+              <Text style={styles.emptyTitle}>No services found</Text>
+              <Text style={styles.emptySubtitle}>
+                Try searching with different keywords
+              </Text>
+            </View>
+          )
         }
         initialNumToRender={6}
         windowSize={5}
@@ -750,6 +768,18 @@ const styles = StyleSheet.create({
   emptySubtitle: {
     fontSize: 14,
     color: '#999',
+    textAlign: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
     textAlign: 'center',
   },
 });
