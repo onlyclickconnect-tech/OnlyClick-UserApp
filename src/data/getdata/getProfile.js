@@ -73,7 +73,3 @@ export const getAddress = async(userId)=>{
   return data.address || "";
 }
 
-export default{
-    getFullName,
-    getProfileImage
-}
