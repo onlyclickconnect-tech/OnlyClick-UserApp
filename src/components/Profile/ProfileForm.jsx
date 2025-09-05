@@ -1,7 +1,9 @@
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from "react";
-import { Alert, Dimensions, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Dimensions, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { useUpdateProfile } from '../../hooks/seeUpdateProfile';
 import useCurrentUserDetails from "../../hooks/useCurrentUserDetails";
+import LoadinScreen from '../common/LoadingScreen'
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -19,6 +21,7 @@ const ProfileForm = ({ onValidationChange, onSave }) => {
   const [errors, setErrors] = useState({});
   const [isSaving, setIsSaving] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
+  const [loadingspin, setLoadingspin] = useState(false)
 
   const validateForm = () => {
     const newErrors = {};
@@ -72,14 +75,34 @@ const ProfileForm = ({ onValidationChange, onSave }) => {
       return updatedForm;
     });
   };
+  const [refreshKey, setRefreshKey] = useState(0);
+   const { updateProfile, loading, error } = useUpdateProfile();
+  const handleSave = async () => {
+    setLoadingspin(true);
+    if (!validateForm()) return; // optional, validate before saving
+    setIsSaving(true);
 
-  const handleSave = () => {
-    if (validateForm()) {
-      onSave && onSave(formData);
+    // Map frontend formData keys to backend table columns
+    const updates = {
+      full_name: formData.fullName,
+      ph_no: formData.phone,
+      email: formData.email,
+      address: formData.address,
+    };
+
+    const result = await updateProfile(updates);
+    console.log("result", result)
+    if (result?.data?.updated) {
+      alert("Profile updated successfully!");
       setIsEditing(false);
-      Alert.alert('Success', 'Profile updated successfully!');
+      setRefreshKey((prev) => prev + 1);
+    } else {
+      alert("Failed to update profile");
     }
+    setLoadingspin(false)
+    setIsSaving(false);
   };
+
 
   const handleCancel = () => {
     setFormData({
@@ -112,18 +135,26 @@ const ProfileForm = ({ onValidationChange, onSave }) => {
     </View>
   );
 
+  if (loadingspin) return <LoadinScreen />;
+
   return (
     <View style={styles.container}>
       <View style={styles.headerContainer}>
         <Text style={styles.header}>Profile Details</Text>
         {!isEditing ? (
-          <TouchableOpacity style={styles.editButton} onPress={() => setIsEditing(true)}>
+          <TouchableOpacity
+            style={styles.editButton}
+            onPress={() => setIsEditing(true)}
+          >
             <Ionicons name="pencil" size={20} color="#0097B3" />
             <Text style={styles.editButtonText}>Edit</Text>
           </TouchableOpacity>
         ) : (
           <View style={styles.actionButtons}>
-            <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={handleCancel}
+            >
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
@@ -136,13 +167,25 @@ const ProfileForm = ({ onValidationChange, onSave }) => {
       <View style={styles.formContainer}>
         {/* Personal Information */}
         <Text style={styles.sectionTitle}>Personal Information</Text>
-        {renderInputField('fullName', 'user', 'Full Name')}
-        {renderInputField('email', 'envelope', 'Email Address (Optional)', 'email-address', { autoCapitalize: 'none' })}
-        {renderInputField('phone', 'phone', 'Phone Number', 'phone-pad')}
+        {renderInputField("fullName", "user", "Full Name")}
+        {renderInputField(
+          "email",
+          "envelope",
+          "Email Address (Optional)",
+          "email-address",
+          { autoCapitalize: "none" }
+        )}
+        {renderInputField("phone", "phone", "Phone Number", "phone-pad")}
 
         {/* Address Information */}
         <Text style={styles.sectionTitle}>Address Information</Text>
-        {renderInputField('address', 'map-marker', 'Complete Address', 'default', { multiline: true })}
+        {renderInputField(
+          "address",
+          "map-marker",
+          "Complete Address",
+          "default",
+          { multiline: true }
+        )}
       </View>
     </View>
   );
