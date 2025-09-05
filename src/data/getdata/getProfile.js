@@ -43,6 +43,36 @@ export const getEmail = async(userId)=>{
     return data.email || "";
 }
 
+export const getPhone = async(userId)=>{
+  const {data, error} = await supabase
+  .schema("oneclick")
+  .from("users")
+  .select("ph_no")
+  .eq("user_id", userId)
+  .single();
+
+  if(error){
+    console.log(error);
+    return [];
+  }
+  return String(data.ph_no) || "";
+}
+
+export const getAddress = async(userId)=>{
+  const {data, error} = await supabase
+  .schema("oneclick")
+  .from("users")
+  .select("address")
+  .eq("user_id", userId)
+  .single();
+
+  if(error){
+    console.log(error);
+    return [];
+  }
+  return data.address || "";
+}
+
 export default{
     getFullName,
     getProfileImage
