@@ -9,6 +9,7 @@ import ProfileHeader from "../../../../../components/Profile/ProfileHeader";
 import AppHeader from '../../../../../components/common/AppHeader';
 import { useAppStates } from "../../../../../context/AppStates";
 import supabase from "../../../../../data/supabaseClient";
+import { RefreshProvider, refreshKey } from "../../../../../context/profileContext";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -70,9 +71,13 @@ const ProfilePage = () => {
 
   return (
     <View style={styles.container}>
-      <AppHeader title="My Profile" showBack={true} onBack={() => router.back()} />
+      <AppHeader
+        title="My Profile"
+        showBack={true}
+        onBack={() => router.back()}
+      />
 
-      <ScrollView 
+      <ScrollView
         style={styles.content}
         contentContainerStyle={[styles.scrollContent, { paddingTop: 16 }]}
         showsVerticalScrollIndicator={false}
@@ -86,56 +91,83 @@ const ProfilePage = () => {
               <Text style={styles.welcomeTitle}>Complete Your Profile</Text>
             </View>
             <Text style={styles.welcomeText}>
-              Help us personalize your experience by filling out your profile details. You can edit all information anytime.
+              Help us personalize your experience by filling out your profile
+              details. You can edit all information anytime.
             </Text>
             <View style={styles.progressIndicator}>
               <View style={styles.progressBar}>
                 <View style={styles.progressFill} />
               </View>
-              <Text style={styles.progressText}>Your information is secure</Text>
+              <Text style={styles.progressText}>
+                Your information is secure
+              </Text>
             </View>
           </View>
         )}
-        
-        <ProfileHeader isGeneral={isGeneral} setIsGeneral={setIsGeneral} />
-        
-        <View style={styles.formContainer}>
-          {isGeneral ? (
-            <>
-              <ProfileForm onSave={handleSaveProfile} />
-              <View style={styles.generalActions}>
-                <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.85}>
-                  <View style={styles.logoutContent}>
-                    <Ionicons name="log-out-outline" size={18} color="#fff" style={styles.logoutIcon} />
-                    <Text style={styles.logoutButtonText}>Logout</Text>
-                  </View>
-                </TouchableOpacity>
-              </View>
-            </>
-          ) : (
-            <AdvancedOptions />
-          )}
-        </View>
-        
+        <RefreshProvider>
+          const {refreshKey} = useContext(RefreshContext);
+          <ProfileHeader isGeneral={isGeneral} setIsGeneral={setIsGeneral} />
+
+          <View style={styles.formContainer}>
+            {isGeneral ? (
+              <>
+                <ProfileForm onSave={handleSaveProfile} />
+                <View style={styles.generalActions}>
+                  <TouchableOpacity
+                    style={styles.logoutButton}
+                    onPress={handleLogout}
+                    activeOpacity={0.85}
+                  >
+                    <View style={styles.logoutContent}>
+                      <Ionicons
+                        name="log-out-outline"
+                        size={18}
+                        color="#fff"
+                        style={styles.logoutIcon}
+                      />
+                      <Text style={styles.logoutButtonText}>Logout</Text>
+                    </View>
+                  </TouchableOpacity>
+                </View>
+              </>
+            ) : (
+              <AdvancedOptions />
+            )}
+          </View>
+        </RefreshProvider>
         {showWelcomeMessage && isGeneral && (
           <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.saveButton} onPress={handleSaveProfile}>
+            <TouchableOpacity
+              style={styles.saveButton}
+              onPress={handleSaveProfile}
+            >
               <View style={styles.buttonContent}>
-                <Ionicons name="checkmark-circle" size={20} color="#fff" style={styles.buttonIcon} />
-                <Text style={styles.saveButtonText}>Save Profile & Continue</Text>
+                <Ionicons
+                  name="checkmark-circle"
+                  size={20}
+                  color="#fff"
+                  style={styles.buttonIcon}
+                />
+                <Text style={styles.saveButtonText}>
+                  Save Profile & Continue
+                </Text>
               </View>
             </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.skipButton} 
+
+            <TouchableOpacity
+              style={styles.skipButton}
               onPress={() => router.replace("/(app)/protected/(tabs)/Home")}
             >
               <Text style={styles.skipButtonText}>Skip for now</Text>
-              <Ionicons name="arrow-forward" size={16} color="#3898B3" style={styles.skipIcon} />
+              <Ionicons
+                name="arrow-forward"
+                size={16}
+                color="#3898B3"
+                style={styles.skipIcon}
+              />
             </TouchableOpacity>
           </View>
         )}
-        
         <BottomLinks />
       </ScrollView>
     </View>
