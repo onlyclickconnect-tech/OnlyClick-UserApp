@@ -35,6 +35,7 @@ export default function AuthProvider({ children }) {
   });
   const [authToken, setAuthToken] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  
 
   useEffect(() => {
     async function fetchUser() {
