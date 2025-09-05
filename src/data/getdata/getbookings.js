@@ -27,7 +27,8 @@ export default async function getbookings() {
 
     return {
       id: element.id,
-      service_name: element.service_name,
+      otp: element.otp,
+      serviceName: element.service_name,
       date,
       time,
       location: element.location,
@@ -36,6 +37,19 @@ export default async function getbookings() {
       price: element.payment_amount,
       category: element.category,
       bookingTime: date,
+      contact: `+91 ${element.tm_contact}`,
+      description: element.service_description || element.service_name, // Use description if available
+      estimatedDuration: element.estimated_duration || '1-2 hours',
+      paymentMethod: element.payment_method || 'Cash on Delivery',
+      bookingId: `BK${element.id.toString().padStart(10, '0')}`,
+      serviceNotes: element.service_notes || 'Our technician will call 15 minutes before arrival.',
+      taskMaster: {
+        name: element.tm_name,
+        contact: `+91 ${element.tm_contact}`,
+        photo: element.tm_photo || 'https://via.placeholder.com/150'
+      },
+      // Keep the original field names for backward compatibility
+      service_name: element.service_name,
       Contact: `+91 ${element.tm_contact}`,
     };
   };

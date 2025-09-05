@@ -14,7 +14,9 @@ import {
   View
 } from "react-native";
 
+import getbookings from "../../data/getdata/getbookings";
 import gettestimonials from "../../data/getdata/gettestimonials";
+
 import { allCategories, categoryImages, getpopularServices } from "../../data/servicesData";
 
 export default function Data() {
@@ -60,23 +62,21 @@ export default function Data() {
     fetchPopularService();
   }, []);
 
-  // Testimonials data
-  // const testimonials = [
-  //   {
-  //     id: 1,
-  //     name: 'A. Shahul',
+  const [bookings, setbookings] = useState([]);
 
-  //     comment: 'Amazing service! The plumber arrived on time and fixed my issue quickly. Highly recommended!',
-  //     avatar: require("../../../assets/images/defaultAvatar.png"), // This is correct
-  //   },
-  //   {
-  //     id: 2,
-  //     name: 'S. Priyanka',
-  //     rating: 5,
-  //     comment: 'Excellent cleaning service. Very professional and thorough. Will definitely book again.',
-  //     avatar: require("../../../assets/images/defaultAvatar.png"), // This is correct
-  //   },
-  // ];
+  useEffect(() => {
+      const getbookingsdata = async () => {
+        const { arr, error } = await getbookings(); // ✅ use arr, not data
+        if (error) {
+          console.error(error);
+          return;
+        }
+        setbookings(arr); // ✅ directly set array
+      };
+  
+      getbookingsdata();
+    }, []);
+
   useEffect(() => {
     const fetchTestimonials = async () => {
       const { arr, error } = await gettestimonials();
@@ -90,23 +90,6 @@ export default function Data() {
 
     fetchTestimonials();
   }, []);
-
-
-  // Book again services - FIXED THE SYNTAX ERRORS
-  const bookAgainServices = [
-    {
-      id: 1,
-      title: 'MCB/Fuse Replacement',
-      image: require("../../../assets/images/mcbReplacement.jpg"), // FIXED - removed extra quotes and parentheses
-      lastBooked: 'Last booked: 2 weeks ago'
-    },
-    {
-      id: 2,
-      title: 'Car Washing',
-      image: require("../../../assets/images/carWashing.jpg"), // FIXED - removed extra quotes and parentheses
-      lastBooked: 'Last booked: 1 month ago'
-    },
-  ];
 
   const handleSeeAll = () => {
     if(loading) return; // Prevent multiple navigations
@@ -197,10 +180,12 @@ export default function Data() {
 
   const renderBookAgainItem = ({ item }) => (
     <TouchableOpacity style={styles.bookAgainCard} onPress={() => { }}>
-      <Image source={item.image} style={styles.bookAgainImage} />
+      <Image source={require("../../../assets/images/mcbReplacement.jpg")} style={styles.bookAgainImage} />
       <View style={styles.bookAgainInfo}>
-        <Text style={styles.bookAgainTitle}>{item.title}</Text>
-        <Text style={styles.bookAgainDate}>{item.lastBooked}</Text>
+        <Text style={styles.bookAgainTitle}>{item.service_name}</Text>
+        <Text style={styles.bookAgainDate}>Booked on: {item.date}</Text>
+        <Text style={styles.bookAgainProvider}>Provider: {item.provider}</Text>
+        <Text style={styles.bookAgainPrice}>₹{item.price}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -271,17 +256,19 @@ export default function Data() {
         />
       </View>
 
-      {/* Book These Again Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Book These Again</Text>
-        <FlatList
-          data={bookAgainServices}
-          renderItem={renderBookAgainItem}
-          keyExtractor={(item) => item.id.toString()}
-          scrollEnabled={false}
-          contentContainerStyle={{ marginBottom: 140 }}
-        />
-      </View>
+      {/* Recent Bookings Section */}
+      {bookings.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Recent Bookings</Text>
+          <FlatList
+            data={bookings.slice(-3)}
+            renderItem={renderBookAgainItem}
+            keyExtractor={(item) => item.id.toString()}
+            scrollEnabled={false}
+            contentContainerStyle={{ marginBottom: 140 }}
+          />
+        </View>
+      )}
     </ScrollView>
   );
 }
@@ -471,7 +458,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    padding: 12,
+    padding: 16,
     marginBottom: 12,
     elevation: 2,
     shadowColor: '#000',
@@ -483,7 +470,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 8,
-    marginRight: 12,
+    marginRight: 16,
   },
   bookAgainInfo: {
     flex: 1,
@@ -498,6 +485,18 @@ const styles = StyleSheet.create({
   bookAgainDate: {
     fontSize: 14,
     color: '#666666',
+    marginBottom: 2,
+  },
+  bookAgainProvider: {
+    fontSize: 13,
+    color: '#3898B3',
+    fontWeight: '500',
+    marginBottom: 2,
+  },
+  bookAgainPrice: {
+    fontSize: 14,
+    color: '#1A1A1A',
+    fontWeight: '600',
   },
   loadingContainer: {
     flex: 1,

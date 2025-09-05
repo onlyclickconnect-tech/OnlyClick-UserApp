@@ -1,7 +1,8 @@
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Animated,
   Dimensions,
@@ -20,14 +21,18 @@ import {
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 import AppHeader from '../../../../../components/common/AppHeader';
-import PressableScale from '../../../../../components/common/PressableScale';
+
 
 export default function BookingDetails() {
   const router = useRouter();
-  const { id } = useLocalSearchParams();
+  const params = useLocalSearchParams();
   const [showCancellationModal, setShowCancellationModal] = useState(false);
-  const [showShareModal, setShowShareModal] = useState(false);
   const [otp, setOtp] = useState('');
+  const [booking, setBooking] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const hasLoadedRef = useRef(false);
 
   // Gesture handling for modals
   const modalY = useRef(new Animated.Value(0)).current;
@@ -66,7 +71,6 @@ export default function BookingDetails() {
             }),
           ]).start(() => {
             setShowCancellationModal(false);
-            setShowShareModal(false);
             modalY.setValue(0);
             modalOpacity.setValue(1);
           });
@@ -123,88 +127,65 @@ export default function BookingDetails() {
     );
   };
 
-  const generateBookingSummary = () => {
-    return `🔧 Service Booking Summary
+  // Load booking data from params instead of API calls
+  useEffect(() => {
+    // Prevent multiple loads
+    if (hasLoadedRef.current) return;
 
-📋 Service: ${booking.serviceName}
-🏢 Provider: ${booking.provider}
-📅 Date: ${formatDate(booking.date)}
-⏰ Time: ${formatTime(booking.time)}
-📍 Location: ${booking.location}
-💰 Price: ₹${booking.price}
-🎫 Booking ID: ${booking.bookingId}
-📊 Status: ${booking.status}
+    const loadBookingDetails = async () => {
+      try {
+        setLoading(true);
+        setError(null);
 
-📞 Contact: ${booking.contact}
-💳 Payment: ${booking.paymentMethod}
-⏱️ Duration: ${booking.estimatedDuration}
+        // Check if booking data was passed from previous screen
+        if (params.serviceName) {
+          // Get the ID from the route parameter
+          const bookingId = parseInt(params.id) || 1;
+          
+          const bookingFromParams = {
+            id: bookingId,
+            serviceName: params.serviceName,
+            date: params.date,
+            time: params.time,
+            location: params.location,
+            status: params.status,
+            provider: params.provider,
+            price: parseFloat(params.price) || 0,
+            category: params.category,
+            contact: params.contact,
+            description: params.description,
+            otp: parseInt(params.otp),
+            taskMaster: params.taskMaster ? JSON.parse(params.taskMaster) : {
+              name: params.provider,
+              contact: params.contact,
+              photo: 'https://via.placeholder.com/150'
+            },
+            estimatedDuration: params.estimatedDuration || '1-2 hours',
+            paymentMethod: params.paymentMethod || 'Cash on Delivery',
+            bookingId: params.bookingId || `BK${bookingId.toString().padStart(10, '0')}`,
+            serviceNotes: params.serviceNotes || 'Our technician will call 15 minutes before arrival.',
+            bookingTime: params.date
+          };
 
-📝 Service Includes:
-${booking.serviceIncludes.map(item => `• ${item}`).join('\n')}
+          setBooking(bookingFromParams);
+          setOtp(bookingFromParams.otp.toString());
+        } else {
+          // If no complete booking data passed, show error
+          throw new Error("Incomplete booking data provided. Please go back and try again.");
+        }
+      } catch (err) {
+        console.error("Error loading booking details:", err);
+        setError(err.message || "Failed to load booking details");
+      } finally {
+        setLoading(false);
+        hasLoadedRef.current = true;
+      }
+    };
 
-📋 Notes: ${booking.serviceNotes}
-
-Booked via YourApp 📱`;
-  };
-
-  const handleShare = (method) => {
-    const summary = generateBookingSummary();
-    
-    switch (method) {
-      case 'copy':
-        // In a real app, use Clipboard API
-        Alert.alert('Copied!', 'Booking details copied to clipboard');
-        break;
-      case 'sms':
-        Alert.alert('Share via SMS', 'Would open SMS app with booking summary');
-        break;
-      case 'whatsapp':
-        Alert.alert('Share via WhatsApp', 'Would open WhatsApp with booking details');
-        break;
-      case 'email':
-        Alert.alert('Share via Email', 'Would open email app with booking summary');
-        break;
-      case 'pdf':
-        Alert.alert('Export PDF', 'Would generate and share PDF receipt');
-        break;
-      default:
-        Alert.alert('Share', 'Generic share functionality');
+    if (params.serviceName && !hasLoadedRef.current) {
+      loadBookingDetails();
     }
-    setShowShareModal(false);
-  };
-
-  // Mock booking data - in real app, fetch by ID
-  const booking = {
-    id: parseInt(id),
-    otp: 1037,
-    serviceName: 'Plumbing Repair',
-    date: '2025-08-08',
-    time: '10:00 AM',
-    location: '123 Main Street, Downtown Area, City - 400001',
-    status: 'Accepted',
-    provider: 'AquaFix Services',
-    price: 299,
-    category: 'Plumbing',
-    bookingTime: '2025-08-06 14:30',
-    contact: '+91 56*** ***10',
-    description: 'Kitchen sink pipe repair and faucet replacement',
-    taskMaster: {
-      name: 'John Doe',
-      contact: '+91 56789 43210',
-      photo: 'https://via.placeholder.com/150'
-    },
-    estimatedDuration: '1-2 hours',
-    paymentMethod: 'Cash on Delivery',
-    bookingId: 'BK2025080001',
-    cancellationDeadline: '2025-08-08 07:55', // 2 hours before service
-    serviceIncludes: [
-      'Pipe inspection and repair',
-      'Faucet replacement',
-      'Basic plumbing tools',
-      'Cleanup after service'
-    ],
-    serviceNotes: 'Please ensure water supply is accessible. Our technician will call 15 minutes before arrival.'
-  };
+  }, []); // Empty dependency array to run only once
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -228,7 +209,7 @@ Booked via YourApp 📱`;
 
   const getStatusMessage = (status) => {
     switch (status) {
-      case 'Pending': return 'A Service Provider will be assigned in 1-2 hours';
+      case 'Pending': return 'A Service Provider will be assigned to you soon.';
       case 'Accepted': return 'Your Service Provider is on the way!';
       case 'Completed': return 'Service completed successfully';
       case 'Cancelled': return 'This booking has been cancelled';
@@ -399,114 +380,6 @@ Booked via YourApp 📱`;
     </Modal>
   );
 
-  const ShareModal = () => (
-    <Modal visible={showShareModal} transparent animationType="none">
-      <Animated.View style={[styles.modalOverlay, { opacity: modalOpacity }]}>
-        <Animated.View 
-          style={[styles.modalContent, { transform: [{ translateY: modalY }] }]}
-          {...panResponder.panHandlers}
-        >
-          {/* Gesture Indicator Bar - Enhanced touch area */}
-          <TouchableOpacity 
-            style={styles.gestureIndicator}
-            activeOpacity={1}
-            onPress={() => {}} // Empty onPress to ensure touch area
-          >
-            <View style={styles.indicatorBar} />
-          </TouchableOpacity>
-          
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>📤 Share Booking</Text>
-            <TouchableOpacity onPress={() => setShowShareModal(false)}>
-              <Ionicons name="close" size={24} color="#333" />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.shareOptionsContainer}>
-            {/* Quick Actions */}
-            <View style={styles.shareSection}>
-              <Text style={styles.shareSectionTitle}>Quick Actions</Text>
-              <View style={styles.shareOptionsGrid}>
-                <TouchableOpacity 
-                  style={styles.shareOption}
-                  onPress={() => handleShare('copy')}
-                >
-                  <View style={styles.shareIconContainer}>
-                    <Ionicons name="copy-outline" size={24} color="#3898B3" />
-                  </View>
-                  <Text style={styles.shareOptionText}>Copy Details</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity 
-                  style={styles.shareOption}
-                  onPress={() => handleShare('pdf')}
-                >
-                  <View style={styles.shareIconContainer}>
-                    <Ionicons name="document-text-outline" size={24} color="#3898B3" />
-                  </View>
-                  <Text style={styles.shareOptionText}>Export PDF</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Share via Apps */}
-            <View style={styles.shareSection}>
-              <Text style={styles.shareSectionTitle}>Share via</Text>
-              <View style={styles.shareOptionsGrid}>
-                <TouchableOpacity 
-                  style={styles.shareOption}
-                  onPress={() => handleShare('whatsapp')}
-                >
-                  <View style={[styles.shareIconContainer, { backgroundColor: '#25D366' }]}>
-                    <Ionicons name="logo-whatsapp" size={24} color="#fff" />
-                  </View>
-                  <Text style={styles.shareOptionText}>WhatsApp</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity 
-                  style={styles.shareOption}
-                  onPress={() => handleShare('sms')}
-                >
-                  <View style={[styles.shareIconContainer, { backgroundColor: '#007AFF' }]}>
-                    <Ionicons name="chatbubble-outline" size={24} color="#fff" />
-                  </View>
-                  <Text style={styles.shareOptionText}>SMS</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity 
-                  style={styles.shareOption}
-                  onPress={() => handleShare('email')}
-                >
-                  <View style={[styles.shareIconContainer, { backgroundColor: '#FF6B35' }]}>
-                    <Ionicons name="mail-outline" size={24} color="#fff" />
-                  </View>
-                  <Text style={styles.shareOptionText}>Email</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Preview */}
-            <View style={styles.shareSection}>
-              <Text style={styles.shareSectionTitle}>Preview</Text>
-              <View style={styles.previewContainer}>
-                <Text style={styles.previewText} numberOfLines={6}>
-                  {generateBookingSummary()}
-                </Text>
-              </View>
-            </View>
-          </View>
-
-          <TouchableOpacity 
-            style={styles.cancelShareButton}
-            onPress={() => setShowShareModal(false)}
-          >
-            <Text style={styles.cancelShareButtonText}>Cancel</Text>
-          </TouchableOpacity>
-        </Animated.View>
-      </Animated.View>
-    </Modal>
-  );
-
   return (
     <View style={styles.container}>
       <StatusBar hidden={true} />
@@ -516,30 +389,98 @@ Booked via YourApp 📱`;
         title="Booking Details"
         showBack={true}
         onBack={() => router.back()}
-        rightElement={
-          <PressableScale
-            accessibilityLabel="Share booking"
-            accessibilityRole="button"
-            onPress={() => setShowShareModal(true)}
-            style={{ padding: 8 }}
-          >
-            <Ionicons name="share-outline" size={22} color="#fff" />
-          </PressableScale>
-        }
       />
 
+      {/* Main Content Area */}
       <ScrollView 
-        style={styles.content} 
+        style={styles.scrollView} 
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+
+        {/* Loading State */}
+        {loading && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#3898B3" />
+            <Text style={styles.loadingText}>Loading booking details...</Text>
+          </View>
+        )}
+
+        {/* Error State */}
+        {error && !loading && (
+          <View style={styles.errorContainer}>
+            <Ionicons name="alert-circle-outline" size={64} color="#F44336" />
+            <Text style={styles.errorTitle}>Failed to Load Booking</Text>
+            <Text style={styles.errorMessage}>{error}</Text>
+            <TouchableOpacity 
+              style={styles.retryButton}
+              onPress={() => {
+                setError(null);
+                setLoading(true);
+                // Re-load data from params
+                const loadBookingDetails = async () => {
+                  try {
+                    if (params.serviceName) {
+                      const bookingFromParams = {
+                        id: parseInt(params.id) || 1,
+                        serviceName: params.serviceName,
+                        date: params.date,
+                        time: params.time,
+                        location: params.location,
+                        status: params.status,
+                        provider: params.provider,
+                        price: parseFloat(params.price) || 0,
+                        category: params.category,
+                        contact: params.contact,
+                        description: params.description,
+                        otp: parseInt(params.otp) || Math.floor(1000 + Math.random() * 9000),
+                        taskMaster: params.taskMaster ? JSON.parse(params.taskMaster) : {
+                          name: params.provider,
+                          contact: params.contact,
+                          photo: 'https://via.placeholder.com/150'
+                        },
+                        estimatedDuration: params.estimatedDuration || '1-2 hours',
+                        paymentMethod: params.paymentMethod || 'Cash on Delivery',
+                        bookingId: params.bookingId || `BK${(parseInt(params.id) || 1).toString().padStart(10, '0')}`,
+                        serviceIncludes: params.serviceIncludes ? JSON.parse(params.serviceIncludes) : [
+                          params.serviceName,
+                          'Professional service',
+                          'Quality assurance',
+                          'Post-service cleanup'
+                        ],
+                        serviceNotes: params.serviceNotes || 'Our technician will call 15 minutes before arrival.',
+                        bookingTime: params.date
+                      };
+                      setBooking(bookingFromParams);
+                    } else {
+                      throw new Error("No booking data available");
+                    }
+                  } catch (err) {
+                    console.error("Error loading booking details:", err);
+                    setError("Failed to load booking details. Please go back and try again.");
+                  } finally {
+                    setLoading(false);
+                    hasLoadedRef.current = true;
+                  }
+                };
+                loadBookingDetails();
+              }}
+            >
+              <Text style={styles.retryButtonText}>Try Again</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Booking Content - Only show when data is loaded */}
+        {booking && !loading && booking.serviceName && (
+          <View>
 
 
         {/* Service Header */}
         <View style={styles.serviceHeader}>
           <Text style={styles.serviceName}>{booking.serviceName}</Text>
           <Text style={styles.scheduledTime}>
-            Scheduled for {formatDate(booking.date)} at {formatTime(booking.time)}
+            {formatDate(booking.date)} at {formatTime(booking.time)}
           </Text>
         </View>
 
@@ -560,7 +501,7 @@ Booked via YourApp 📱`;
         </View>
 
         {/* Service Provider Details */}
-        {booking.taskMaster && (
+        {booking.taskMaster && (booking.status === 'Accepted' || booking.status === 'Completed') && (
           <View style={styles.providerDetailsContainer}>
             <Text style={styles.sectionTitle}>Service Provider</Text>
             <View style={styles.providerDetails}>
@@ -583,7 +524,7 @@ Booked via YourApp 📱`;
         )}
 
         {/* OTP Display Section */}
-        {booking.status === 'Pending' && (
+        {booking.status === 'Accepted' && (
           <View style={styles.otpDisplayContainer}>
             <Text style={styles.sectionTitle}>Your OTP</Text>
             <Text style={styles.otpCode}>{booking.otp}</Text>
@@ -649,15 +590,7 @@ Booked via YourApp 📱`;
             <Text style={styles.description}>{booking.description}</Text>
           </View>
 
-          <View style={styles.includesSection}>
-            <Text style={styles.infoLabel}>What's Included</Text>
-            {booking.serviceIncludes.map((item, index) => (
-              <View key={index} style={styles.includeItem}>
-                <Ionicons name="checkmark" size={16} color="#4CAF50" />
-                <Text style={styles.includeText}>{item}</Text>
-              </View>
-            ))}
-          </View>
+          
 
           {booking.serviceNotes && (
             <View style={styles.notesSection}>
@@ -668,7 +601,7 @@ Booked via YourApp 📱`;
         </View>
 
         {/* Payment Information */}
-        <View style={styles.infoCard}>
+        <View style={booking.status === 'Completed' ? styles.infoCardCompleted : styles.infoCard}>
           <Text style={styles.sectionTitle}>Payment Information</Text>
           
           <View style={styles.paymentRow}>
@@ -683,43 +616,46 @@ Booked via YourApp 📱`;
         </View>
 
         {/* Cancellation Rules */}
-        <View style={styles.cancellationCard}>
-          <TouchableOpacity 
-            style={styles.cancellationHeader}
-            onPress={() => setShowCancellationModal(true)}
-          >
-            <View style={styles.cancellationTitleRow}>
-              <MaterialIcons name="policy" size={20} color="#F44336" />
-              <Text style={styles.cancellationTitle}>Cancellation Policy</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={16} color="#666" />
-          </TouchableOpacity>
-          
-          <Text style={styles.cancellationHighlight}>
-            Free cancellation up to 2 hours before scheduled time
-          </Text>
-        </View>
+        {(booking.status === 'Accepted' || booking.status === 'Pending') && (
+          <View style={styles.cancellationCard}>
+            <TouchableOpacity 
+              style={styles.cancellationHeader}
+              onPress={() => setShowCancellationModal(true)}
+            >
+              <View style={styles.cancellationTitleRow}>
+                <MaterialIcons name="policy" size={20} color="#F44336" />
+                <Text style={styles.cancellationTitle}>Cancellation Policy</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color="#666" />
+            </TouchableOpacity>
+            
+            <Text style={styles.cancellationHighlight}>
+              Free cancellation up to 2 hours before scheduled time
+            </Text>
+          </View>
+        )}
+
+        {/* Action Buttons */}
+        {(booking.status === 'Pending' || booking.status === 'Accepted') && (
+          <View style={styles.actionButtonsContainer}>
+            <TouchableOpacity 
+              style={styles.cancelButton}
+              onPress={handleCancelBooking}
+            >
+              <Text style={styles.cancelButtonText}>Cancel Booking</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.rescheduleButton}>
+              <Text style={styles.rescheduleButtonText}>Reschedule</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+          </View>
+        )}
 
 
       </ScrollView>
 
-      {/* Bottom Actions */}
-      {booking.status === 'Pending' && (
-        <View style={styles.bottomActions}>
-          <TouchableOpacity 
-            style={styles.cancelButton}
-            onPress={handleCancelBooking}
-          >
-            <Text style={styles.cancelButtonText}>Cancel Booking</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.rescheduleButton}>
-            <Text style={styles.rescheduleButtonText}>Reschedule</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      <ShareModal />
       <CancellationRulesModal />
     </View>
   );
@@ -730,55 +666,19 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8f9fa',
   },
-  header: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#3898B3',
-    paddingTop: screenHeight * 0.08, // Adjusted padding dynamically
-    paddingBottom: screenHeight * 0.04, // Adjusted padding dynamically
-    borderBottomLeftRadius: screenWidth * 0.08, // Dynamic radius
-    borderBottomRightRadius: screenWidth * 0.08, // Dynamic radius
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    zIndex: 1000,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-  },
-  backButton: {
-    padding: 5,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#fff',
-    flex: 1,
-    textAlign: 'center',
-    marginHorizontal: 10,
-  },
-  shareButton: {
-    padding: 5,
-  },
-  content: {
+  scrollView: {
     flex: 1,
   },
   scrollContent: {
     paddingTop: 16,
+    paddingBottom: 20,
   },
   serviceHeader: {
     backgroundColor: '#fff',
     padding: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E5E5',
-    marginTop: screenHeight * 0.02,
+    marginTop: screenHeight * 0.01,
   },
   serviceName: {
     fontSize: 24,
@@ -818,6 +718,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333',
     fontWeight: '500',
+  },
+    infoCardCompleted: {
+    backgroundColor: '#fff',
+    padding: 20,
+    marginBottom: 50,
   },
   infoCard: {
     backgroundColor: '#fff',
@@ -905,7 +810,7 @@ const styles = StyleSheet.create({
   cancellationCard: {
     backgroundColor: '#fff',
     padding: 20,
-    marginBottom: 140,
+    marginBottom: 10,
   },
   cancellationHeader: {
     flexDirection: 'row',
@@ -928,39 +833,93 @@ const styles = StyleSheet.create({
     color: '#F44336',
     fontWeight: '500',
   },
-  bottomActions: {
+  actionButtonsContainer: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
+    marginTop: 20,
+    marginBottom: 100,
     paddingHorizontal: 20,
-    paddingVertical: 15,
-    borderTopWidth: 1,
-    borderTopColor: '#E5E5E5',
+    gap: 15,
   },
   cancelButton: {
     flex: 1,
     backgroundColor: '#F44336',
-    paddingVertical: 12,
+    paddingVertical: 14,
     borderRadius: 8,
-    marginRight: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   cancelButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
-    textAlign: 'center',
   },
   rescheduleButton: {
     flex: 1,
     backgroundColor: '#3898B3',
-    paddingVertical: 12,
+    paddingVertical: 14,
     borderRadius: 8,
-    marginLeft: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   rescheduleButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
     textAlign: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 100,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 50,
+    paddingHorizontal: 20,
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    marginTop: 16,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  errorMessage: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  retryButton: {
+    backgroundColor: '#3898B3',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
   modalOverlay: {
     flex: 1,
@@ -1015,69 +974,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
-  },
-  // Share Modal Styles
-  shareOptionsContainer: {
-    marginBottom: 20,
-  },
-  shareSection: {
-    marginBottom: 25,
-  },
-  shareSectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1A1A1A',
-    marginBottom: 15,
-  },
-  shareOptionsGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    gap: 15,
-  },
-  shareOption: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  shareIconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#E3F2FD',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  shareOptionText: {
-    fontSize: 12,
-    color: '#333',
-    textAlign: 'center',
-    fontWeight: '500',
-  },
-  previewContainer: {
-    backgroundColor: '#F8F9FA',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#E5E5E5',
-  },
-  previewText: {
-    fontSize: 13,
-    color: '#666',
-    lineHeight: 18,
-  },
-  cancelShareButton: {
-    backgroundColor: '#F8F9FA',
-    borderRadius: 12,
-    paddingVertical: 15,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E5E5E5',
-    marginTop: -30,
-  },
-  cancelShareButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#666',
   },
   // Provider Details Styles
   providerDetailsContainer: {
