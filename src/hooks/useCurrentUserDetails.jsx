@@ -14,7 +14,7 @@ function useCurrentUserDetails() {
     _id: user._id,
     reviews: user.reviews,
     ratings: user.ratings,
-    userId: user.taskMasterId,
+    userId: user._id,
     service: user.service,
     isLoggedIn,
     authToken: user.authToken,
