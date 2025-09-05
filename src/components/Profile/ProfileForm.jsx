@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Dimensions, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useUpdateProfile } from '../../hooks/seeUpdateProfile';
 import useCurrentUserDetails from "../../hooks/useCurrentUserDetails";
-import LoadinScreen from '../common/LoadingScreen'
+import LoadinScreen from '../common/LoadingScreen';
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -77,6 +77,7 @@ const ProfileForm = ({ onValidationChange, onSave }) => {
   };
   const [refreshKey, setRefreshKey] = useState(0);
    const { updateProfile, loading, error } = useUpdateProfile();
+
   const handleSave = async () => {
     setLoadingspin(true);
     if (!validateForm()) return; // optional, validate before saving
@@ -85,7 +86,6 @@ const ProfileForm = ({ onValidationChange, onSave }) => {
     // Map frontend formData keys to backend table columns
     const updates = {
       full_name: formData.fullName,
-      ph_no: formData.phone,
       email: formData.email,
       address: formData.address,
     };
