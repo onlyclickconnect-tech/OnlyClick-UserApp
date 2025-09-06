@@ -158,12 +158,13 @@ function ServicesPage() {
   // };
 
   const addToCartClickHandle = async (service) => {
-    setOverlayLoading(true)
-    delete service.count;
-    delete service.image_url;
-    delete service.description;
-    delete service.created_at;
-    delete service.ratings;
+    setOverlayLoading(true);
+     const cartPayload = { ...service };
+    delete cartPayload.count;
+    delete cartPayload.image_url;
+    delete cartPayload.description;
+    delete cartPayload.created_at;
+    delete cartPayload.ratings;
     const { error } = await addToCart(service)
 
     // Show success feedback (you can customize this)
@@ -212,7 +213,7 @@ function ServicesPage() {
               <Text style={styles.serviceName} numberOfLines={1}>
                 {item.title}
               </Text>
-              <Text style={styles.serviceCategory}>{item.subCategory}</Text>
+              <Text style={styles.serviceCategory}>{item.sub_category}</Text>
             </View>
 
             <Text style={styles.serviceDescription} numberOfLines={2}>
