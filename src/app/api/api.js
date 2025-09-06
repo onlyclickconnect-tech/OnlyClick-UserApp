@@ -5,7 +5,7 @@ const api = axios.create({
 
   baseURL: "https://yellow-tigers-care.loca.lt",
   // baseURL: "onlyclickdeveloper.up.railway.app",
-
+})
 
 api.interceptors.request.use(async (config) => {
   const {
