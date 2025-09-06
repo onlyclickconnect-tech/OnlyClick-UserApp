@@ -1,14 +1,21 @@
 import { FontAwesome } from '@expo/vector-icons';
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View, Linking } from "react-native";
 
 const BottomLinks = () => {
+
+  const handleWhatsApp = () => {
+      const phone = '919121377419';
+      const url = `https://wa.me/${phone}`;
+      Linking.openURL(url);
+    };
+
   return (
     <View style={styles.container}>
       <View style={styles.helpSection}>
         <Text style={styles.helpText}>Need help?</Text>
       </View>
       
-      <TouchableOpacity style={styles.chatButton} onPress={() => {}}>
+      <TouchableOpacity style={styles.chatButton} onPress={handleWhatsApp}>
         <FontAwesome name="comments" size={18} color="white" style={styles.chatIcon} />
         <Text style={styles.chatButtonText}>Chat</Text>
       </TouchableOpacity>

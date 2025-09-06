@@ -127,6 +127,27 @@ export default function BookingDetails() {
     );
   };
 
+  const formatTime = (timeString) => {
+    // Handle different time formats
+    if (!timeString) return '';
+    
+    // If it's already in AM/PM format, return as is
+    if (timeString.toLowerCase().includes('am') || timeString.toLowerCase().includes('pm')) {
+      return timeString;
+    }
+    
+    // Parse time string (assuming format like "14:30" or "2:30")
+    const [hours, minutes] = timeString.split(':');
+    const hour24 = parseInt(hours, 10);
+    const minute = minutes || '00';
+    
+    // Convert to 12-hour format
+    const hour12 = hour24 === 0 ? 12 : hour24 > 12 ? hour24 - 12 : hour24;
+    const ampm = hour24 >= 12 ? 'PM' : 'AM';
+    
+    return `${hour12}:${minute} ${ampm}`;
+  };
+
   // Load booking data from params instead of API calls
   useEffect(() => {
     // Prevent multiple loads
@@ -225,10 +246,6 @@ export default function BookingDetails() {
       month: 'long', 
       day: 'numeric' 
     });
-  };
-
-  const formatTime = (timeString) => {
-    return timeString;
   };
 
   const handleCancelBooking = () => {

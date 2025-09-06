@@ -33,60 +33,60 @@ const AdvancedOptions = () => {
     );
   };
 
-  const handleSaveBankDetails = () => {
-    if (!bankDetails.accountNumber || !bankDetails.ifscCode || !bankDetails.accountHolderName) {
-      Alert.alert('Error', 'Please fill in all required bank details');
-      return;
-    }
-    setIsEditingBank(false);
-    Alert.alert('Success', 'Bank details saved successfully!');
-  };
+  // const handleSaveBankDetails = () => {
+  //   if (!bankDetails.accountNumber || !bankDetails.ifscCode || !bankDetails.accountHolderName) {
+  //     Alert.alert('Error', 'Please fill in all required bank details');
+  //     return;
+  //   }
+  //   setIsEditingBank(false);
+  //   Alert.alert('Success', 'Bank details saved successfully!');
+  // };
 
-  const renderBankDetailsForm = () => (
-    <View style={styles.bankForm}>
-      <Text style={styles.formTitle}>Bank Account Details</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Account Holder Name"
-        value={bankDetails.accountHolderName}
-        onChangeText={(text) => setBankDetails(prev => ({ ...prev, accountHolderName: text }))}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Bank Name"
-        value={bankDetails.bankName}
-        onChangeText={(text) => setBankDetails(prev => ({ ...prev, bankName: text }))}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Account Number"
-        value={bankDetails.accountNumber}
-        onChangeText={(text) => setBankDetails(prev => ({ ...prev, accountNumber: text }))}
-        keyboardType="number-pad"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="IFSC Code"
-        value={bankDetails.ifscCode}
-        onChangeText={(text) => setBankDetails(prev => ({ ...prev, ifscCode: text.toUpperCase() }))}
-        autoCapitalize="characters"
-        maxLength={11}
-      />
-      <View style={styles.formActions}>
-        <TouchableOpacity style={styles.cancelBtn} onPress={() => setIsEditingBank(false)}>
-          <Text style={styles.cancelBtnText}>Cancel</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.saveBtn} onPress={handleSaveBankDetails}>
-          <Text style={styles.saveBtnText}>Save</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+  // const renderBankDetailsForm = () => (
+  //   <View style={styles.bankForm}>
+  //     <Text style={styles.formTitle}>Bank Account Details</Text>
+  //     <TextInput
+  //       style={styles.input}
+  //       placeholder="Account Holder Name"
+  //       value={bankDetails.accountHolderName}
+  //       onChangeText={(text) => setBankDetails(prev => ({ ...prev, accountHolderName: text }))}
+  //     />
+  //     <TextInput
+  //       style={styles.input}
+  //       placeholder="Bank Name"
+  //       value={bankDetails.bankName}
+  //       onChangeText={(text) => setBankDetails(prev => ({ ...prev, bankName: text }))}
+  //     />
+  //     <TextInput
+  //       style={styles.input}
+  //       placeholder="Account Number"
+  //       value={bankDetails.accountNumber}
+  //       onChangeText={(text) => setBankDetails(prev => ({ ...prev, accountNumber: text }))}
+  //       keyboardType="number-pad"
+  //     />
+  //     <TextInput
+  //       style={styles.input}
+  //       placeholder="IFSC Code"
+  //       value={bankDetails.ifscCode}
+  //       onChangeText={(text) => setBankDetails(prev => ({ ...prev, ifscCode: text.toUpperCase() }))}
+  //       autoCapitalize="characters"
+  //       maxLength={11}
+  //     />
+  //     <View style={styles.formActions}>
+  //       <TouchableOpacity style={styles.cancelBtn} onPress={() => setIsEditingBank(false)}>
+  //         <Text style={styles.cancelBtnText}>Cancel</Text>
+  //       </TouchableOpacity>
+  //       <TouchableOpacity style={styles.saveBtn} onPress={handleSaveBankDetails}>
+  //         <Text style={styles.saveBtnText}>Save</Text>
+  //       </TouchableOpacity>
+  //     </View>
+  //   </View>
+  // );
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Bank Details Section */}
-      <View style={styles.section}>
+      {/* <View style={styles.section}>
         <Text style={styles.sectionTitle}>Financial Information</Text>
         {isEditingBank ? (
           renderBankDetailsForm()
@@ -107,7 +107,7 @@ const AdvancedOptions = () => {
             <FontAwesome name="chevron-right" size={14} color="#808080" />
           </TouchableOpacity>
         )}
-      </View>
+      </View> */}
 
       {/* Other Options */}
       <View style={styles.section}>

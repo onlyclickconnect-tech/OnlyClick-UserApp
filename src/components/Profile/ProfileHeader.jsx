@@ -12,13 +12,15 @@ const ProfileHeader = ({ isGeneral = true, setIsGeneral = () => {} }) => {
   const [userName, setUserName] = useState(name || "User's Name");
 
   const toggleWidth = Math.min(screenWidth * 0.9, 340);
+  const padding = 4; // Internal padding of the toggle container
+  const sliderWidth = (toggleWidth - (padding * 2)) / 2; // Half width minus padding
 
   const sliderStyle = {
-    width: toggleWidth * 0.42,
+    width: sliderWidth,
     transform: [{
       translateX: sliderPosition.interpolate({
         inputRange: [0, 1],
-        outputRange: [toggleWidth * 0.03, toggleWidth * 0.45],
+        outputRange: [0, sliderWidth],
       })
     }]
   };
@@ -64,26 +66,16 @@ const ProfileHeader = ({ isGeneral = true, setIsGeneral = () => {} }) => {
     );
   };
 
-  const handleNameSave = () => {
-    if (userName.trim()) {
-      setIsEditingName(false);
-      // Here you would typically save to backend
-      Alert.alert("Success", "Name updated successfully!");
-    }
-  };
+
 
   return (
     <View style={styles.container}>
-      <Image
-        source={require('../../../assets/images/logo.png')}
-        style={styles.logo}
-        resizeMode="contain"
-      />
+     
 
       <View style={styles.profileSection}>
         <TouchableOpacity style={styles.profileIconContainer} onPress={handleProfileImagePress}>
           {profileImage ? (
-            <Image source={{ uri: profileImage }} style={styles.profileImage} />
+            <Image source={{ uri: profileImage || 'https://img.myloview.com/posters/default-profile-picture-avatar-photo-placeholder-vector-illustration-700-197279432.jpg' }} style={styles.profileImage} />
           ) : (
             <FontAwesome name="user" size={60} color="gray" />
           )}
@@ -93,33 +85,7 @@ const ProfileHeader = ({ isGeneral = true, setIsGeneral = () => {} }) => {
         </TouchableOpacity>
 
         <View style={styles.userInfo}>
-          {isEditingName ? (
-            <View style={styles.nameEditContainer}>
-              <TextInput
-                style={styles.nameInput}
-                value={userName}
-                onChangeText={setUserName}
-                autoFocus
-                maxLength={50}
-              />
-              <View style={styles.nameEditActions}>
-                <TouchableOpacity onPress={handleNameSave}>
-                  <Ionicons name="checkmark" size={20} color="#0097B3" />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => {
-                  setUserName(name || "User's Name");
-                  setIsEditingName(false);
-                }}>
-                  <Ionicons name="close" size={20} color="#FF4D4F" />
-                </TouchableOpacity>
-              </View>
-            </View>
-          ) : (
-            <TouchableOpacity onPress={() => setIsEditingName(true)}>
-              <Text style={styles.username}>{userName}</Text>
-              <Ionicons name="pencil" size={14} color="#0097B3" style={styles.editIcon} />
-            </TouchableOpacity>
-          )}
+          <Text style={styles.username}>{userName}</Text>
           <Text style={styles.userid}>ID: {userId || 'N/A'}</Text>
           <Text style={styles.email}>{email || 'No email provided'}</Text>
         </View>
@@ -209,28 +175,6 @@ const styles = StyleSheet.create({
     color: 'black',
     marginBottom: 4,
   },
-  editIcon: {
-    marginLeft: 8,
-  },
-  nameEditContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  nameInput: {
-    flex: 1,
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: 'black',
-    borderBottomWidth: 1,
-    borderBottomColor: '#0097B3',
-    paddingVertical: 4,
-  },
-  nameEditActions: {
-    flexDirection: 'row',
-    marginLeft: 8,
-    gap: 8,
-  },
   userid: {
     color: "#666",
     fontSize: 14,
@@ -242,28 +186,25 @@ const styles = StyleSheet.create({
   },
   toggleContainer: {
     flexDirection: "row",
-    width: '94%',
-    maxWidth: 340,
+    width: '100%',
+    maxWidth: 345,
     height: 66,
     borderRadius: 40,
     borderWidth: 1,
     borderColor: '#E0E0E0',
     backgroundColor: '#F5F5F5',
-    overflow: 'hidden',
     alignSelf: 'center',
     position: 'relative',
+    padding: 0,
   },
-
   slider: {
     position: 'absolute',
-    height: 51,
+    height: 55,
     backgroundColor: '#0097B3',
-    borderRadius: 38,
-    marginTop: 7.5,
-    marginLeft: 3,
+    borderRadius: 36,
+    top: 4,
+    left: 4,
   },
-
-
   toggleButton: {
     flex: 1,
     justifyContent: 'center',
