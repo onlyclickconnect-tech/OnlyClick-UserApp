@@ -78,6 +78,27 @@ export default function Bookings() {
     });
   };
 
+  const formatTime = (timeString) => {
+    // Handle different time formats
+    if (!timeString) return '';
+    
+    // If it's already in AM/PM format, return as is
+    if (timeString.toLowerCase().includes('am') || timeString.toLowerCase().includes('pm')) {
+      return timeString;
+    }
+    
+    // Parse time string (assuming format like "14:30" or "2:30")
+    const [hours, minutes] = timeString.split(':');
+    const hour24 = parseInt(hours, 10);
+    const minute = minutes || '00';
+    
+    // Convert to 12-hour format
+    const hour12 = hour24 === 0 ? 12 : hour24 > 12 ? hour24 - 12 : hour24;
+    const ampm = hour24 >= 12 ? 'PM' : 'AM';
+    
+    return `${hour12}:${minute} ${ampm}`;
+  };
+
   const renderTabButton = (tab, index) => {
     const isActive = activeTab === tab;
 
@@ -119,28 +140,6 @@ export default function Bookings() {
         showsVerticalScrollIndicator={false}
         bounces={true}
       >
-        {/* Prominent OTP Notice */}
-        {/* <View style={styles.otpNoticeContainer}>
-          <View style={styles.otpNoticeCard}>
-            <View style={styles.otpNoticeHeader}>
-              <View style={styles.otpNoticeIconContainer}>
-                <Ionicons name="shield-checkmark" size={24} color="#fff" />
-              </View>
-              <View style={styles.otpNoticeContent}>
-                <Text style={styles.otpNoticeTitle}>🔐 OTP Verification Required</Text>
-                <Text style={styles.otpNoticeText}>
-                  For your security, service providers will send an OTP during service delivery. Please verify the OTP to confirm service completion.
-                </Text>
-              </View>
-            </View>
-            <View style={styles.otpNoticeFooter}>
-              <Ionicons name="information-circle" size={16} color="#3898B3" />
-              <Text style={styles.otpNoticeFooterText}>
-                No OTP verification needed during booking - only at service completion
-              </Text>
-            </View>
-          </View>
-        </View> */}
 
         {/* Tabs */}
         <View style={styles.tabsContainer}>
@@ -188,7 +187,7 @@ export default function Bookings() {
                   <View style={styles.cardBody}>
                     <View style={styles.infoRow}>
                       <Ionicons name="calendar-outline" size={16} color="#666" />
-                      <Text style={styles.infoText}>{formatDate(item.date)} at {item.time}</Text>
+                      <Text style={styles.infoText}>{formatDate(item.date)} at {formatTime(item.time)}</Text>
                     </View>
 
                     <View style={styles.infoRow}>

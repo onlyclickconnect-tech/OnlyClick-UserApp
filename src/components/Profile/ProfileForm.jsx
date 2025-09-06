@@ -178,7 +178,7 @@ const ProfileForm = ({ onValidationChange, onSave }) => {
         {renderInputField("phone", "phone", "Phone Number", "phone-pad")}
 
         {/* Address Information */}
-        <Text style={styles.sectionTitle}>Address Information</Text>
+        <Text style={styles.sectionTitle}>Permanent Address Information</Text>
         {renderInputField(
           "address",
           "map-marker",
