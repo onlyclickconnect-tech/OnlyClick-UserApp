@@ -17,7 +17,6 @@ import AppHeader from '../../../../../components/common/AppHeader';
 import PressableScale from '../../../../../components/common/PressableScale';
 import { allCategories, allServices, categoryImages } from "../../../../../data/servicesData";
 import { addToCart } from '../../../../api/cart';
-import LoadingSpinner from '../../../../../components/common/LoadingSpinner'
 
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
@@ -234,7 +233,7 @@ function ServicesPage() {
                 <View style={styles.ratingInline}>
                   <Ionicons name="star" size={12} color="#FFD700" />
                   <Text style={styles.ratingTextSmall}>
-                    {item.rating || 0.0}
+                    {item.ratings || 0.0}
                   </Text>
                 </View>
               </View>
