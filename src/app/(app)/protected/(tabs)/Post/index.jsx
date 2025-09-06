@@ -15,10 +15,11 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
-
-const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
+import { createCustomPost } from "../../../../api/post";
 
 import AppHeader from '../../../../../components/common/AppHeader';
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 export default function PostRequest() {
   const router = useRouter();
@@ -129,7 +130,7 @@ export default function PostRequest() {
   };
 
   // Submit function
-  const handleSubmitRequest = () => {
+  const handleSubmitRequest = async () => {
     if (!problemDescription.trim()) {
       Alert.alert("Missing Information", "Please describe your problem");
       return;
@@ -147,15 +148,37 @@ export default function PostRequest() {
       return;
     }
 
-    // Here you would submit the request
-    Alert.alert(
-      "Request Submitted!",
-      "Your custom request has been posted. Contractors will be notified shortly.",
-      [
-        { text: "View in Cart", style: "default", onPress: () => router.push("/(app)/(modal)/cart") },
-        { text: "OK", style: "default", onPress: () => router.back() }
-      ]
-    );
+    try {
+      const postData = {
+        image: selectedImage,
+        description: problemDescription,
+        location: location,
+        urgency: urgency,
+        contractorPreference: contractorPreference,
+      };
+
+      const result = await createCustomPost(postData);
+
+      if (result.error) {
+        Alert.alert("Error", "Failed to submit request");
+        return;
+      }
+
+      Alert.alert(
+        "Request Submitted!",
+        "Your custom request has been posted. Contractors will be notified shortly.",
+        [
+          {
+            text: "View in Cart",
+            style: "default",
+            onPress: () => router.push("/(app)/(modal)/cart"),
+          },
+          { text: "OK", style: "default", onPress: () => router.back() },
+        ]
+      );
+    } catch (error) {
+      Alert.alert("Error", "Failed to submit request");
+    }
   };
 
   // Help Modal Component
