@@ -4,6 +4,7 @@ import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import { useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Dimensions,
   Image,
@@ -27,19 +28,8 @@ export default function PostRequest() {
   const [problemDescription, setProblemDescription] = useState("");
   const [location, setLocation] = useState("");
   const [isLocationLoading, setIsLocationLoading] = useState(false);
-  const [urgency, setUrgency] = useState(null);
-  const [contractorPreference, setContractorPreference] = useState(null);
   const [showHelpModal, setShowHelpModal] = useState(false);
-
-  const urgencyOptions = [
-    { label: "Normal", value: "normal", icon: "schedule" },
-    { label: "Urgent", value: "urgent", icon: "priority-high" },
-  ];
-
-  const contractorOptions = [
-    { label: "Auto-assign", value: "auto", icon: "auto-fix-high" },
-    { label: "Previously used", value: "previous", icon: "history" },
-  ];
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Camera function
   const takePhoto = async () => {
@@ -53,7 +43,7 @@ export default function PostRequest() {
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
-        aspect: [4, 3],
+        aspect: [3, 4], // Changed from [4, 3] to [3, 4] for better crop area
         quality: 0.8,
       });
 
@@ -78,7 +68,7 @@ export default function PostRequest() {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
-        aspect: [4, 3],
+        aspect: [3, 4], // Changed from [4, 3] to [3, 4] for better crop area
         quality: 0.8,
         presentationStyle: ImagePicker.UIImagePickerPresentationStyle.FULL_SCREEN,
       });
@@ -121,13 +111,7 @@ export default function PostRequest() {
   };
 
   // AI assistance for problem description
-  const getAIHelp = () => {
-    Alert.alert(
-      "AI Assistant",
-      "Describe your problem in detail. For example:\n• What needs to be fixed?\n• When did the issue start?\n• What have you tried?\n• Any specific requirements?",
-      [{ text: "Got it", style: "default" }]
-    );
-  };
+  
 
   // Submit function
   const handleSubmitRequest = async () => {
@@ -139,22 +123,13 @@ export default function PostRequest() {
       Alert.alert("Missing Information", "Please provide a location");
       return;
     }
-    if (!urgency) {
-      Alert.alert("Missing Information", "Please select urgency level");
-      return;
-    }
-    if (!contractorPreference) {
-      Alert.alert("Missing Information", "Please select contractor preference");
-      return;
-    }
 
+    setIsSubmitting(true);
     try {
       const postData = {
         image: selectedImage,
         description: problemDescription,
         location: location,
-        urgency: urgency,
-        contractorPreference: contractorPreference,
       };
 
       const result = await createCustomPost(postData);
@@ -178,6 +153,8 @@ export default function PostRequest() {
       );
     } catch (error) {
       Alert.alert("Error", "Failed to submit request");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -391,10 +368,9 @@ export default function PostRequest() {
               <Text style={styles.sectionTitle}>Describe Problem</Text>
             </View>
           </View>
-          <TouchableOpacity onPress={getAIHelp} style={styles.aiBtn}>
-            <Ionicons name="bulb-outline" size={16} color="#FFB800" />
-            <Text style={styles.aiBtnText}>AI Help</Text>
-          </TouchableOpacity>
+          <View style={styles.compulsaryBadge}>
+            <Text style={styles.compulsoryText}>Compulsory</Text>
+          </View>
         </View>
         
         <TextInput
@@ -447,7 +423,7 @@ export default function PostRequest() {
       </View>
 
       {/* Urgency Section */}
-      <View style={styles.section}>
+      {/* <View style={styles.section}>
         <View style={styles.sectionHeaderWithIcon}>
           <View style={styles.sectionTitleContainer}>
             <View style={styles.iconContainer}>
@@ -482,10 +458,10 @@ export default function PostRequest() {
             </TouchableOpacity>
           ))}
         </View>
-      </View>
+      </View> */}
 
       {/* Contractor Preference Section */}
-      <View style={styles.section}>
+      {/* <View style={styles.section}>
         <View style={styles.sectionHeaderWithIcon}>
           <View style={styles.sectionTitleContainer}>
             <View style={styles.iconContainer}>
@@ -526,16 +502,26 @@ export default function PostRequest() {
             </TouchableOpacity>
           ))}
         </View>
-      </View>
+      </View> */}
 
       {/* Submit Button */}
       <View style={styles.submitContainer}>
-        <TouchableOpacity style={styles.submitBtn} onPress={handleSubmitRequest}>
+        <TouchableOpacity 
+          style={[styles.submitBtn, isSubmitting && styles.submitBtnDisabled]} 
+          onPress={handleSubmitRequest}
+          disabled={isSubmitting}
+        >
           <View style={styles.submitContent}>
-            <Ionicons name="checkmark-circle" size={24} color="#fff" />
-            <Text style={styles.submitBtnText}>Post Request</Text>
+            {isSubmitting ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Ionicons name="checkmark-circle" size={24} color="#fff" />
+            )}
+            <Text style={styles.submitBtnText}>
+              {isSubmitting ? "Posting..." : "Post Request"}
+            </Text>
           </View>
-          <Text style={styles.submitSubtext}>Free to post  •  Pay only when hired</Text>
+          <Text style={styles.submitSubtext}>Free to post  •  Pay only when service is done</Text>
         </TouchableOpacity>
       </View>
       </ScrollView>
@@ -671,6 +657,18 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "500",
   },
+  compulsoryText: {
+    color: "#e47272ff",
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  compulsaryBadge: {
+    backgroundColor: "#FDE8E8",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginTop: 4,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "700",
@@ -731,22 +729,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#666",
     textAlign: "center",
-  },
-  aiBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FFF8E1",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#FFE082",
-  },
-  aiBtnText: {
-    marginLeft: 4,
-    color: "#856404",
-    fontSize: 12,
-    fontWeight: "500",
   },
   problemInput: {
     borderWidth: 2,
@@ -848,6 +830,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 8,
+  },
+  submitBtnDisabled: {
+    backgroundColor: "#ccc",
+    shadowOpacity: 0.1,
   },
   submitContent: {
     flexDirection: "row",
