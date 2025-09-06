@@ -2,7 +2,7 @@ import AntDesign from "@expo/vector-icons/AntDesign";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Tabs, useRouter } from "expo-router";
-import { Platform, View } from "react-native";
+import { Platform, View, TouchableOpacity } from "react-native";
 export default function RootLayout() {
   const router = useRouter();
   return (
@@ -21,6 +21,9 @@ export default function RootLayout() {
         tabBarIconStyle: {
           marginTop: 0,
         },
+        tabBarButton: (props) => (
+          <TouchableOpacity {...props} activeOpacity={0.4} />
+        ),
         tabBarStyle: {
           height: 90,
           paddingTop: 15,
@@ -58,7 +61,7 @@ export default function RootLayout() {
               >
                 <AntDesign
                   name="home"
-                  size={24}
+                  size={focused ? 28 : 24}
                   color={focused ? "#3898b3" : "#a0a0a0"}
                 />
               </View>
@@ -87,7 +90,7 @@ export default function RootLayout() {
               >
                 <Ionicons
                   name="grid-outline"
-                  size={24}
+                  size={focused ? 28 : 24}
                   color={focused ? "#3898b3" : "#a0a0a0"}
                 />
               </View>
@@ -152,7 +155,7 @@ export default function RootLayout() {
               >
                 <FontAwesome
                   name="calendar-check-o"
-                  size={24}
+                  size={focused ? 28 : 24}
                   color={focused ? "#3898b3" : "#a0a0a0"}
                 />
               </View>
@@ -180,7 +183,7 @@ export default function RootLayout() {
               >
                 <Ionicons
                   name="person-sharp"
-                  size={24}
+                  size={focused ? 28 : 24}
                   color={focused ? "#3898b3" : "#a0a0a0"}
                 />
               </View>

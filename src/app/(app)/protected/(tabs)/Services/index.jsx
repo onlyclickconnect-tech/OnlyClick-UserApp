@@ -17,7 +17,6 @@ import AppHeader from '../../../../../components/common/AppHeader';
 import PressableScale from '../../../../../components/common/PressableScale';
 import { allCategories, allServices, categoryImages } from "../../../../../data/servicesData";
 import { addToCart } from '../../../../api/cart';
-import LoadingSpinner from '../../../../../components/common/LoadingSpinner'
 
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
@@ -159,12 +158,13 @@ function ServicesPage() {
   // };
 
   const addToCartClickHandle = async (service) => {
-    setOverlayLoading(true)
-    delete service.count;
-    delete service.image_url;
-    delete service.description;
-    delete service.created_at;
-    delete service.ratings;
+    setOverlayLoading(true);
+     const cartPayload = { ...service };
+    delete cartPayload.count;
+    delete cartPayload.image_url;
+    delete cartPayload.description;
+    delete cartPayload.created_at;
+    delete cartPayload.ratings;
     const { error } = await addToCart(service)
 
     // Show success feedback (you can customize this)
@@ -213,7 +213,7 @@ function ServicesPage() {
               <Text style={styles.serviceName} numberOfLines={1}>
                 {item.title}
               </Text>
-              <Text style={styles.serviceCategory}>{item.subCategory}</Text>
+              <Text style={styles.serviceCategory}>{item.sub_category}</Text>
             </View>
 
             <Text style={styles.serviceDescription} numberOfLines={2}>
@@ -234,7 +234,7 @@ function ServicesPage() {
                 <View style={styles.ratingInline}>
                   <Ionicons name="star" size={12} color="#FFD700" />
                   <Text style={styles.ratingTextSmall}>
-                    {item.rating || 0.0}
+                    {item.ratings || 0.0}
                   </Text>
                 </View>
               </View>
