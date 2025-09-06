@@ -3,29 +3,30 @@ import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
-    Alert,
-    Animated,
-    Dimensions,
-    Modal,
-    PanResponder,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  Alert,
+  Animated,
+  Dimensions,
+  Modal,
+  PanResponder,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { useAppStates } from '../../../../context/AppStates';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 import AppHeader from '../../../../components/common/AppHeader';
+import fetchCart from '../../../../data/getdata/getCart';
 
 export default function Cart() {
   const router = useRouter();
   const { selectedLocation, updateSelectedLocation } = useAppStates();
-  
+
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [showCancellationPolicy, setShowCancellationPolicy] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -48,8 +49,8 @@ export default function Cart() {
       },
       onMoveShouldSetPanResponder: (evt, gestureState) => {
         // Only respond to vertical gestures
-        return Math.abs(gestureState.dy) > Math.abs(gestureState.dx) && 
-               Math.abs(gestureState.dy) > 10;
+        return Math.abs(gestureState.dy) > Math.abs(gestureState.dx) &&
+          Math.abs(gestureState.dy) > 10;
       },
       onPanResponderMove: (evt, gestureState) => {
         if (gestureState.dy > 0) {
@@ -113,30 +114,30 @@ export default function Cart() {
       },
     })
   ).current;
-  
+
   // Location state management
   const [isLocationLoading, setIsLocationLoading] = useState(false);
   const [manualLocation, setManualLocation] = useState("");
   const [isManualLocationEditing, setIsManualLocationEditing] = useState(false);
-  
+
   // Mobile number state management
   const [showMobileModal, setShowMobileModal] = useState(false);
   const [mobileNumber, setMobileNumber] = useState("+91 98765 43210"); // Default number
   const [tempMobileNumber, setTempMobileNumber] = useState("");
-  
+
   // Interactive kindness reminder
   const [hasClickedKindness, setHasClickedKindness] = useState(false);
-  
+
   // Auto-hide tooltip after 3 seconds
   useEffect(() => {
     if (showServiceFeeTooltip) {
       const timer = setTimeout(() => {
-        
+
       }, 3000);
       return () => clearTimeout(timer);
     }
   }, [showServiceFeeTooltip]);
-  
+
   const kindnessMessages = [
     "💧 Offer water to service providers",
     "☕ A cup of tea brightens their day",
@@ -183,7 +184,7 @@ export default function Cart() {
     }
     setIsLocationLoading(false);
   };
-  
+
   const saveManualLocation = () => {
     if (manualLocation && manualLocation.trim()) {
       updateSelectedLocation(manualLocation.trim());
@@ -270,49 +271,56 @@ export default function Cart() {
   };
 
   // Mock cart data grouped by category
-  const cartData = [
-    {
-      category: 'Plumbing',
-      provider: {
-        name: 'AquaFix Services',
-        rating: 4.8,
-        phone: '+91 98765 43210'
-      },
-      items: [
-        {
-          id: 1,
-          name: 'Pipe Repair',
-          price: 299,
-          quantity: 1,
-          duration: '1-2 hours'
-        },
-        {
-          id: 2,
-          name: 'Tap Installation',
-          price: 150,
-          quantity: 2,
-          duration: '30 min each'
-        }
-      ]
-    },
-    {
-      category: 'Electrical',
-      provider: {
-        name: 'PowerPro Electricians',
-        rating: 4.9,
-        phone: '+91 87654 32109'
-      },
-      items: [
-        {
-          id: 3,
-          name: 'Switch Replacement',
-          price: 199,
-          quantity: 3,
-          duration: '20 min each'
-        }
-      ]
+  // const cartData = [
+  //   {
+  //     category: 'Plumbing',
+  //     items: [
+  //       {
+  //         id: 1,
+  //         name: 'Pipe Repair',
+  //         price: 299,
+  //         quantity: 1,
+  //         duration: '1-2 hours'
+  //       },
+  //       {
+  //         id: 2,
+  //         name: 'Tap Installation',
+  //         price: 150,
+  //         quantity: 2,
+  //         duration: '30 min each'
+  //       }
+  //     ]
+  //   },
+  //   {
+  //     category: 'Electrical',
+  //     provider: {
+  //       name: 'PowerPro Electricians',
+  //       rating: 4.9,
+  //       phone: '+91 87654 32109'
+  //     },
+  //     items: [
+  //       {
+  //         id: 3,
+  //         name: 'Switch Replacement',
+  //         price: 199,
+  //         quantity: 3,
+  //         duration: '20 min each'
+  //       }
+  //     ]
+  //   }
+  // ];
+
+  const [cartData, setCartData] = useState([])
+
+  useEffect(() => {
+    const getcartDatahandler = async () => {
+      const { arr } = await fetchCart();
+      console.log(arr);
+      setCartData(arr)
     }
-  ];
+    getcartDatahandler()
+  }, [])
+
 
   const calculateCategoryTotal = (items) => {
     return items.reduce((total, item) => total + (item.price * item.quantity), 0);
@@ -332,9 +340,11 @@ export default function Cart() {
       'Are you sure you want to remove this item from cart?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Remove', style: 'destructive', onPress: () => {
-          console.log('Item removed');
-        }}
+        {
+          text: 'Remove', style: 'destructive', onPress: () => {
+            console.log('Item removed');
+          }
+        }
       ]
     );
   };
@@ -357,10 +367,12 @@ export default function Cart() {
       'Payment Successful',
       'Your booking has been confirmed! You will receive an SMS confirmation shortly.',
       [
-        { text: 'OK', onPress: () => {
-          setShowPaymentModal(false);
-          router.push('/protected/(tabs)/Bookings');
-        }}
+        {
+          text: 'OK', onPress: () => {
+            setShowPaymentModal(false);
+            router.push('/protected/(tabs)/Bookings');
+          }
+        }
       ]
     );
   };
@@ -371,9 +383,11 @@ export default function Cart() {
       'Are you sure you want to remove all items from cart?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Clear All', style: 'destructive', onPress: () => {
-          console.log('Cart cleared');
-        }}
+        {
+          text: 'Clear All', style: 'destructive', onPress: () => {
+            console.log('Cart cleared');
+          }
+        }
       ]
     );
   };
@@ -385,25 +399,25 @@ export default function Cart() {
         <Text style={styles.itemDuration}>{item.duration}</Text>
         <Text style={styles.itemPrice}>₹{item.price}</Text>
       </View>
-      
+
       <View style={styles.itemActions}>
         <View style={styles.quantityContainer}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.quantityButton}
             onPress={() => handleQuantityChange(categoryIndex, itemIndex, -1)}
           >
             <Ionicons name="remove" size={16} color="#3898B3" />
           </TouchableOpacity>
           <Text style={styles.quantityText}>{item.quantity}</Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.quantityButton}
             onPress={() => handleQuantityChange(categoryIndex, itemIndex, 1)}
           >
             <Ionicons name="add" size={16} color="#3898B3" />
           </TouchableOpacity>
         </View>
-        
-        <TouchableOpacity 
+
+        <TouchableOpacity
           style={styles.removeButton}
           onPress={() => handleRemoveItem(categoryIndex, itemIndex)}
         >
@@ -439,7 +453,7 @@ export default function Cart() {
 
       {/* Items List */}
       <View style={styles.itemsList}>
-        {categoryData.items.map((item, itemIndex) => 
+        {categoryData.items.map((item, itemIndex) =>
           renderCartItem(item, categoryIndex, itemIndex)
         )}
       </View>
@@ -449,7 +463,7 @@ export default function Cart() {
   const LocationModal = () => (
     <Modal visible={showLocationModal} transparent animationType="none">
       <Animated.View style={[styles.modalOverlay, { opacity: modalOpacity }]}>
-        <Animated.View 
+        <Animated.View
           style={[styles.modalContent, { transform: [{ translateY: modalY }] }]}
           {...panResponder.panHandlers}
         >
@@ -457,7 +471,7 @@ export default function Cart() {
           <View style={styles.gestureIndicator}>
             <View style={styles.indicatorBar} />
           </View>
-          
+
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>📍 Update Location</Text>
             <TouchableOpacity onPress={() => {
@@ -467,19 +481,19 @@ export default function Cart() {
               <Ionicons name="close" size={24} color="#333" />
             </TouchableOpacity>
           </View>
-          
+
           {/* Current Location Option */}
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.locationOption, isLocationLoading && styles.locationOptionDisabled]}
             onPress={getCurrentLocation}
             disabled={isLocationLoading}
           >
             <View style={styles.locationOptionLeft}>
               <View style={styles.locationIconContainer}>
-                <Ionicons 
-                  name={isLocationLoading ? "refresh" : "location"} 
-                  size={20} 
-                  color="#3898B3" 
+                <Ionicons
+                  name={isLocationLoading ? "refresh" : "location"}
+                  size={20}
+                  color="#3898B3"
                 />
               </View>
               <View>
@@ -518,7 +532,7 @@ export default function Cart() {
 
           {/* Action Buttons */}
           <View style={styles.buttonContainer}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.cancelButton}
               onPress={() => {
                 setShowLocationModal(false);
@@ -528,8 +542,8 @@ export default function Cart() {
             >
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={[
                 styles.saveButton,
                 (!manualLocation || !manualLocation.trim()) && styles.saveButtonDisabled
@@ -546,14 +560,14 @@ export default function Cart() {
   );
 
   const MobileNumberModal = () => (
-    <Modal 
-      visible={showMobileModal} 
-      transparent 
+    <Modal
+      visible={showMobileModal}
+      transparent
       animationType="none"
       onRequestClose={cancelMobileEdit}
     >
       <Animated.View style={[styles.modalOverlay, { opacity: modalOpacity }]}>
-        <Animated.View 
+        <Animated.View
           style={[styles.modalContainer, { transform: [{ translateY: modalY }] }]}
           {...panResponder.panHandlers}
         >
@@ -561,10 +575,10 @@ export default function Cart() {
           <View style={styles.gestureIndicator}>
             <View style={styles.indicatorBar} />
           </View>
-          
+
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>📱 Update Mobile Number</Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={cancelMobileEdit}
               style={styles.closeButton}
             >
@@ -596,14 +610,14 @@ export default function Cart() {
 
             {/* Action Buttons */}
             <View style={styles.buttonContainer}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.cancelButton}
                 onPress={cancelMobileEdit}
               >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
+
+              <TouchableOpacity
                 style={[
                   styles.saveButton,
                   (!tempMobileNumber || !tempMobileNumber.trim()) && styles.saveButtonDisabled
@@ -623,7 +637,7 @@ export default function Cart() {
   const CancellationPolicyModal = () => (
     <Modal visible={showCancellationPolicy} transparent animationType="none">
       <Animated.View style={[styles.modalOverlay, { opacity: modalOpacity }]}>
-        <Animated.View 
+        <Animated.View
           style={[styles.modalContent, { transform: [{ translateY: modalY }] }]}
           {...panResponder.panHandlers}
         >
@@ -631,15 +645,15 @@ export default function Cart() {
           <View style={styles.gestureIndicator}>
             <View style={styles.indicatorBar} />
           </View>
-          
+
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Cancellation Policy</Text>
             <TouchableOpacity onPress={() => setShowCancellationPolicy(false)}>
               <Ionicons name="close" size={24} color="#333" />
             </TouchableOpacity>
           </View>
-          
-          <ScrollView 
+
+          <ScrollView
             style={styles.policyContent}
             showsVerticalScrollIndicator={false}
             bounces={false}
@@ -652,7 +666,7 @@ export default function Cart() {
             <Text style={styles.policyIntro}>
               At Only Click, we strive to provide seamless and professional service at all times. However, we understand that sometimes cancellations are necessary. Our cancellation policy is designed to be fair to both our valued customers and our service providers.
             </Text>
-            
+
             <Text style={styles.sectionTitle}>1. Cancellation by Customer</Text>
             <View style={styles.policyItem}>
               <Text style={styles.bulletPoint}>•</Text>
@@ -678,7 +692,7 @@ export default function Cart() {
                 <Text style={styles.boldText}>Emergency Situations:</Text> In case of an emergency or unforeseen event (e.g., hospitalization, urgent personal matters), please inform us as soon as possible. We will assess each case on an individual basis and make necessary accommodations.
               </Text>
             </View>
-            
+
             <Text style={styles.sectionTitle}>2. Cancellation by Only Click or Service Provider</Text>
             <View style={styles.policyItem}>
               <Text style={styles.bulletPoint}>•</Text>
@@ -697,7 +711,7 @@ export default function Cart() {
                 <Text style={styles.boldText}>Refunds:</Text> In case the service is canceled by us or the service provider, full refunds will be issued to the customer within 7 working days.
               </Text>
             </View>
-            
+
             <Text style={styles.sectionTitle}>3. How to Cancel</Text>
             <Text style={styles.policyText}>
               You can cancel your appointment via the Only Click app, or by calling our customer support team at <Text style={styles.contactText}>+91-9121377419</Text> or emailing <Text style={styles.contactText}>onlyclick.connect@gmail.com</Text>.
@@ -705,7 +719,7 @@ export default function Cart() {
             <Text style={styles.policyText}>
               For cancellations made via customer support, please provide your booking details, including the service type, provider name, and scheduled time.
             </Text>
-            
+
             <Text style={styles.sectionTitle}>4. Refunds</Text>
             <View style={styles.policyItem}>
               <Text style={styles.bulletPoint}>•</Text>
@@ -715,7 +729,7 @@ export default function Cart() {
               <Text style={styles.bulletPoint}>•</Text>
               <Text style={styles.policyText}>For late cancellations or no-shows, refunds will not be applicable, and the cancellation fee will be charged.</Text>
             </View>
-            
+
             <Text style={styles.sectionTitle}>5. Special Cases</Text>
             <View style={styles.policyItem}>
               <Text style={styles.bulletPoint}>•</Text>
@@ -729,18 +743,18 @@ export default function Cart() {
                 <Text style={styles.boldText}>Holiday/Peak Time Bookings:</Text> During high-demand periods (holidays, special events, etc.), a higher cancellation fee may be applicable due to increased demand and scheduling complexity.
               </Text>
             </View>
-            
+
             <Text style={styles.sectionTitle}>6. Customer Support</Text>
             <Text style={styles.policyText}>
               For any questions or concerns about the cancellation policy or if you require assistance with rescheduling, please contact our customer support team via the app or at <Text style={styles.contactText}>+91-9121377419</Text>.
             </Text>
-            
+
             <Text style={styles.policyFooter}>
               By placing a booking, you agree to adhere to this cancellation policy. We appreciate your understanding and cooperation.
             </Text>
           </ScrollView>
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             style={styles.confirmButton}
             onPress={() => setShowCancellationPolicy(false)}
           >
@@ -754,7 +768,7 @@ export default function Cart() {
   const DateTimeModal = () => (
     <Modal visible={showDateTimeModal} transparent animationType="none">
       <Animated.View style={[styles.modalOverlay, { opacity: modalOpacity }]}>
-        <Animated.View 
+        <Animated.View
           style={[styles.modalContent, styles.dateTimeModalContent, { transform: [{ translateY: modalY }] }]}
           {...panResponder.panHandlers}
         >
@@ -762,16 +776,16 @@ export default function Cart() {
           <View style={styles.gestureIndicator}>
             <View style={styles.indicatorBar} />
           </View>
-          
+
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Select Date & Time</Text>
             <TouchableOpacity onPress={() => setShowDateTimeModal(false)}>
               <Ionicons name="close" size={24} color="#333" />
             </TouchableOpacity>
           </View>
-          
-          <ScrollView 
-            style={styles.dateTimeScrollView} 
+
+          <ScrollView
+            style={styles.dateTimeScrollView}
             showsVerticalScrollIndicator={false}
             bounces={false}
             scrollEventThrottle={16}
@@ -903,7 +917,7 @@ export default function Cart() {
 
           {/* Confirm Button */}
           <View style={styles.dateTimeFooter}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[
                 styles.confirmDateTimeButton,
                 (!selectedDate || !selectedTimeSlot) && styles.disabledButton
@@ -923,7 +937,7 @@ export default function Cart() {
   const PaymentModal = () => (
     <Modal visible={showPaymentModal} transparent animationType="none">
       <Animated.View style={[styles.modalOverlay, { opacity: modalOpacity }]}>
-        <Animated.View 
+        <Animated.View
           style={[styles.modalContent, styles.paymentModalContent, { transform: [{ translateY: modalY }] }]}
           {...panResponder.panHandlers}
         >
@@ -931,7 +945,7 @@ export default function Cart() {
           <View style={styles.gestureIndicator}>
             <View style={styles.indicatorBar} />
           </View>
-          
+
           {/* Enhanced Header */}
           <View style={styles.paymentModalHeader}>
             <View style={styles.paymentHeaderLeft}>
@@ -943,16 +957,16 @@ export default function Cart() {
                 <Text style={styles.paymentModalSubtitle}>Complete your booking</Text>
               </View>
             </View>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.closeIconButton}
               onPress={() => setShowPaymentModal(false)}
             >
               <Ionicons name="close" size={24} color="#333" />
             </TouchableOpacity>
           </View>
-          
-          <ScrollView 
-            style={styles.paymentScrollView} 
+
+          <ScrollView
+            style={styles.paymentScrollView}
             showsVerticalScrollIndicator={false}
             bounces={false}
             scrollEventThrottle={16}
@@ -967,7 +981,7 @@ export default function Cart() {
                 <Ionicons name="calendar-outline" size={20} color="#3898B3" />
                 <Text style={styles.bookingSummaryTitle}>Booking Details</Text>
               </View>
-              
+
               {selectedDateItem && selectedTimeSlot && (
                 <View style={styles.bookingDetailsRow}>
                   <View style={styles.bookingDetailItem}>
@@ -993,21 +1007,21 @@ export default function Cart() {
                 <Text style={styles.servicesOverviewTitle}>Services ({cartData.reduce((total, cat) => total + cat.items.length, 0)})</Text>
                 <Text style={styles.servicesOverviewTotal}>₹{calculateGrandTotal()}</Text>
               </View>
-              
+
               {cartData.map((category, index) => (
                 <View key={index} style={styles.serviceCategory}>
                   <View style={styles.serviceCategoryHeader}>
                     <View style={styles.categoryIconWrapper}>
-                      <Ionicons 
-                        name={category.category === 'Plumbing' ? 'water' : 'flash'} 
-                        size={14} 
-                        color="#3898B3" 
+                      <Ionicons
+                        name={category.category === 'Plumbing' ? 'water' : 'flash'}
+                        size={14}
+                        color="#3898B3"
                       />
                     </View>
                     <Text style={styles.serviceCategoryName}>{category.category}</Text>
                     <Text style={styles.serviceCategoryPrice}>₹{calculateCategoryTotal(category.items)}</Text>
                   </View>
-                  
+
                   {category.items.map((item, itemIndex) => (
                     <View key={item.id} style={styles.serviceItem}>
                       <View style={styles.serviceItemLeft}>
@@ -1027,7 +1041,7 @@ export default function Cart() {
                 <Ionicons name="receipt" size={20} color="#3898B3" />
                 <Text style={styles.billTitle}>Bill Summary</Text>
               </View>
-              
+
               <View style={styles.billRows}>
                 <View style={styles.billRow}>
                   <Text style={styles.billLabel}>Subtotal</Text>
@@ -1036,7 +1050,7 @@ export default function Cart() {
                 <View style={[styles.billRow, { position: 'relative' }]}>
                   <View style={styles.billLabelWithIcon}>
                     <Text style={styles.billLabel}>Service Fee</Text>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       onPress={() => setShowServiceFeeTooltip(!showServiceFeeTooltip)}
                       style={styles.infoIconButton}
                     >
@@ -1044,7 +1058,7 @@ export default function Cart() {
                     </TouchableOpacity>
                   </View>
                   <Text style={styles.billAmount}>₹50</Text>
-                  
+
                   {/* Service Fee Tooltip */}
                   {showServiceFeeTooltip && (
                     <View style={styles.serviceFeeTooltip}>
@@ -1057,14 +1071,14 @@ export default function Cart() {
                     </View>
                   )}
                 </View>
-                
+
                 <View style={styles.billRow}>
                   <Text style={styles.billLabel}>GST (18%)</Text>
                   <Text style={styles.billAmount}>₹{Math.round(calculateGrandTotal() * 0.18)}</Text>
                 </View>
-                
+
                 <View style={styles.billDivider} />
-                
+
                 <View style={styles.billTotalRow}>
                   <View>
                     <Text style={styles.billTotalLabel}>Total Amount</Text>
@@ -1073,7 +1087,7 @@ export default function Cart() {
                   <Text style={styles.billTotalAmount}>₹{calculateGrandTotal() + 50 + Math.round(calculateGrandTotal() * 0.18)}</Text>
                 </View>
               </View>
-              
+
               <View style={styles.savingsBanner}>
                 <Ionicons name="gift" size={18} color="#4CAF50" />
                 <Text style={styles.savingsText}>🎉 You&apos;re saving ₹120 on this booking!</Text>
@@ -1086,13 +1100,13 @@ export default function Cart() {
                 <Ionicons name="wallet" size={20} color="#3898B3" />
                 <Text style={styles.paymentMethodsTitle}>Choose Payment Method</Text>
               </View>
-              
+
               <View style={styles.paymentMethodsList}>
                 {[
-                  { 
-                    key: 'UPI', 
-                    icon: 'phone-portrait', 
-                    label: 'UPI Payment', 
+                  {
+                    key: 'UPI',
+                    icon: 'phone-portrait',
+                    label: 'UPI Payment',
                     subtitle: 'Pay using any UPI app',
                     options: [
                       { type: 'upi_id', label: 'Enter UPI ID', placeholder: 'your-id@paytm' },
@@ -1100,38 +1114,38 @@ export default function Cart() {
                       { type: 'app', label: 'Pay with App', apps: ['PhonePe', 'Paytm', 'Google Pay'] }
                     ]
                   },
-                  { 
-                    key: 'Credit/Debit Card', 
-                    icon: 'card', 
-                    label: 'Credit/Debit Card', 
+                  {
+                    key: 'Credit/Debit Card',
+                    icon: 'card',
+                    label: 'Credit/Debit Card',
                     subtitle: 'Visa, Mastercard, Rupay',
                     options: [
                       { type: 'saved_cards', label: 'Saved Cards', cards: ['**** 1234', '**** 5678'] },
                       { type: 'new_card', label: 'Add New Card', fields: ['number', 'expiry', 'cvv', 'name'] }
                     ]
                   },
-                  { 
-                    key: 'Net Banking', 
-                    icon: 'globe', 
-                    label: 'Net Banking', 
+                  {
+                    key: 'Net Banking',
+                    icon: 'globe',
+                    label: 'Net Banking',
                     subtitle: 'All major banks supported',
                     options: [
                       { type: 'bank_list', label: 'Select Bank', banks: ['SBI', 'HDFC', 'ICICI', 'Axis', 'Kotak'] }
                     ]
                   },
-                  { 
-                    key: 'Wallet', 
-                    icon: 'wallet', 
-                    label: 'Digital Wallet', 
+                  {
+                    key: 'Wallet',
+                    icon: 'wallet',
+                    label: 'Digital Wallet',
                     subtitle: 'Paytm, PhonePe, etc.',
                     options: [
                       { type: 'wallet_list', label: 'Select Wallet', wallets: ['Paytm', 'PhonePe', 'Amazon Pay', 'MobiKwik'] }
                     ]
                   },
-                  { 
-                    key: 'Cash on Delivery', 
-                    icon: 'cash', 
-                    label: 'Pay on Service', 
+                  {
+                    key: 'Cash on Delivery',
+                    icon: 'cash',
+                    label: 'Pay on Service',
                     subtitle: 'Cash payment to provider',
                     options: [
                       { type: 'cash_note', label: 'Note', text: 'Pay directly to the service provider when they arrive' }
@@ -1151,10 +1165,10 @@ export default function Cart() {
                           styles.paymentMethodIconContainer,
                           selectedPaymentMethod === method.key && styles.selectedPaymentMethodIcon
                         ]}>
-                          <Ionicons 
-                            name={method.icon} 
-                            size={24} 
-                            color={selectedPaymentMethod === method.key ? '#3898B3' : '#666'} 
+                          <Ionicons
+                            name={method.icon}
+                            size={24}
+                            color={selectedPaymentMethod === method.key ? '#3898B3' : '#666'}
                           />
                         </View>
                         <View style={styles.paymentMethodInfo}>
@@ -1176,9 +1190,9 @@ export default function Cart() {
                             <View style={styles.paymentMethodRadioInner} />
                           )}
                         </View>
-                        <Ionicons 
-                          name={selectedPaymentMethod === method.key ? "chevron-up" : "chevron-down"} 
-                          size={16} 
+                        <Ionicons
+                          name={selectedPaymentMethod === method.key ? "chevron-up" : "chevron-down"}
+                          size={16}
                           color="#666"
                           style={{ marginLeft: 8 }}
                         />
@@ -1200,14 +1214,14 @@ export default function Cart() {
                                 </View>
                               </View>
                             )}
-                            
+
                             {option.type === 'qr' && (
                               <TouchableOpacity style={styles.qrOption}>
                                 <Ionicons name="qr-code-outline" size={20} color="#3898B3" />
                                 <Text style={styles.optionText}>{option.label}</Text>
                               </TouchableOpacity>
                             )}
-                            
+
                             {option.type === 'app' && (
                               <View style={styles.appContainer}>
                                 <Text style={styles.optionTitle}>{option.label}</Text>
@@ -1237,7 +1251,7 @@ export default function Cart() {
                                 ))}
                               </View>
                             )}
-                            
+
                             {option.type === 'new_card' && (
                               <View style={styles.newCardContainer}>
                                 <Text style={styles.optionTitle}>{option.label}</Text>
@@ -1328,7 +1342,7 @@ export default function Cart() {
               <Text style={styles.payAmountLabel}>Total Amount</Text>
               <Text style={styles.payAmountValue}>₹{calculateGrandTotal() + 50 + Math.round(calculateGrandTotal() * 0.18)}</Text>
             </View>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.enhancedPayButton}
               onPress={handlePayment}
             >
@@ -1353,15 +1367,15 @@ export default function Cart() {
         showBack
         onBack={() => router.back()}
       />
-      
-      <ScrollView 
-        style={styles.scrollContainer} 
+
+      <ScrollView
+        style={styles.scrollContainer}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         bounces={true}
       >
         {/* Location Confirmation */}
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.locationCard}
           onPress={() => {
             setManualLocation(selectedLocation || "");
@@ -1370,10 +1384,10 @@ export default function Cart() {
           }}
         >
           <View style={styles.locationHeader}>
-            <Ionicons 
-              name={isLocationLoading ? "refresh" : "location"} 
-              size={20} 
-              color={isLocationLoading ? "#FF9800" : "#3898B3"} 
+            <Ionicons
+              name={isLocationLoading ? "refresh" : "location"}
+              size={20}
+              color={isLocationLoading ? "#FF9800" : "#3898B3"}
             />
             <Text style={styles.locationTitle}>Service Location</Text>
           </View>
@@ -1386,15 +1400,15 @@ export default function Cart() {
         </TouchableOpacity>
 
         {/* Mobile Number Section */}
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.locationCard}
           onPress={openMobileModal}
         >
           <View style={styles.locationHeader}>
-            <Ionicons 
-              name="call" 
-              size={20} 
-              color="#3898B3" 
+            <Ionicons
+              name="call"
+              size={20}
+              color="#3898B3"
             />
             <Text style={styles.locationTitle}>Mobile Number</Text>
           </View>
@@ -1407,21 +1421,21 @@ export default function Cart() {
         </TouchableOpacity>
 
         {/* Cart Categories */}
-        {cartData.map((categoryData, index) => 
+        {cartData.map((categoryData, index) =>
           renderCategorySection(categoryData, index)
         )}
 
         {/* Payment Summary */}
         <View style={styles.summaryCard}>
           <Text style={styles.summaryTitle}>Payment Summary</Text>
-          
+
           {cartData.map((category, index) => (
             <View key={index} style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>{category.category}</Text>
               <Text style={styles.summaryAmount}>₹{calculateCategoryTotal(category.items)}</Text>
             </View>
           ))}
-          
+
           <View style={styles.summaryDivider} />
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Service Fee</Text>
@@ -1431,7 +1445,7 @@ export default function Cart() {
             <Text style={styles.summaryLabel}>Taxes</Text>
             <Text style={styles.summaryAmount}>₹{Math.round(calculateGrandTotal() * 0.18)}</Text>
           </View>
-          
+
           <View style={styles.summaryDivider} />
           <View style={styles.summaryRow}>
             <Text style={styles.totalLabel}>Total Amount</Text>
@@ -1440,7 +1454,7 @@ export default function Cart() {
         </View>
 
         {/* Cancellation Policy */}
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.policyCard}
           onPress={() => setShowCancellationPolicy(true)}
         >
@@ -1456,7 +1470,7 @@ export default function Cart() {
           <Text style={styles.bottomTotalLabel}>Total</Text>
           <Text style={styles.bottomTotalAmount}>₹{calculateGrandTotal() + 50 + Math.round(calculateGrandTotal() * 0.18)}</Text>
         </View>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.proceedButton}
           onPress={handleProceedNow}
         >
@@ -1483,7 +1497,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-  paddingTop: 16,
+    paddingTop: 16,
     paddingHorizontal: 20,
     paddingBottom: 100,
   },
@@ -1738,7 +1752,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#3898B3',
-  marginLeft: 16,
+    marginLeft: 16,
   },
   policyCard: {
     flexDirection: 'row',
@@ -2023,7 +2037,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginBottom: 10,
   },
-  
+
   // Enhanced Header
   paymentModalHeader: {
     flexDirection: 'row',
@@ -2065,7 +2079,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  
+
   // Booking Summary Card
   bookingSummaryCard: {
     backgroundColor: '#F8FCFF',
@@ -2103,7 +2117,7 @@ const styles = StyleSheet.create({
     color: '#1A1A1A',
     fontWeight: '600',
   },
-  
+
   // Services Overview Card
   servicesOverviewCard: {
     backgroundColor: '#fff',
@@ -2200,7 +2214,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#3898B3',
   },
-  
+
   // Bill Summary Card
   billSummaryCard: {
     backgroundColor: '#fff',
@@ -2298,7 +2312,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     flex: 1,
   },
-  
+
   // Payment Methods Section
   paymentMethodsSection: {
     backgroundColor: '#fff',
@@ -2400,7 +2414,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: '#3898B3',
   },
-  
+
   // Expanded Payment Options
   paymentOptionsExpanded: {
     backgroundColor: '#fff',
@@ -2422,7 +2436,7 @@ const styles = StyleSheet.create({
     color: '#1A1A1A',
     marginLeft: 8,
   },
-  
+
   // UPI Options
   upiIdContainer: {
     marginBottom: 12,
@@ -2490,7 +2504,7 @@ const styles = StyleSheet.create({
     color: '#1A1A1A',
     textAlign: 'center',
   },
-  
+
   // Card Options
   savedCardsContainer: {
     marginBottom: 12,
@@ -2521,7 +2535,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
   },
-  
+
   // Bank Options
   bankListContainer: {
     marginBottom: 12,
@@ -2553,7 +2567,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#fff',
   },
-  
+
   // Wallet Options
   walletListContainer: {
     marginBottom: 12,
@@ -2591,7 +2605,7 @@ const styles = StyleSheet.create({
     color: '#1A1A1A',
     textAlign: 'center',
   },
-  
+
   // Cash Options
   cashNoteContainer: {
     backgroundColor: '#FFF8E1',
@@ -2611,7 +2625,7 @@ const styles = StyleSheet.create({
     flex: 1,
     lineHeight: 18,
   },
-  
+
   // Security Notice
   securityNotice: {
     flexDirection: 'row',
@@ -2630,7 +2644,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontWeight: '500',
   },
-  
+
   // Enhanced Payment Footer
   enhancedPaymentFooter: {
     borderTopWidth: 1,
