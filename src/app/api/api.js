@@ -2,7 +2,7 @@ import axios from "axios";
 import supabase from "../../data/supabaseClient";
 
 const api = axios.create({
-  baseURL: "https://twenty-bats-boil.loca.lt",
+  baseURL: "https://tiny-mice-smash.loca.lt",
 });
 
 api.interceptors.request.use(async (config) => {

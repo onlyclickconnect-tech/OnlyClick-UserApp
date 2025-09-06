@@ -261,7 +261,7 @@ export default function Data() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Recent Bookings</Text>
           <FlatList
-            data={bookings.slice(-3)}
+            data={bookings.slice(-2)}
             renderItem={renderBookAgainItem}
             keyExtractor={(item) => item.id.toString()}
             scrollEnabled={false}

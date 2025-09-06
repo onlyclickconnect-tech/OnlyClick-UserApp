@@ -1,14 +1,17 @@
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from "react";
 import { Dimensions, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { useModal } from '../../context/ModalProvider';
 import { useUpdateProfile } from '../../hooks/seeUpdateProfile';
 import useCurrentUserDetails from "../../hooks/useCurrentUserDetails";
 import LoadinScreen from '../common/LoadingScreen';
+import SuccessModal from '../common/SuccessModal';
 
 const screenWidth = Dimensions.get("window").width;
 
 const ProfileForm = ({ onValidationChange, onSave }) => {
   const { name, email, userAddress, phone, profileImage, _id, reviews, ratings, userId, service } = useCurrentUserDetails();
+  const { setIsSuccessModalOpen } = useModal();
 
   const [formData, setFormData] = useState({
     fullName: name || '',
@@ -93,7 +96,7 @@ const ProfileForm = ({ onValidationChange, onSave }) => {
     const result = await updateProfile(updates);
     console.log("result", result)
     if (result?.data?.updated) {
-      alert("Profile updated successfully!");
+      setIsSuccessModalOpen(true);
       setIsEditing(false);
       setRefreshKey((prev) => prev + 1);
     } else {
@@ -120,14 +123,14 @@ const ProfileForm = ({ onValidationChange, onSave }) => {
       <FontAwesome name={icon} size={18} color="#0097B3" style={styles.icon} />
       <View style={styles.inputContainer}>
         <TextInput
-          style={[styles.input, errors[name] && styles.inputError]}
+          style={[styles.input, errors[name] && styles.inputError, name === "phone" ? styles.inputBlur : null]}
           value={formData[name]}
           onChangeText={(text) => handleInputChange(name, text)}
           onFocus={() => setHasInteracted(true)} // Mark interaction on focus
           keyboardType={keyboardType}
           placeholder={placeholder}
           placeholderTextColor="#808080"
-          editable={isEditing}
+          editable={name === "phone" ? false : isEditing}
           {...additionalProps}
         />
         {hasInteracted && errors[name] && <Text style={styles.errorText}>{errors[name]}</Text>}
@@ -138,56 +141,59 @@ const ProfileForm = ({ onValidationChange, onSave }) => {
   if (loadingspin) return <LoadinScreen />;
 
   return (
-    <View style={styles.container}>
-      <View style={styles.headerContainer}>
-        <Text style={styles.header}>Profile Details</Text>
-        {!isEditing ? (
-          <TouchableOpacity
-            style={styles.editButton}
-            onPress={() => setIsEditing(true)}
-          >
-            <Ionicons name="pencil" size={20} color="#0097B3" />
-            <Text style={styles.editButtonText}>Edit</Text>
-          </TouchableOpacity>
-        ) : (
-          <View style={styles.actionButtons}>
+    <>
+      <View style={styles.container}>
+        <View style={styles.headerContainer}>
+          <Text style={styles.header}>Profile Details</Text>
+          {!isEditing ? (
             <TouchableOpacity
-              style={styles.cancelButton}
-              onPress={handleCancel}
+              style={styles.editButton}
+              onPress={() => setIsEditing(true)}
             >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
+              <Ionicons name="pencil" size={20} color="#0097B3" />
+              <Text style={styles.editButtonText}>Edit</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-              <Text style={styles.saveButtonText}>Save</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
+          ) : (
+            <View style={styles.actionButtons}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={handleCancel}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+                <Text style={styles.saveButtonText}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
 
-      <View style={styles.formContainer}>
-        {/* Personal Information */}
-        <Text style={styles.sectionTitle}>Personal Information</Text>
-        {renderInputField("fullName", "user", "Full Name")}
-        {renderInputField(
-          "email",
-          "envelope",
-          "Email Address (Optional)",
-          "email-address",
-          { autoCapitalize: "none" }
-        )}
-        {renderInputField("phone", "phone", "Phone Number", "phone-pad")}
+        <View style={styles.formContainer}>
+          {/* Personal Information */}
+          <Text style={styles.sectionTitle}>Personal Information</Text>
+          {renderInputField("fullName", "user", "Full Name")}
+          {renderInputField(
+            "email",
+            "envelope",
+            "Email Address (Optional)",
+            "email-address",
+            { autoCapitalize: "none" }
+          )}
+          {renderInputField("phone", "phone", "Phone Number", "phone-pad")}
 
-        {/* Address Information */}
-        <Text style={styles.sectionTitle}>Permanent Address Information</Text>
-        {renderInputField(
-          "address",
-          "map-marker",
-          "Complete Address",
-          "default",
-          { multiline: true }
-        )}
+          {/* Address Information */}
+          <Text style={styles.sectionTitle}>Permanent Address Information</Text>
+          {renderInputField(
+            "address",
+            "map-marker",
+            "Complete Address",
+            "default",
+            { multiline: true }
+          )}
+        </View>
       </View>
-    </View>
+      <SuccessModal />
+    </>
   );
 };
 
@@ -297,6 +303,9 @@ const styles = StyleSheet.create({
   inputError: {
     borderColor: '#FF4D4F',
     backgroundColor: '#FFF5F5',
+  },
+  inputBlur: {
+    opacity: 0.7,
   },
   errorText: {
     color: '#FF4D4F',
