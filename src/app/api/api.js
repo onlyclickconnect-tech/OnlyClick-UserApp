@@ -2,8 +2,11 @@ import axios from "axios";
 import supabase from "../../data/supabaseClient";
 
 const api = axios.create({
-  baseURL: "https://nine-plants-lead.loca.lt",
-});
+
+  baseURL: "https://yellow-tigers-care.loca.lt",
+  // baseURL: "onlyclickdeveloper.up.railway.app",
+})
+
 
 api.interceptors.request.use(async (config) => {
   const {
