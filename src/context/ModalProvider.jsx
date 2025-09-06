@@ -7,6 +7,7 @@ export default function ModalProvider({ children }) {
   const [isAutoPayoutModalOpen, setIsAutoPayoutModalOpen] = useState(false);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
   const [isEnterAmountModalOpen, setIsEnterAmountModalOpen] = useState(false);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const value = useMemo(
     () => ({
       isCustomModalOpen,
@@ -17,12 +18,15 @@ export default function ModalProvider({ children }) {
       setIsWithdrawModalOpen,
       isEnterAmountModalOpen,
       setIsEnterAmountModalOpen,
+      isSuccessModalOpen,
+      setIsSuccessModalOpen,
     }),
     [
       isCustomModalOpen,
       isAutoPayoutModalOpen,
       isWithdrawModalOpen,
       isEnterAmountModalOpen,
+      isSuccessModalOpen,
     ]
   );
 

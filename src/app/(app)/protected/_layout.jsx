@@ -4,6 +4,7 @@ import { View } from "react-native";
 import CustomServiceModal from "../../../components/common/CustomServiceModal";
 import EnterAmountModal from "../../../components/common/EnterAmountModal";
 import PressableScale from "../../../components/common/PressableScale";
+import SuccessModal from "../../../components/common/SuccessModal";
 
 export default function RootLayout() {
   const router = useRouter();
@@ -33,6 +34,7 @@ export default function RootLayout() {
       </Stack>
       <CustomServiceModal />
       <EnterAmountModal />
+      <SuccessModal />
     </View>
   );
 }
