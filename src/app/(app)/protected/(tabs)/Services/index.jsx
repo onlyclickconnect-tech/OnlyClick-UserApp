@@ -16,6 +16,9 @@ import {
 import AppHeader from '../../../../../components/common/AppHeader';
 import PressableScale from '../../../../../components/common/PressableScale';
 import { allCategories, allServices, categoryImages } from "../../../../../data/servicesData";
+import { addToCart } from '../../../../api/cart';
+import LoadingSpinner from '../../../../../components/common/LoadingSpinner'
+
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -28,7 +31,8 @@ function ServicesPage() {
   const [categories, setCategories] = useState([]);
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [categoriesLoading, setCategoriesLoading] = useState(true); 
+  const [overlayLoading, setOverlayLoading] = useState(false);
 
   const ITEM_CARD_HEIGHT = 170 + 16; // card height + marginBottom
 
@@ -76,12 +80,12 @@ function ServicesPage() {
       cat.id === "all"
         ? (services || []).length
         : (services || []).filter((s) => {
-            // Try multiple matching strategies
-            return s.category === cat.id || 
-                   s.category === cat.name ||
-                   s.category?.toLowerCase() === cat.id?.toLowerCase() ||
-                   s.category?.toLowerCase().replace(/\s+/g, "_") === cat.id?.toLowerCase();
-          }).length,
+          // Try multiple matching strategies
+          return s.category === cat.id ||
+            s.category === cat.name ||
+            s.category?.toLowerCase() === cat.id?.toLowerCase() ||
+            s.category?.toLowerCase().replace(/\s+/g, "_") === cat.id?.toLowerCase();
+        }).length,
   }));
   const filteredCategories = categoriesWithCounts.filter(
     (category) => category.count > 0
@@ -117,7 +121,7 @@ function ServicesPage() {
         categoryMatches =
           service.category === categoryObj.id ||
           service.category.toLowerCase().replace(/\s+/g, "_") ===
-            categoryObj.id;
+          categoryObj.id;
       }
     }
 
@@ -132,31 +136,47 @@ function ServicesPage() {
     }
   };
 
-  const addToCart = (service) => {
-    // Check if item already exists in cart
-    const existingItem = cartItems.find(
-      (item) => item.serviceId === service.serviceId
-    );
+  // const addToCart = (service) => {
+  //   // Check if item already exists in cart
+  //   const existingItem = cartItems.find(
+  //     (item) => item.serviceId === service.serviceId
+  //   );
 
-    if (existingItem) {
-      // Update quantity if item exists
-      setCartItems(
-        cartItems.map((item) =>
-          item.serviceId === service.serviceId
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        )
-      );
-    } else {
-      // Add new item to cart
-      setCartItems([...cartItems, { ...service, quantity: 1 }]);
-    }
+  //   if (existingItem) {
+  //     // Update quantity if item exists
+  //     setCartItems(
+  //       cartItems.map((item) =>
+  //         item.serviceId === service.serviceId
+  //           ? { ...item, quantity: item.quantity + 1 }
+  //           : item
+  //       )
+  //     );
+  //   } else {
+  //     // Add new item to cart
+  //     setCartItems([...cartItems, { ...service, quantity: 1 }]);
+  //   }
+
+  // };
+
+  const addToCartClickHandle = async (service) => {
+    setOverlayLoading(true)
+    delete service.count;
+    delete service.image_url;
+    delete service.description;
+    delete service.created_at;
+    delete service.ratings;
+    const { error } = await addToCart(service)
 
     // Show success feedback (you can customize this)
-    alert(`${service.title} added to cart!`);
-  };
+    setOverlayLoading(false) 
+    if (error) {
+      alert(`Something went wrong. couldn't add to cart`);
+    }
+    else {
+      alert(`${service.title} added to cart!`);
+    }
+  }
 
-  
 
   const renderCategoryCard = ({ item }) => (
     <TouchableOpacity
@@ -173,7 +193,7 @@ function ServicesPage() {
           resizeMode="contain"
         />
       </View>
-      
+
       <Text style={styles.categoryCount}>{item.count} services</Text>
     </TouchableOpacity>
   );
@@ -222,7 +242,7 @@ function ServicesPage() {
               <View style={styles.controlsRight}>
                 <PressableScale
                   style={styles.addToCartButton}
-                  onPress={() => addToCart(item)}
+                  onPress={() => addToCartClickHandle(item)}
                 >
                   <Ionicons name="cart-outline" size={16} color="#fff" />
                 </PressableScale>
@@ -233,16 +253,17 @@ function ServicesPage() {
           <View style={styles.serviceImageContainer}>
             <Image
               source={
-                item.image_url ? { uri: item.image_url } : 
-                item.image ? item.image : {
-                  uri: "https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751596604/ChatGPT_Image_Jul_3_2025_10_18_12_PM_xqu38i.png",
-                }
+                item.image_url ? { uri: item.image_url } :
+                  item.image ? item.image : {
+                    uri: "https://res.cloudinary.com/dsjcgs6nu/image/upload/v1751596604/ChatGPT_Image_Jul_3_2025_10_18_12_PM_xqu38i.png",
+                  }
               }
               style={styles.serviceImage}
               resizeMode="cover"
               onError={(e) => console.log('Image error:', e.nativeEvent?.error, 'for item:', item.title)}
             />
           </View>
+          
         </View>
       </PressableScale>
     );
@@ -365,6 +386,12 @@ function ServicesPage() {
         showsVerticalScrollIndicator={false}
         bounces={true}
       />
+      {/* Overlay Spinner */}
+          {overlayLoading && (
+            <View style={styles.overlay}>
+              <ActivityIndicator size="large" color="#fff" />
+            </View>
+          )}
     </View>
   );
 }
@@ -448,8 +475,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     paddingHorizontal: 20,
     paddingVertical: 15,
-  // spacing adjusted to sit closer under AppHeader
-  marginTop: 12,
+    // spacing adjusted to sit closer under AppHeader
+    marginTop: 12,
     marginHorizontal: 20,
     borderRadius: 15,
     elevation: 4,
@@ -553,60 +580,60 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   serviceCard: {
-  backgroundColor: '#fff',
-  borderRadius: 16,
-  marginBottom: 16,
-  marginHorizontal: 16,
-  height: 170,
-  elevation: 6,
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 4 },
-  shadowOpacity: 0.08,
-  shadowRadius: 10,
-  overflow: 'hidden',
-  borderWidth: 1,
-  borderColor: '#F0F0F0',
-  padding: 0,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    marginBottom: 16,
+    marginHorizontal: 16,
+    height: 170,
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+    padding: 0,
   },
   cardContentHorizontal: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  minHeight: 140,
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 140,
   },
   serviceDetailsLeft: {
-  flex: 1,
-  paddingVertical: 14,
-  paddingLeft: 16,
-  justifyContent: 'space-between',
-  paddingRight: 12,
+    flex: 1,
+    paddingVertical: 14,
+    paddingLeft: 16,
+    justifyContent: 'space-between',
+    paddingRight: 12,
   },
   serviceBadge: {
-  // removed
+    // removed
   },
   badgeText: {
-  // removed
+    // removed
   },
   serviceImageContainer: {
-  position: 'relative',
-  width: 120,
-  height: 165,
-  borderTopRightRadius: 12,
-  borderBottomRightRadius: 12,
-  overflow: 'hidden',
-  alignSelf: 'center',
+    position: 'relative',
+    width: 120,
+    height: 165,
+    borderTopRightRadius: 12,
+    borderBottomRightRadius: 12,
+    overflow: 'hidden',
+    alignSelf: 'center',
   },
   serviceImage: {
-  width: '100%',
-  height: '100%',
-  resizeMode: 'cover',
-  borderTopRightRadius: 12,
-  borderBottomRightRadius: 12,
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+    borderTopRightRadius: 12,
+    borderBottomRightRadius: 12,
   },
   imageOverlay: {
-  // removed
+    // removed
   },
   favoriteButton: {
-  // removed
+    // removed
   },
   bottomRow: {
     flexDirection: 'row',
@@ -781,5 +808,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     textAlign: 'center',
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject, // fills the entire screen
+    backgroundColor: 'rgba(0,0,0,0.5)', // semi-transparent background
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 999, // ensure it’s on top
   },
 });

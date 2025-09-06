@@ -2,7 +2,7 @@ import axios from "axios";
 import supabase from "../../data/supabaseClient";
 
 const api = axios.create({
-  baseURL: "https://onlyclickdeveloper.up.railway.app",
+  baseURL: "https://witty-paths-see.loca.lt",
 });
 
 api.interceptors.request.use(async (config) => {
