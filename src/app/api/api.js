@@ -1,12 +1,12 @@
 import axios from "axios";
+import Constants from "expo-constants";
 import supabase from "../../data/supabaseClient";
 
 const api = axios.create({
-
-  baseURL: "https://81cq2mbl-5500.inc1.devtunnels.ms",
-  // baseURL: "onlyclickdeveloper.up.railway.app",
-})
-
+  baseURL:
+    Constants.expoConfig?.extra?.EXPO_PUBLIC_API_URL ||
+    "https://jqkb8s0g-5500.inc1.devtunnels.ms/",
+});
 
 api.interceptors.request.use(async (config) => {
   const {
