@@ -43,7 +43,6 @@ export default function PostRequest() {
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
-        aspect: [3, 4], // Changed from [4, 3] to [3, 4] for better crop area
         quality: 0.8,
       });
 
@@ -68,7 +67,6 @@ export default function PostRequest() {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
-        aspect: [3, 4], // Changed from [4, 3] to [3, 4] for better crop area
         quality: 0.8,
         presentationStyle: ImagePicker.UIImagePickerPresentationStyle.FULL_SCREEN,
       });
@@ -327,7 +325,7 @@ export default function PostRequest() {
               style={styles.removeImageBtn}
               onPress={() => setSelectedImage(null)}
             >
-              <Ionicons name="close-circle" size={24} color="#FF6B6B" />
+              <Ionicons name="close-circle" size={28} color="#FF6B6B" />
             </TouchableOpacity>
           </View>
         ) : (
@@ -679,19 +677,23 @@ const styles = StyleSheet.create({
   imageContainer: {
     position: "relative",
     alignItems: "center",
+    width: "100%",
+    backgroundColor: "#F8F9FA",
+    borderRadius: 12,
+    padding: 10,
   },
   selectedImage: {
-    width: 200,
-    height: 150,
+    width: "100%",
+    height: 200,
     borderRadius: 12,
-    resizeMode: "cover",
+    resizeMode: "contain",
   },
   removeImageBtn: {
     position: "absolute",
-    top: -8,
-    right: 80,
+    top: 5,
+    right: 5,
     backgroundColor: "#fff",
-    borderRadius: 12,
+    borderRadius: 14,
   },
   imageUploadOptions: {
     flexDirection: "row",

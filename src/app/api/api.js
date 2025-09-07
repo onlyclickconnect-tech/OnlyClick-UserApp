@@ -3,7 +3,7 @@ import supabase from "../../data/supabaseClient";
 
 const api = axios.create({
 
-  baseURL: "https://onlyclickdevelopers.loca.lt",
+  baseURL: "https://81cq2mbl-5500.inc1.devtunnels.ms",
   // baseURL: "onlyclickdeveloper.up.railway.app",
 })
 

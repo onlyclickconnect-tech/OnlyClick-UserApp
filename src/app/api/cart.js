@@ -27,3 +27,23 @@ export const removeOneFromCart = async (service_id) => {
   }
 };
 
+export const addOneInCart = async (service_id) => {
+  try {
+    const { data } = await api.post("/api/v1/addoneincart", { service_id });
+    return { data };
+  } catch (error) {
+    console.error("Error adding item:", error.response?.data || error.message);
+    return { error };
+  }
+};
+
+export const removeAllFromCart = async (service_id) => {
+  try {
+    const { data } = await api.post("/api/v1/removeallfromcart", { service_id });
+    return { data };
+  } catch (error) {
+    console.error("Error removing item:", error.response?.data || error.message);
+    return { error };
+  }
+};
+

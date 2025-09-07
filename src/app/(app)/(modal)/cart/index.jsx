@@ -3,6 +3,7 @@ import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Animated,
   Dimensions,
@@ -22,7 +23,7 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 import AppHeader from '../../../../components/common/AppHeader';
 import fetchCart from '../../../../data/getdata/getCart';
-import { removeOneFromCart } from '../../../api/cart';
+import { addOneInCart, removeAllFromCart, removeOneFromCart } from '../../../api/cart';
 
 export default function Cart() {
   const router = useRouter();
@@ -41,6 +42,10 @@ export default function Cart() {
   const [service_charge, setSetservice_charge] = useState()
   const [totalTax, setTotalTax] = useState()
   const [total, setTotal] = useState()
+  const [deletingItemId, setDeletingItemId] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
+  const [updatingItemId, setUpdatingItemId] = useState(null);
 
   // Gesture handling for modals
   const modalY = useRef(new Animated.Value(0)).current;
@@ -124,6 +129,14 @@ export default function Cart() {
   const [isLocationLoading, setIsLocationLoading] = useState(false);
   const [manualLocation, setManualLocation] = useState("");
   const [isManualLocationEditing, setIsManualLocationEditing] = useState(false);
+  
+  // Location form fields
+  const [houseNumber, setHouseNumber] = useState("");
+  const [road, setRoad] = useState("");
+  const [district, setDistrict] = useState("");
+  const [city, setCity] = useState("");
+  const [additionalInfo, setAdditionalInfo] = useState("");
+  const [pincode, setPincode] = useState("");
 
   // Mobile number state management
   const [showMobileModal, setShowMobileModal] = useState(false);
@@ -191,11 +204,34 @@ export default function Cart() {
   };
 
   const saveManualLocation = () => {
-    if (manualLocation && manualLocation.trim()) {
-      updateSelectedLocation(manualLocation.trim());
+    // Stitch together all the location fields
+    const locationParts = [];
+    
+    if (houseNumber.trim()) locationParts.push(houseNumber.trim());
+    if (road.trim()) locationParts.push(road.trim());
+    if (district.trim()) locationParts.push(district.trim());
+    if (city.trim()) locationParts.push(city.trim());
+    if (additionalInfo.trim()) locationParts.push(additionalInfo.trim());
+    if (pincode.trim()) locationParts.push(pincode.trim());
+    
+    const fullAddress = locationParts.join(', ');
+    
+    if (fullAddress) {
+      updateSelectedLocation(fullAddress);
       setIsManualLocationEditing(false);
       setShowLocationModal(false);
+    } else {
+      Alert.alert("Error", "Please fill at least one location field");
     }
+  };
+
+  const clearLocationFields = () => {
+    setHouseNumber("");
+    setRoad("");
+    setDistrict("");
+    setCity("");
+    setAdditionalInfo("");
+    setPincode("");
   };
 
   // Mobile number management functions
@@ -317,17 +353,19 @@ export default function Cart() {
 
   const [cartData, setCartData] = useState([])
 
+  // Function to fetch cart data from server
+  const fetchCartData = async () => {
+    const { serviceCharge, tax, arr, phno, address, totalAmount } = await fetchCart();
+    setTotal(totalAmount);
+    setTotalTax(tax);
+    setSetservice_charge(serviceCharge);
+    setCartData(arr);
+    updateSelectedLocation(address);
+    setMobileNumber(phno);
+  };
+
   useEffect(() => {
-    const getcartDatahandler = async () => {
-      const { serviceCharge,tax,arr,phno,address,totalAmount } = await fetchCart();
-      setTotal(totalAmount)
-      setTotalTax(tax);
-      setSetservice_charge(serviceCharge);
-      setCartData(arr)
-      updateSelectedLocation(address);
-      setMobileNumber(phno);
-    }
-    getcartDatahandler()
+    fetchCartData();
   }, [])
 
 
@@ -339,29 +377,85 @@ export default function Cart() {
     return cartData.reduce((total, category) => total + calculateCategoryTotal(category.items), 0);
   };
 
-  const handleQuantityChange = (categoryIndex, itemIndex, change) => {
-    Alert.alert('Update Quantity', `Updated quantity for item`);
+  // Check if cart is empty or total is 0
+  const isCartEmptyOrZero = () => {
+    const grandTotal = calculateGrandTotal();
+    const totalItems = cartData.reduce((total, cat) => total + cat.items.length, 0);
+    return totalItems === 0 || grandTotal === 0;
   };
 
-  const handleRemoveItem = (service_id) => {
-    console.log(service_id);
-    const {data, error} = removeOneFromCart(service_id);
-    console.log(data, error);
-    // Alert.alert(
-    //   'Remove Item',
-    //   'Are you sure you want to remove this item from cart?',
-    //   [
-    //     { text: 'Cancel', style: 'cancel' },
-    //     {
-    //       text: 'Remove', style: 'destructive', onPress: () => {
-    //         console.log('Item removed');
-    //       }
-    //     }
-    //   ]
-    // );
+  const handleQuantityChange = async (categoryIndex, itemIndex, change) => {
+    const item = cartData[categoryIndex]?.items[itemIndex];
+    if (!item) return;
+
+    setUpdatingItemId(item.service_id);
+
+    try {
+      if (change > 0) {
+        // Increase quantity
+        const { data, error } = await addOneInCart(item.service_id);
+        if (error) {
+          Alert.alert('Error', 'Failed to increase quantity');
+        } else {
+          // Refetch cart data to get updated quantities
+          await fetchCartData();
+        }
+      } else if (change < 0) {
+        // Decrease quantity
+        const { data, error } = await removeOneFromCart(item.service_id);
+        if (error) {
+          Alert.alert('Error', 'Failed to decrease quantity');
+        } else {
+          // Refetch cart data to get updated quantities
+          await fetchCartData();
+        }
+      }
+    } catch (error) {
+      console.error('Error updating quantity:', error);
+      Alert.alert('Error', 'Failed to update quantity');
+    } finally {
+      setUpdatingItemId(null);
+    }
+  };
+
+  const handleDeletePress = (item) => {
+    setItemToDelete(item);
+    setShowDeleteModal(true);
+  };
+
+  const handleRemoveItem = async (service_id) => {
+    setDeletingItemId(service_id);
+    try {
+      const {data, error} = await removeAllFromCart(service_id);
+      console.log(data, error);
+      
+      if (error) {
+        Alert.alert('Error', 'Failed to clear cart');
+      } else {
+        // Refetch cart data from server instead of optimistic updates
+        await fetchCartData();
+      }
+    } catch (error) {
+      console.error('Error clearing cart:', error);
+      Alert.alert('Error', 'Failed to clear cart');
+    } finally {
+      setDeletingItemId(null);
+      // Close the modal after deletion completes
+      setShowDeleteModal(false);
+      setItemToDelete(null);
+    }
   };
 
   const handleProceedNow = () => {
+    // Prevent proceeding if cart is empty or total is 0
+    if (isCartEmptyOrZero()) {
+      Alert.alert(
+        'Cart Empty', 
+        'Please add items to your cart before proceeding.',
+        [{ text: 'OK', style: 'default' }]
+      );
+      return;
+    }
     setShowDateTimeModal(true);
   };
 
@@ -415,23 +509,33 @@ export default function Cart() {
       <View style={styles.itemActions}>
         <View style={styles.quantityContainer}>
           <TouchableOpacity
-            style={styles.quantityButton}
+            style={[styles.quantityButton, updatingItemId === item.service_id && styles.quantityButtonDisabled]}
             onPress={() => handleQuantityChange(categoryIndex, itemIndex, -1)}
+            disabled={updatingItemId === item.service_id}
           >
-            <Ionicons name="remove" size={16} color="#3898B3" />
+            {updatingItemId === item.service_id ? (
+              <ActivityIndicator size="small" color="#3898B3" />
+            ) : (
+              <Ionicons name="remove" size={16} color="#3898B3" />
+            )}
           </TouchableOpacity>
           <Text style={styles.quantityText}>{item.quantity}</Text>
           <TouchableOpacity
-            style={styles.quantityButton}
+            style={[styles.quantityButton, updatingItemId === item.service_id && styles.quantityButtonDisabled]}
             onPress={() => handleQuantityChange(categoryIndex, itemIndex, 1)}
+            disabled={updatingItemId === item.service_id}
           >
-            <Ionicons name="add" size={16} color="#3898B3" />
+            {updatingItemId === item.service_id ? (
+              <ActivityIndicator size="small" color="#3898B3" />
+            ) : (
+              <Ionicons name="add" size={16} color="#3898B3" />
+            )}
           </TouchableOpacity>
         </View>
 
         <TouchableOpacity
           style={styles.removeButton}
-          onPress={() => handleRemoveItem(item.service_id)}
+          onPress={() => handleDeletePress(item)}
         >
           <Ionicons name="trash-outline" size={18} color="#F44336" />
         </TouchableOpacity>
@@ -473,101 +577,175 @@ export default function Cart() {
   );
 
   const LocationModal = () => (
-    <Modal visible={showLocationModal} transparent animationType="none">
-      <Animated.View style={[styles.modalOverlay, { opacity: modalOpacity }]}>
-        <Animated.View
-          style={[styles.modalContent, { transform: [{ translateY: modalY }] }]}
-          {...panResponder.panHandlers}
-        >
-          {/* Gesture Indicator Bar */}
-          <View style={styles.gestureIndicator}>
-            <View style={styles.indicatorBar} />
-          </View>
-
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>📍 Update Location</Text>
-            <TouchableOpacity onPress={() => {
-              setShowLocationModal(false);
-              setIsManualLocationEditing(false);
-            }}>
-              <Ionicons name="close" size={24} color="#333" />
+    <Modal 
+      visible={showLocationModal} 
+      transparent 
+      animationType="slide"
+      onRequestClose={() => {
+        setShowLocationModal(false);
+        clearLocationFields();
+      }}
+    >
+      <View style={styles.locationModalOverlay}>
+        <View style={styles.locationModalContainer}>
+          {/* Header */}
+          <View style={styles.locationModalHeader}>
+            <Text style={styles.locationModalTitle}>📍 Enter Your Address</Text>
+            <TouchableOpacity 
+              style={styles.locationCloseButton}
+              onPress={() => {
+                setShowLocationModal(false);
+                clearLocationFields();
+              }}
+            >
+              <Ionicons name="close" size={24} color="#666" />
             </TouchableOpacity>
           </View>
 
-          {/* Current Location Option */}
-          <TouchableOpacity
-            style={[styles.locationOption, isLocationLoading && styles.locationOptionDisabled]}
-            onPress={getCurrentLocation}
-            disabled={isLocationLoading}
+          {/* Scrollable Form Content */}
+          <ScrollView 
+            style={styles.locationFormScroll}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
           >
-            <View style={styles.locationOptionLeft}>
-              <View style={styles.locationIconContainer}>
-                <Ionicons
-                  name={isLocationLoading ? "refresh" : "location"}
-                  size={20}
-                  color="#3898B3"
+            {/* House Number */}
+            <View style={styles.locationFieldContainer}>
+              <Text style={styles.locationFieldLabel}>House No./Building Name *</Text>
+              <View style={styles.locationInputWrapper}>
+                <Ionicons name="home-outline" size={18} color="#3898B3" style={styles.locationInputIcon} />
+                <TextInput
+                  style={styles.locationTextInput}
+                  placeholder="Enter house/flat number or building name"
+                  placeholderTextColor="#999"
+                  value={houseNumber}
+                  onChangeText={setHouseNumber}
+                  autoCapitalize="words"
+                  returnKeyType="next"
                 />
               </View>
-              <View>
-                <Text style={styles.locationOptionTitle}>
-                  {isLocationLoading ? "Getting Location..." : "Use Current Location"}
-                </Text>
-                <Text style={styles.locationOptionSubtitle}>
-                  Automatically detect your location
-                </Text>
+            </View>
+
+            {/* Road/Street */}
+            <View style={styles.locationFieldContainer}>
+              <Text style={styles.locationFieldLabel}>Road/Street Name *</Text>
+              <View style={styles.locationInputWrapper}>
+                <Ionicons name="map-outline" size={18} color="#3898B3" style={styles.locationInputIcon} />
+                <TextInput
+                  style={styles.locationTextInput}
+                  placeholder="Enter road or street name"
+                  placeholderTextColor="#999"
+                  value={road}
+                  onChangeText={setRoad}
+                  autoCapitalize="words"
+                  returnKeyType="next"
+                />
               </View>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#999" />
-          </TouchableOpacity>
 
-          {/* Manual Location Input */}
-          <View style={styles.manualSection}>
-            <Text style={styles.sectionTitle}>Enter Location Manually</Text>
-            <View style={styles.inputContainer}>
-              <Ionicons name="location-outline" size={20} color="#666" style={styles.inputIcon} />
-              <TextInput
-                style={styles.textInput}
-                placeholder="Type your address here..."
-                placeholderTextColor="#999"
-                value={manualLocation}
-                onChangeText={(text) => {
-                  setManualLocation(text);
-                  setIsManualLocationEditing(true);
-                }}
-                onFocus={() => setIsManualLocationEditing(true)}
-                onBlur={() => setIsManualLocationEditing(false)}
-                multiline={true}
-                numberOfLines={2}
-              />
+            {/* Area/District and City Row */}
+            <View style={styles.locationRowContainer}>
+              <View style={styles.locationHalfField}>
+                <Text style={styles.locationFieldLabel}>Area/District *</Text>
+                <View style={styles.locationInputWrapper}>
+                  <Ionicons name="business-outline" size={18} color="#3898B3" style={styles.locationInputIcon} />
+                  <TextInput
+                    style={styles.locationTextInput}
+                    placeholder="Area/District"
+                    placeholderTextColor="#999"
+                    value={district}
+                    onChangeText={setDistrict}
+                    autoCapitalize="words"
+                    returnKeyType="next"
+                  />
+                </View>
+              </View>
+
+              <View style={styles.locationHalfField}>
+                <Text style={styles.locationFieldLabel}>City *</Text>
+                <View style={styles.locationInputWrapper}>
+                  <Ionicons name="location-outline" size={18} color="#3898B3" style={styles.locationInputIcon} />
+                  <TextInput
+                    style={styles.locationTextInput}
+                    placeholder="City name"
+                    placeholderTextColor="#999"
+                    value={city}
+                    onChangeText={setCity}
+                    autoCapitalize="words"
+                    returnKeyType="next"
+                  />
+                </View>
+              </View>
             </View>
-          </View>
+
+            {/* Landmark */}
+            <View style={styles.locationFieldContainer}>
+              <Text style={styles.locationFieldLabel}>
+                Landmark/Additional Details 
+                <Text style={styles.locationOptionalText}> (Optional)</Text>
+              </Text>
+              <View style={styles.locationInputWrapper}>
+                <Ionicons name="information-circle-outline" size={18} color="#3898B3" style={styles.locationInputIcon} />
+                <TextInput
+                  style={styles.locationTextInput}
+                  placeholder="Near landmark, floor details, gate info, etc."
+                  placeholderTextColor="#999"
+                  value={additionalInfo}
+                  onChangeText={setAdditionalInfo}
+                  autoCapitalize="words"
+                  returnKeyType="next"
+                />
+              </View>
+            </View>
+
+            {/* Pincode */}
+            <View style={styles.locationFieldContainer}>
+              <Text style={styles.locationFieldLabel}>Pincode *</Text>
+              <View style={styles.locationInputWrapper}>
+                <Ionicons name="mail-outline" size={18} color="#3898B3" style={styles.locationInputIcon} />
+                <TextInput
+                  style={styles.locationTextInput}
+                  placeholder="Enter 6-digit pincode"
+                  placeholderTextColor="#999"
+                  value={pincode}
+                  onChangeText={(text) => {
+                    const numbersOnly = text.replace(/\D/g, '');
+                    if (numbersOnly.length <= 6) {
+                      setPincode(numbersOnly);
+                    }
+                  }}
+                  keyboardType="numeric"
+                  maxLength={6}
+                  returnKeyType="done"
+                />
+              </View>
+            </View>
+          </ScrollView>
 
           {/* Action Buttons */}
-          <View style={styles.buttonContainer}>
+          <View style={styles.locationButtonContainer}>
             <TouchableOpacity
-              style={styles.cancelButton}
+              style={styles.locationCancelButton}
               onPress={() => {
                 setShowLocationModal(false);
-                setIsManualLocationEditing(false);
-                setManualLocation(selectedLocation || "");
+                clearLocationFields();
               }}
             >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
+              <Text style={styles.locationCancelButtonText}>Cancel</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               style={[
-                styles.saveButton,
-                (!manualLocation || !manualLocation.trim()) && styles.saveButtonDisabled
+                styles.locationSaveButton,
+                (!houseNumber.trim() || !road.trim() || !district.trim() || !city.trim() || !pincode.trim()) && styles.locationSaveButtonDisabled
               ]}
               onPress={saveManualLocation}
-              disabled={!manualLocation || !manualLocation.trim()}
+              disabled={!houseNumber.trim() || !road.trim() || !district.trim() || !city.trim() || !pincode.trim()}
             >
-              <Text style={styles.saveButtonText}>Save Location</Text>
+              <Text style={styles.locationSaveButtonText}>Save Address</Text>
             </TouchableOpacity>
           </View>
-        </Animated.View>
-      </Animated.View>
+        </View>
+      </View>
     </Modal>
   );
 
@@ -1048,63 +1226,65 @@ export default function Cart() {
             </View>
 
             {/* Bill Summary */}
-            <View style={styles.billSummaryCard}>
-              <View style={styles.billHeader}>
-                <Ionicons name="receipt" size={20} color="#3898B3" />
-                <Text style={styles.billTitle}>Bill Summary</Text>
-              </View>
-
-              <View style={styles.billRows}>
-                <View style={styles.billRow}>
-                  <Text style={styles.billLabel}>Subtotal</Text>
-                  <Text style={styles.billAmount}>₹{calculateGrandTotal()}</Text>
+            {!isCartEmptyOrZero() && (
+              <View style={styles.billSummaryCard}>
+                <View style={styles.billHeader}>
+                  <Ionicons name="receipt" size={20} color="#3898B3" />
+                  <Text style={styles.billTitle}>Bill Summary</Text>
                 </View>
-                <View style={[styles.billRow, { position: 'relative' }]}>
-                  <View style={styles.billLabelWithIcon}>
-                    <Text style={styles.billLabel}>Service Fee</Text>
-                    <TouchableOpacity
-                      onPress={() => setShowServiceFeeTooltip(!showServiceFeeTooltip)}
-                      style={styles.infoIconButton}
-                    >
-                      <Ionicons name="information-circle-outline" size={16} color="#666" />
-                    </TouchableOpacity>
-                  </View>
-                  <Text style={styles.billAmount}>₹50</Text>
 
-                  {/* Service Fee Tooltip */}
-                  {showServiceFeeTooltip && (
-                    <View style={styles.serviceFeeTooltip}>
-                      <View style={styles.tooltipBubble}>
-                        <Text style={styles.tooltipText}>
-                          💡 Service fee covers platform maintenance, customer support, and quality assurance!
-                        </Text>
-                        <View style={styles.tooltipArrow} />
-                      </View>
+                <View style={styles.billRows}>
+                  <View style={styles.billRow}>
+                    <Text style={styles.billLabel}>Subtotal</Text>
+                    <Text style={styles.billAmount}>₹{calculateGrandTotal()}</Text>
+                  </View>
+                  <View style={[styles.billRow, { position: 'relative' }]}>
+                    <View style={styles.billLabelWithIcon}>
+                      <Text style={styles.billLabel}>Service Fee</Text>
+                      <TouchableOpacity
+                        onPress={() => setShowServiceFeeTooltip(!showServiceFeeTooltip)}
+                        style={styles.infoIconButton}
+                      >
+                        <Ionicons name="information-circle-outline" size={16} color="#666" />
+                      </TouchableOpacity>
                     </View>
-                  )}
-                </View>
+                    <Text style={styles.billAmount}>₹50</Text>
 
-                <View style={styles.billRow}>
-                  <Text style={styles.billLabel}>GST (18%)</Text>
-                  <Text style={styles.billAmount}>₹{Math.round(calculateGrandTotal() * 0.18)}</Text>
-                </View>
-
-                <View style={styles.billDivider} />
-
-                <View style={styles.billTotalRow}>
-                  <View>
-                    <Text style={styles.billTotalLabel}>Total Amount</Text>
-                    <Text style={styles.billTotalSubtext}>All taxes included</Text>
+                    {/* Service Fee Tooltip */}
+                    {showServiceFeeTooltip && (
+                      <View style={styles.serviceFeeTooltip}>
+                        <View style={styles.tooltipBubble}>
+                          <Text style={styles.tooltipText}>
+                            💡 Service fee covers platform maintenance, customer support, and quality assurance!
+                          </Text>
+                          <View style={styles.tooltipArrow} />
+                        </View>
+                      </View>
+                    )}
                   </View>
-                  <Text style={styles.billTotalAmount}>₹{calculateGrandTotal() + service_charge + totalTax}</Text>
+
+                  <View style={styles.billRow}>
+                    <Text style={styles.billLabel}>GST (18%)</Text>
+                    <Text style={styles.billAmount}>₹{Math.round(calculateGrandTotal() * 0.18)}</Text>
+                  </View>
+
+                  <View style={styles.billDivider} />
+
+                  <View style={styles.billTotalRow}>
+                    <View>
+                      <Text style={styles.billTotalLabel}>Total Amount</Text>
+                      <Text style={styles.billTotalSubtext}>All taxes included</Text>
+                    </View>
+                    <Text style={styles.billTotalAmount}>₹{Math.round(calculateGrandTotal() + service_charge + totalTax)}</Text>
+                  </View>
+                </View>
+
+                <View style={styles.savingsBanner}>
+                  <Ionicons name="gift" size={18} color="#4CAF50" />
+                  <Text style={styles.savingsText}>🎉 You&apos;re saving ₹120 on this booking!</Text>
                 </View>
               </View>
-
-              <View style={styles.savingsBanner}>
-                <Ionicons name="gift" size={18} color="#4CAF50" />
-                <Text style={styles.savingsText}>🎉 You&apos;re saving ₹120 on this booking!</Text>
-              </View>
-            </View>
+            )}
 
             {/* Payment Methods */}
             <View style={styles.paymentMethodsSection}>
@@ -1352,7 +1532,7 @@ export default function Cart() {
           <View style={styles.enhancedPaymentFooter}>
             <View style={styles.paymentAmountSummary}>
               <Text style={styles.payAmountLabel}>Total Amount</Text>
-              <Text style={styles.payAmountValue}>₹{total}</Text>
+              <Text style={styles.payAmountValue}>₹{Math.round(total)}</Text>
             </View>
             <TouchableOpacity
               style={styles.enhancedPayButton}
@@ -1367,6 +1547,54 @@ export default function Cart() {
           </View>
         </Animated.View>
       </Animated.View>
+    </Modal>
+  );
+
+  const DeleteConfirmationModal = () => (
+    <Modal visible={showDeleteModal} transparent animationType="fade">
+      <View style={styles.deleteModalOverlay}>
+        <View style={styles.deleteModalContent}>
+          <View style={styles.deleteModalHeader}>
+            <View style={styles.deleteIconContainer}>
+              
+                <Ionicons name="trash-outline" size={32} color="#F44336" />
+              
+            </View>
+            <Text style={styles.deleteModalTitle}>Clear Cart</Text>
+          </View>
+
+          <Text style={styles.deleteModalMessage}>
+            Are you sure you want to remove all items from your cart?
+          </Text>
+
+          <View style={styles.deleteModalButtons}>
+            <TouchableOpacity
+              style={styles.deleteCancelButton}
+              onPress={() => {
+                setShowDeleteModal(false);
+                setItemToDelete(null);
+              }}
+            >
+              <Text style={styles.deleteCancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.deleteConfirmButton, deletingItemId === itemToDelete?.service_id && styles.deleteConfirmButtonDisabled]}
+              onPress={() => {
+                if (itemToDelete) {
+                  handleRemoveItem(itemToDelete.service_id);
+                }
+              }}
+              disabled={deletingItemId === itemToDelete?.service_id}
+            >
+              {deletingItemId === itemToDelete?.service_id ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={styles.deleteConfirmButtonText}>Clear Cart</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
     </Modal>
   );
 
@@ -1433,37 +1661,47 @@ export default function Cart() {
         </TouchableOpacity>
 
         {/* Cart Categories */}
-        {cartData.map((categoryData, index) =>
-          renderCategorySection(categoryData, index)
+        {cartData.length === 0 ? (
+          <View style={styles.emptyCartContainer}>
+            <Ionicons name="basket-outline" size={64} color="#ccc" />
+            <Text style={styles.emptyCartTitle}>Your Cart is Empty</Text>
+            <Text style={styles.emptyCartSubtitle}>Add some services to get started!</Text>
+          </View>
+        ) : (
+          cartData.map((categoryData, index) =>
+            renderCategorySection(categoryData, index)
+          )
         )}
 
         {/* Payment Summary */}
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryTitle}>Payment Summary</Text>
+        {!isCartEmptyOrZero() && (
+          <View style={styles.summaryCard}>
+            <Text style={styles.summaryTitle}>Payment Summary</Text>
 
-          {cartData.map((category, index) => (
-            <View key={index} style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>{category.category}</Text>
-              <Text style={styles.summaryAmount}>₹{calculateCategoryTotal(category.items)}</Text>
+            {cartData.map((category, index) => (
+              <View key={index} style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>{category.category}</Text>
+                <Text style={styles.summaryAmount}>₹{calculateCategoryTotal(category.items)}</Text>
+              </View>
+            ))}
+
+            <View style={styles.summaryDivider} />
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Service Fee</Text>
+              <Text style={styles.summaryAmount}>{'₹'+Math.round(service_charge)}</Text>
             </View>
-          ))}
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Taxes</Text>
+              <Text style={styles.summaryAmount}>₹{Math.round(totalTax)}</Text>
+            </View>
 
-          <View style={styles.summaryDivider} />
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Service Fee</Text>
-            <Text style={styles.summaryAmount}>{'₹'+Math.round(service_charge)}</Text>
+            <View style={styles.summaryDivider} />
+            <View style={styles.summaryRow}>
+              <Text style={styles.totalLabel}>Total Amount</Text>
+              <Text style={styles.totalAmount}>₹{Math.round(total)}</Text>
+            </View>
           </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Taxes</Text>
-            <Text style={styles.summaryAmount}>₹{Math.round(totalTax)}</Text>
-          </View>
-
-          <View style={styles.summaryDivider} />
-          <View style={styles.summaryRow}>
-            <Text style={styles.totalLabel}>Total Amount</Text>
-            <Text style={styles.totalAmount}>₹{Math.round(total)}</Text>
-          </View>
-        </View>
+        )}
 
         {/* Cancellation Policy */}
         <TouchableOpacity
@@ -1480,14 +1718,28 @@ export default function Cart() {
       <View style={styles.bottomSection}>
         <View style={styles.totalContainer}>
           <Text style={styles.bottomTotalLabel}>Total</Text>
-          <Text style={styles.bottomTotalAmount}>₹{calculateGrandTotal() + 50 + Math.round(calculateGrandTotal() * 0.18)}</Text>
+          <Text style={styles.bottomTotalAmount}>₹{Math.round(calculateGrandTotal() + service_charge + totalTax)}</Text>
         </View>
         <TouchableOpacity
-          style={styles.proceedButton}
+          style={[
+            styles.proceedButton,
+            isCartEmptyOrZero() && styles.proceedButtonDisabled
+          ]}
           onPress={handleProceedNow}
+          disabled={isCartEmptyOrZero()}
         >
-          <Text style={styles.proceedButtonText}>Proceed Now</Text>
-          <Ionicons name="arrow-forward" size={16} color="#fff" style={{ marginLeft: 8 }} />
+          <Text style={[
+            styles.proceedButtonText,
+            isCartEmptyOrZero() && styles.proceedButtonTextDisabled
+          ]}>
+            Proceed Now
+          </Text>
+          <Ionicons 
+            name="arrow-forward" 
+            size={16} 
+            color={isCartEmptyOrZero() ? "#999" : "#fff"} 
+            style={{ marginLeft: 8 }} 
+          />
         </TouchableOpacity>
       </View>
 
@@ -1496,6 +1748,7 @@ export default function Cart() {
       <CancellationPolicyModal />
       <DateTimeModal />
       <PaymentModal />
+      <DeleteConfirmationModal />
     </View>
   );
 }
@@ -1703,6 +1956,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  quantityButtonDisabled: {
+    opacity: 0.5,
+  },
   quantityText: {
     fontSize: 16,
     fontWeight: '600',
@@ -1711,6 +1967,9 @@ const styles = StyleSheet.create({
   },
   removeButton: {
     padding: 5,
+  },
+  removeButtonDisabled: {
+    opacity: 0.5,
   },
   summaryCard: {
     backgroundColor: '#fff',
@@ -1831,13 +2090,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  proceedButtonDisabled: {
+    backgroundColor: '#E0E0E0',
+    elevation: 0,
+    shadowOpacity: 0,
+  },
+  proceedButtonTextDisabled: {
+    color: '#999',
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#fff',
+    backgroundColor: '#ffffffff',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 20,
@@ -1866,7 +2133,7 @@ const styles = StyleSheet.create({
     color: '#1A1A1A',
   },
   manualSection: {
-    marginBottom: 30,
+    marginBottom: 0,
   },
   sectionTitle: {
     fontSize: 16,
@@ -3023,6 +3290,125 @@ const styles = StyleSheet.create({
     maxHeight: '90%',
     minHeight: '70%',
   },
+  // Location Modal Specific Styles
+  locationModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  locationModalContainer: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    height: '80%',
+    paddingTop: 8,
+  },
+  locationModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  locationModalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1A1A1A',
+  },
+  locationCloseButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F5F5F5',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  locationFormScroll: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
+  locationFieldContainer: {
+    marginBottom: 20,
+  },
+  locationFieldLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    marginBottom: 8,
+  },
+  locationOptionalText: {
+    fontSize: 12,
+    color: '#999',
+    fontWeight: '400',
+  },
+  locationInputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
+    paddingHorizontal: 12,
+    height: 48,
+  },
+  locationInputIcon: {
+    marginRight: 10,
+  },
+  locationTextInput: {
+    flex: 1,
+    fontSize: 14,
+    color: '#333',
+    height: '100%',
+  },
+  locationRowContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  locationHalfField: {
+    flex: 1,
+    marginRight: 8,
+  },
+  locationButtonContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    gap: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+    backgroundColor: '#fff',
+  },
+  locationCancelButton: {
+    flex: 1,
+    backgroundColor: '#F5F5F5',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  locationCancelButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#666',
+  },
+  locationSaveButton: {
+    flex: 1,
+    backgroundColor: '#3898B3',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  locationSaveButtonDisabled: {
+    backgroundColor: '#B3D9FF',
+    opacity: 0.6,
+  },
+  locationSaveButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
+  },
   gestureIndicator: {
     alignItems: 'center',
     paddingVertical: 16,
@@ -3085,6 +3471,108 @@ const styles = StyleSheet.create({
     color: '#666',
     marginTop: 20,
     fontStyle: 'italic',
+    textAlign: 'center',
+  },
+  // Delete Confirmation Modal Styles
+  deleteModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  deleteModalContent: {
+    backgroundColor: '#fff',
+    marginHorizontal: 40,
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 10,
+    minWidth: 300,
+  },
+  deleteModalHeader: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  deleteIconContainer: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#FFF5F5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  deleteModalTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#333',
+    textAlign: 'center',
+  },
+  deleteModalMessage: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 24,
+  },
+  deleteModalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  deleteCancelButton: {
+    flex: 1,
+    backgroundColor: '#F5F5F5',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  deleteCancelButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#666',
+  },
+  deleteConfirmButton: {
+    flex: 1,
+    backgroundColor: '#F44336',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  deleteConfirmButtonDisabled: {
+    backgroundColor: '#FFCDD2',
+  },
+  deleteConfirmButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#fff',
+  },
+  // Empty Cart Styles
+  emptyCartContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+    paddingHorizontal: 20,
+  },
+  emptyCartTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    marginTop: 20,
+    marginBottom: 8,
+  },
+  emptyCartSubtitle: {
+    fontSize: 16,
+    color: '#666',
     textAlign: 'center',
   },
 });
