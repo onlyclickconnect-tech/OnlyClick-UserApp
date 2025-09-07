@@ -15,6 +15,7 @@ export const updateProfile = async (updates) => {
     throw error;
   }
 };
+
 export const uploadAvatar = async (imageUri) => {
   try {
     const formData = new FormData();
@@ -34,6 +35,19 @@ export const uploadAvatar = async (imageUri) => {
   } catch (error) {
     console.error(
       "Error uploading avatar:",
+      error.response?.data || error.message
+    );
+    return { error };
+  }
+};
+
+export const deleteAvatar = async () => {
+  try {
+    const { data } = await api.delete("/api/v1/avatar");
+    return data;
+  } catch (error) {
+    console.error(
+      "Error deleting avatar:",
       error.response?.data || error.message
     );
     return { error };

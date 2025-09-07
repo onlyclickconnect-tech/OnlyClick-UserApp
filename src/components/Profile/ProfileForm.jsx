@@ -29,10 +29,12 @@ const ProfileForm = ({ onValidationChange, onSave }) => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required';
-    if (formData.email.trim() && !/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Email is invalid';
-    if (!formData.phone.trim()) newErrors.phone = 'Phone number is required';
-    if (!formData.address.trim()) newErrors.address = 'Address is required';
+    if (!formData.fullName?.trim())
+      newErrors.fullName = "Full name is required";
+    if (formData.email?.trim() && !/\S+@\S+\.\S+/.test(formData.email))
+      newErrors.email = "Email is invalid";
+    if (!formData.phone?.trim()) newErrors.phone = "Phone number is required";
+    if (!formData.address?.trim()) newErrors.address = "Address is required";
 
     setErrors(newErrors);
     const isValid = Object.keys(newErrors).length === 0;
@@ -40,12 +42,13 @@ const ProfileForm = ({ onValidationChange, onSave }) => {
     return isValid;
   };
 
+
   // Only validate after user has interacted with the form
   useEffect(() => {
     if (hasInteracted) {
       validateForm();
     }
-  }, [formData, hasInteracted]);
+  }, []);
 
   // Check if form is initially valid (for first-time users)
   useEffect(() => {
