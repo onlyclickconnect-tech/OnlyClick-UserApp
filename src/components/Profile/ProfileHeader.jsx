@@ -2,6 +2,7 @@ import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Alert, Animated, Easing, Image, Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { uploadAvatar } from "../../app/api/userServices";
 import useCurrentUserDetails from "../../hooks/useCurrentUserDetails";
 import useDimension from "../../hooks/useDimensions";
 import SuccessIndicator from "../common/SuccessIndicator";
@@ -22,21 +23,43 @@ const ProfileHeader = ({ isGeneral = true, setIsGeneral = () => {} }) => {
   const uploadImageToBackend = async (imageUri) => {
     setIsUpdatingPhoto(true);
     try {
-      // Simulate API call - replace with actual backend call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      console.log("Starting upload for:", imageUri);
+
+      // Add timeout to prevent infinite loading
+      const uploadPromise = uploadAvatar(imageUri);
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Upload timeout")), 30000)
+      );
+
+      const result = await Promise.race([uploadPromise, timeoutPromise]);
+
+      console.log("Upload result:", result);
+
+      if (result?.error) {
+        Alert.alert(
+          "Error",
+          "Failed to update profile picture. Please try again."
+        );
+        setTempImageUri(null);
+        return;
+      }
+
       // On success, update the selected image
       setSelectedImage(imageUri);
       setTempImageUri(null);
       setShowSuccessModal(true);
     } catch (error) {
       console.log("Upload error:", error);
-      Alert.alert("Error", "Failed to update profile picture. Please try again.");
+      Alert.alert(
+        "Error",
+        `Upload failed: ${error.message || "Unknown error"}`
+      );
       setTempImageUri(null);
     } finally {
       setIsUpdatingPhoto(false);
     }
   };
+
 
   // Confirm image selection
   const confirmImageSelection = (imageUri) => {
