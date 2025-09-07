@@ -1,8 +1,10 @@
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useRef, useState } from "react";
-import { Alert, Animated, Easing, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, Animated, Easing, Image, Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import useCurrentUserDetails from "../../hooks/useCurrentUserDetails";
 import useDimension from "../../hooks/useDimensions";
+import SuccessIndicator from "../common/SuccessIndicator";
 
 const ProfileHeader = ({ isGeneral = true, setIsGeneral = () => {} }) => {
   const { name, email, profileImage, userId } = useCurrentUserDetails();
@@ -10,6 +12,152 @@ const ProfileHeader = ({ isGeneral = true, setIsGeneral = () => {} }) => {
   const { screenWidth } = useDimension();
   const [isEditingName, setIsEditingName] = useState(false);
   const [userName, setUserName] = useState(name || "User's Name");
+  const [selectedImage, setSelectedImage] = useState(profileImage);
+  const [isUpdatingPhoto, setIsUpdatingPhoto] = useState(false);
+  const [tempImageUri, setTempImageUri] = useState(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+
+  // Upload image to backend
+  const uploadImageToBackend = async (imageUri) => {
+    setIsUpdatingPhoto(true);
+    try {
+      // Simulate API call - replace with actual backend call
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // On success, update the selected image
+      setSelectedImage(imageUri);
+      setTempImageUri(null);
+      setShowSuccessModal(true);
+    } catch (error) {
+      console.log("Upload error:", error);
+      Alert.alert("Error", "Failed to update profile picture. Please try again.");
+      setTempImageUri(null);
+    } finally {
+      setIsUpdatingPhoto(false);
+    }
+  };
+
+  // Confirm image selection
+  const confirmImageSelection = (imageUri) => {
+    setTempImageUri(imageUri);
+    setShowConfirmModal(true);
+  };
+
+  // Handle confirm button in modal
+  const handleConfirmImage = () => {
+    setShowConfirmModal(false);
+    uploadImageToBackend(tempImageUri);
+  };
+
+  // Handle cancel button in modal
+  const handleCancelImage = () => {
+    setShowConfirmModal(false);
+    setTempImageUri(null);
+  };
+  // Camera function
+  const takePhoto = async () => {
+    if (isUpdatingPhoto) return; // Prevent multiple clicks during upload
+    
+    try {
+      const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+      if (!permissionResult.granted) {
+        Alert.alert("Permission required", "Camera permission is needed to take photos");
+        return;
+      }
+      
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.8,
+        allowsMultipleSelection: false,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const imageUri = result.assets[0].uri;
+        confirmImageSelection(imageUri);
+      }
+    } catch (error) {
+      console.log("Camera error:", error);
+      Alert.alert(
+        "Camera Error", 
+        "There was an issue accessing your camera. Please check camera permissions and try again.",
+        [{ text: 'OK', style: 'default' }]
+      );
+    }
+  };
+
+  // Gallery function
+  const pickFromGallery = async () => {
+    if (isUpdatingPhoto) return; // Prevent multiple clicks during upload
+    
+    try {
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permissionResult.granted) {
+        Alert.alert("Permission required", "Gallery permission is needed to select photos");
+        return;
+      }
+      
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.8,
+        allowsMultipleSelection: false,
+        selectionLimit: 1,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const imageUri = result.assets[0].uri;
+        confirmImageSelection(imageUri);
+      }
+    } catch (error) {
+      console.log("Gallery error:", error);
+      // More specific error handling for PhotoPicker issues
+      if (error.message && error.message.includes('PhotoPicker')) {
+        Alert.alert(
+          "Gallery Error", 
+          "There was an issue accessing your photo library. Please try again or use the camera option.",
+          [{ text: 'OK', style: 'default' }]
+        );
+      } else {
+        Alert.alert("Error", `Failed to pick image: ${error.message}`);
+      }
+    }
+  };
+
+  // Remove photo function
+  const removePhoto = () => {
+    if (isUpdatingPhoto) return; // Prevent action during upload
+    
+    Alert.alert(
+      "Remove Profile Picture",
+      "Are you sure you want to remove your profile picture?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Remove",
+          style: "destructive",
+          onPress: async () => {
+            setIsUpdatingPhoto(true);
+            try {
+              // Simulate API call to remove photo
+              await new Promise(resolve => setTimeout(resolve, 1500));
+              
+              setSelectedImage(null);
+              Alert.alert("Success", "Profile picture removed successfully!");
+            } catch (error) {
+              Alert.alert("Error", "Failed to remove profile picture. Please try again.");
+            } finally {
+              setIsUpdatingPhoto(false);
+            }
+          }
+        }
+      ]
+    );
+  };
 
   const toggleWidth = Math.min(screenWidth * 0.9, 340);
   const padding = 4; // Internal padding of the toggle container
@@ -34,54 +182,145 @@ const ProfileHeader = ({ isGeneral = true, setIsGeneral = () => {} }) => {
     }).start();
   }, [isGeneral]);
 
+  // Confirmation Modal Component
+  const ConfirmImageModal = () => (
+    <Modal
+      visible={showConfirmModal}
+      transparent
+      animationType="fade"
+      onRequestClose={handleCancelImage}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.confirmModalContainer}>
+          <View style={styles.confirmModalHeader}>
+            <Ionicons name="camera" size={32} color="#0097B3" />
+            <Text style={styles.confirmModalTitle}>Confirm Profile Picture</Text>
+          </View>
+          
+          {tempImageUri && (
+            <View style={styles.previewImageContainer}>
+              <Image source={{ uri: tempImageUri }} style={styles.previewImage} />
+            </View>
+          )}
+          
+          <Text style={styles.confirmModalText}>
+            Do you want to set this as your profile picture?
+          </Text>
+          
+          <View style={styles.confirmModalButtons}>
+            <TouchableOpacity 
+              style={styles.confirmCancelButton}
+              onPress={handleCancelImage}
+            >
+              <Text style={styles.confirmCancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.confirmButton}
+              onPress={handleConfirmImage}
+            >
+              <Text style={styles.confirmButtonText}>Confirm</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+
+  // Success Modal Component
+  const SuccessModal = () => {
+    // Auto-close the modal after 1 second
+    useEffect(() => {
+      if (showSuccessModal) {
+        const timer = setTimeout(() => {
+          setShowSuccessModal(false);
+        }, 1000);
+
+        return () => clearTimeout(timer);
+      }
+    }, [showSuccessModal]);
+
+    return (
+      <Modal
+        visible={showSuccessModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowSuccessModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.successModalContainer}>
+            <SuccessIndicator
+              title="Success!"
+              subtitle="Profile picture updated successfully"
+              message="Your new profile picture has been saved and will be visible across the app."
+              iconColor="#0097B3"
+            />
+          </View>
+        </View>
+      </Modal>
+    );
+  };
+
   const handleProfileImagePress = () => {
+    if (isUpdatingPhoto) {
+      return;
+    }
+
     Alert.alert(
-      "Change Profile Picture",
-      "Choose an option to update your profile picture",
+      "Profile Picture",
+      "Choose an option",
       [
         {
           text: "Take Photo",
-          onPress: () => {
-            // Here you would integrate with camera
-            Alert.alert("Camera", "Camera functionality would be implemented here");
-          }
+          onPress: takePhoto,
         },
         {
           text: "Choose from Gallery",
-          onPress: () => {
-            // Here you would integrate with image picker
-            Alert.alert("Gallery", "Gallery picker functionality would be implemented here");
-          }
+          onPress: pickFromGallery,
         },
-        {
+        ...(profileImage ? [{
           text: "Remove Photo",
-          onPress: () => {
-            // Here you would remove the profile image
-            Alert.alert("Remove", "Profile photo removal would be implemented here");
-          },
-          style: "destructive"
-        },
+          style: "destructive",
+          onPress: removePhoto,
+        }] : []),
         { text: "Cancel", style: "cancel" }
       ]
     );
   };
 
-
-
   return (
     <View style={styles.container}>
-     
+      <ConfirmImageModal />
+      <SuccessModal />
 
       <View style={styles.profileSection}>
-        <TouchableOpacity style={styles.profileIconContainer} onPress={handleProfileImagePress}>
-          {profileImage ? (
-            <Image source={{ uri: profileImage || 'https://img.myloview.com/posters/default-profile-picture-avatar-photo-placeholder-vector-illustration-700-197279432.jpg' }} style={styles.profileImage} />
+        <TouchableOpacity 
+          style={[styles.profileIconContainer, isUpdatingPhoto && styles.profileIconContainerLoading]} 
+          onPress={handleProfileImagePress}
+          disabled={isUpdatingPhoto}
+        >
+          {isUpdatingPhoto ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#0097B3" />
+              <Text style={styles.loadingText}>Updating...</Text>
+            </View>
           ) : (
-            <FontAwesome name="user" size={60} color="gray" />
+            <>
+              {selectedImage || profileImage ? (
+                <Image 
+                  source={{
+                    uri: selectedImage || profileImage || 'https://img.myloview.com/posters/default-profile-picture-avatar-photo-placeholder-vector-illustration-700-197279432.jpg' 
+                  }}
+                  style={styles.profileImage} 
+                />
+              ) : (
+                <FontAwesome name="user" size={60} color="gray" />
+              )}
+              <View style={styles.editImageOverlay}>
+                <Ionicons name="camera" size={20} color="#fff" />
+              </View>
+            </>
           )}
-          <View style={styles.editImageOverlay}>
-            <Ionicons name="camera" size={20} color="#fff" />
-          </View>
         </TouchableOpacity>
 
         <View style={styles.userInfo}>
@@ -146,6 +385,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 20,
     position: 'relative',
+  },
+  profileIconContainerLoading: {
+    opacity: 0.7,
+  },
+  loadingContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 8,
+    fontSize: 12,
+    color: '#0097B3',
+    fontWeight: '500',
   },
   profileImage: {
     width: 131,
@@ -218,6 +470,111 @@ const styles = StyleSheet.create({
   },
   activeToggleText: {
     color: 'white',
+  },
+  // Confirmation Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  confirmModalContainer: {
+    backgroundColor: 'white',
+    borderRadius: 15,
+    padding: 25,
+    margin: 20,
+    maxWidth: 350,
+    width: '90%',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  confirmModalHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  confirmModalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginTop: 10,
+    textAlign: 'center',
+  },
+  previewImageContainer: {
+    marginBottom: 20,
+    alignItems: 'center',
+  },
+  previewImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 3,
+    borderColor: '#0097B3',
+  },
+  confirmModalText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 25,
+    lineHeight: 22,
+  },
+  confirmModalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    gap: 15,
+  },
+  confirmCancelButton: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  confirmCancelButtonText: {
+    color: '#666',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  confirmButton: {
+    flex: 1,
+    backgroundColor: '#0097B3',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  confirmButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  // Success Modal Styles
+  successModalContainer: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 30,
+    margin: 20,
+    maxWidth: 400,
+    width: '90%',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 8,
   },
 });
 

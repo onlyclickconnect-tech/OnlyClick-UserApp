@@ -377,6 +377,13 @@ export default function Cart() {
     return cartData.reduce((total, category) => total + calculateCategoryTotal(category.items), 0);
   };
 
+  // Check if cart is empty or total is 0
+  const isCartEmptyOrZero = () => {
+    const grandTotal = calculateGrandTotal();
+    const totalItems = cartData.reduce((total, cat) => total + cat.items.length, 0);
+    return totalItems === 0 || grandTotal === 0;
+  };
+
   const handleQuantityChange = async (categoryIndex, itemIndex, change) => {
     const item = cartData[categoryIndex]?.items[itemIndex];
     if (!item) return;
@@ -427,7 +434,6 @@ export default function Cart() {
       } else {
         // Refetch cart data from server instead of optimistic updates
         await fetchCartData();
-        Alert.alert('Success', 'Cart cleared successfully');
       }
     } catch (error) {
       console.error('Error clearing cart:', error);
@@ -441,6 +447,15 @@ export default function Cart() {
   };
 
   const handleProceedNow = () => {
+    // Prevent proceeding if cart is empty or total is 0
+    if (isCartEmptyOrZero()) {
+      Alert.alert(
+        'Cart Empty', 
+        'Please add items to your cart before proceeding.',
+        [{ text: 'OK', style: 'default' }]
+      );
+      return;
+    }
     setShowDateTimeModal(true);
   };
 
@@ -1211,63 +1226,65 @@ export default function Cart() {
             </View>
 
             {/* Bill Summary */}
-            <View style={styles.billSummaryCard}>
-              <View style={styles.billHeader}>
-                <Ionicons name="receipt" size={20} color="#3898B3" />
-                <Text style={styles.billTitle}>Bill Summary</Text>
-              </View>
-
-              <View style={styles.billRows}>
-                <View style={styles.billRow}>
-                  <Text style={styles.billLabel}>Subtotal</Text>
-                  <Text style={styles.billAmount}>₹{calculateGrandTotal()}</Text>
+            {!isCartEmptyOrZero() && (
+              <View style={styles.billSummaryCard}>
+                <View style={styles.billHeader}>
+                  <Ionicons name="receipt" size={20} color="#3898B3" />
+                  <Text style={styles.billTitle}>Bill Summary</Text>
                 </View>
-                <View style={[styles.billRow, { position: 'relative' }]}>
-                  <View style={styles.billLabelWithIcon}>
-                    <Text style={styles.billLabel}>Service Fee</Text>
-                    <TouchableOpacity
-                      onPress={() => setShowServiceFeeTooltip(!showServiceFeeTooltip)}
-                      style={styles.infoIconButton}
-                    >
-                      <Ionicons name="information-circle-outline" size={16} color="#666" />
-                    </TouchableOpacity>
-                  </View>
-                  <Text style={styles.billAmount}>₹50</Text>
 
-                  {/* Service Fee Tooltip */}
-                  {showServiceFeeTooltip && (
-                    <View style={styles.serviceFeeTooltip}>
-                      <View style={styles.tooltipBubble}>
-                        <Text style={styles.tooltipText}>
-                          💡 Service fee covers platform maintenance, customer support, and quality assurance!
-                        </Text>
-                        <View style={styles.tooltipArrow} />
-                      </View>
+                <View style={styles.billRows}>
+                  <View style={styles.billRow}>
+                    <Text style={styles.billLabel}>Subtotal</Text>
+                    <Text style={styles.billAmount}>₹{calculateGrandTotal()}</Text>
+                  </View>
+                  <View style={[styles.billRow, { position: 'relative' }]}>
+                    <View style={styles.billLabelWithIcon}>
+                      <Text style={styles.billLabel}>Service Fee</Text>
+                      <TouchableOpacity
+                        onPress={() => setShowServiceFeeTooltip(!showServiceFeeTooltip)}
+                        style={styles.infoIconButton}
+                      >
+                        <Ionicons name="information-circle-outline" size={16} color="#666" />
+                      </TouchableOpacity>
                     </View>
-                  )}
-                </View>
+                    <Text style={styles.billAmount}>₹50</Text>
 
-                <View style={styles.billRow}>
-                  <Text style={styles.billLabel}>GST (18%)</Text>
-                  <Text style={styles.billAmount}>₹{Math.round(calculateGrandTotal() * 0.18)}</Text>
-                </View>
-
-                <View style={styles.billDivider} />
-
-                <View style={styles.billTotalRow}>
-                  <View>
-                    <Text style={styles.billTotalLabel}>Total Amount</Text>
-                    <Text style={styles.billTotalSubtext}>All taxes included</Text>
+                    {/* Service Fee Tooltip */}
+                    {showServiceFeeTooltip && (
+                      <View style={styles.serviceFeeTooltip}>
+                        <View style={styles.tooltipBubble}>
+                          <Text style={styles.tooltipText}>
+                            💡 Service fee covers platform maintenance, customer support, and quality assurance!
+                          </Text>
+                          <View style={styles.tooltipArrow} />
+                        </View>
+                      </View>
+                    )}
                   </View>
-                  <Text style={styles.billTotalAmount}>₹{calculateGrandTotal() + service_charge + totalTax}</Text>
+
+                  <View style={styles.billRow}>
+                    <Text style={styles.billLabel}>GST (18%)</Text>
+                    <Text style={styles.billAmount}>₹{Math.round(calculateGrandTotal() * 0.18)}</Text>
+                  </View>
+
+                  <View style={styles.billDivider} />
+
+                  <View style={styles.billTotalRow}>
+                    <View>
+                      <Text style={styles.billTotalLabel}>Total Amount</Text>
+                      <Text style={styles.billTotalSubtext}>All taxes included</Text>
+                    </View>
+                    <Text style={styles.billTotalAmount}>₹{Math.round(calculateGrandTotal() + service_charge + totalTax)}</Text>
+                  </View>
+                </View>
+
+                <View style={styles.savingsBanner}>
+                  <Ionicons name="gift" size={18} color="#4CAF50" />
+                  <Text style={styles.savingsText}>🎉 You&apos;re saving ₹120 on this booking!</Text>
                 </View>
               </View>
-
-              <View style={styles.savingsBanner}>
-                <Ionicons name="gift" size={18} color="#4CAF50" />
-                <Text style={styles.savingsText}>🎉 You&apos;re saving ₹120 on this booking!</Text>
-              </View>
-            </View>
+            )}
 
             {/* Payment Methods */}
             <View style={styles.paymentMethodsSection}>
@@ -1515,7 +1532,7 @@ export default function Cart() {
           <View style={styles.enhancedPaymentFooter}>
             <View style={styles.paymentAmountSummary}>
               <Text style={styles.payAmountLabel}>Total Amount</Text>
-              <Text style={styles.payAmountValue}>₹{total}</Text>
+              <Text style={styles.payAmountValue}>₹{Math.round(total)}</Text>
             </View>
             <TouchableOpacity
               style={styles.enhancedPayButton}
@@ -1644,37 +1661,47 @@ export default function Cart() {
         </TouchableOpacity>
 
         {/* Cart Categories */}
-        {cartData.map((categoryData, index) =>
-          renderCategorySection(categoryData, index)
+        {cartData.length === 0 ? (
+          <View style={styles.emptyCartContainer}>
+            <Ionicons name="basket-outline" size={64} color="#ccc" />
+            <Text style={styles.emptyCartTitle}>Your Cart is Empty</Text>
+            <Text style={styles.emptyCartSubtitle}>Add some services to get started!</Text>
+          </View>
+        ) : (
+          cartData.map((categoryData, index) =>
+            renderCategorySection(categoryData, index)
+          )
         )}
 
         {/* Payment Summary */}
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryTitle}>Payment Summary</Text>
+        {!isCartEmptyOrZero() && (
+          <View style={styles.summaryCard}>
+            <Text style={styles.summaryTitle}>Payment Summary</Text>
 
-          {cartData.map((category, index) => (
-            <View key={index} style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>{category.category}</Text>
-              <Text style={styles.summaryAmount}>₹{calculateCategoryTotal(category.items)}</Text>
+            {cartData.map((category, index) => (
+              <View key={index} style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>{category.category}</Text>
+                <Text style={styles.summaryAmount}>₹{calculateCategoryTotal(category.items)}</Text>
+              </View>
+            ))}
+
+            <View style={styles.summaryDivider} />
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Service Fee</Text>
+              <Text style={styles.summaryAmount}>{'₹'+Math.round(service_charge)}</Text>
             </View>
-          ))}
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Taxes</Text>
+              <Text style={styles.summaryAmount}>₹{Math.round(totalTax)}</Text>
+            </View>
 
-          <View style={styles.summaryDivider} />
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Service Fee</Text>
-            <Text style={styles.summaryAmount}>{'₹'+Math.round(service_charge)}</Text>
+            <View style={styles.summaryDivider} />
+            <View style={styles.summaryRow}>
+              <Text style={styles.totalLabel}>Total Amount</Text>
+              <Text style={styles.totalAmount}>₹{Math.round(total)}</Text>
+            </View>
           </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Taxes</Text>
-            <Text style={styles.summaryAmount}>₹{Math.round(totalTax)}</Text>
-          </View>
-
-          <View style={styles.summaryDivider} />
-          <View style={styles.summaryRow}>
-            <Text style={styles.totalLabel}>Total Amount</Text>
-            <Text style={styles.totalAmount}>₹{Math.round(total)}</Text>
-          </View>
-        </View>
+        )}
 
         {/* Cancellation Policy */}
         <TouchableOpacity
@@ -1694,11 +1721,25 @@ export default function Cart() {
           <Text style={styles.bottomTotalAmount}>₹{Math.round(calculateGrandTotal() + service_charge + totalTax)}</Text>
         </View>
         <TouchableOpacity
-          style={styles.proceedButton}
+          style={[
+            styles.proceedButton,
+            isCartEmptyOrZero() && styles.proceedButtonDisabled
+          ]}
           onPress={handleProceedNow}
+          disabled={isCartEmptyOrZero()}
         >
-          <Text style={styles.proceedButtonText}>Proceed Now</Text>
-          <Ionicons name="arrow-forward" size={16} color="#fff" style={{ marginLeft: 8 }} />
+          <Text style={[
+            styles.proceedButtonText,
+            isCartEmptyOrZero() && styles.proceedButtonTextDisabled
+          ]}>
+            Proceed Now
+          </Text>
+          <Ionicons 
+            name="arrow-forward" 
+            size={16} 
+            color={isCartEmptyOrZero() ? "#999" : "#fff"} 
+            style={{ marginLeft: 8 }} 
+          />
         </TouchableOpacity>
       </View>
 
@@ -2048,6 +2089,14 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  proceedButtonDisabled: {
+    backgroundColor: '#E0E0E0',
+    elevation: 0,
+    shadowOpacity: 0,
+  },
+  proceedButtonTextDisabled: {
+    color: '#999',
   },
   modalOverlay: {
     flex: 1,
@@ -3506,5 +3555,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     color: '#fff',
+  },
+  // Empty Cart Styles
+  emptyCartContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+    paddingHorizontal: 20,
+  },
+  emptyCartTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    marginTop: 20,
+    marginBottom: 8,
+  },
+  emptyCartSubtitle: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
   },
 });
