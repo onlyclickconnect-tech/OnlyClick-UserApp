@@ -2,7 +2,7 @@ import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Alert, Animated, Easing, Image, Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { uploadAvatar } from "../../app/api/userServices";
+import { deleteAvatar, uploadAvatar } from "../../app/api/userServices";
 import useCurrentUserDetails from "../../hooks/useCurrentUserDetails";
 import useDimension from "../../hooks/useDimensions";
 import SuccessIndicator from "../common/SuccessIndicator";
@@ -150,15 +150,15 @@ const ProfileHeader = ({ isGeneral = true, setIsGeneral = () => {} }) => {
 
   // Remove photo function
   const removePhoto = () => {
-    if (isUpdatingPhoto) return; // Prevent action during upload
-    
+    if (isUpdatingPhoto) return; 
+
     Alert.alert(
       "Remove Profile Picture",
       "Are you sure you want to remove your profile picture?",
       [
         {
           text: "Cancel",
-          style: "cancel"
+          style: "cancel",
         },
         {
           text: "Remove",
@@ -166,18 +166,28 @@ const ProfileHeader = ({ isGeneral = true, setIsGeneral = () => {} }) => {
           onPress: async () => {
             setIsUpdatingPhoto(true);
             try {
-              // Simulate API call to remove photo
-              await new Promise(resolve => setTimeout(resolve, 1500));
-              
+              const result = await deleteAvatar();
+
+              if (result?.error) {
+                Alert.alert(
+                  "Error",
+                  "Failed to remove profile picture. Please try again."
+                );
+                return;
+              }
+
               setSelectedImage(null);
               Alert.alert("Success", "Profile picture removed successfully!");
             } catch (error) {
-              Alert.alert("Error", "Failed to remove profile picture. Please try again.");
+              Alert.alert(
+                "Error",
+                "Failed to remove profile picture. Please try again."
+              );
             } finally {
               setIsUpdatingPhoto(false);
             }
-          }
-        }
+          },
+        },
       ]
     );
   };
