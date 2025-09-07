@@ -1,30 +1,45 @@
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from "react";
 import { Dimensions, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { useAuth } from "../../context/AuthProvider";
 import { useModal } from '../../context/ModalProvider';
 import { useUpdateProfile } from '../../hooks/seeUpdateProfile';
 import useCurrentUserDetails from "../../hooks/useCurrentUserDetails";
 import LoadinScreen from '../common/LoadingScreen';
 import SuccessModal from '../common/SuccessModal';
 
+
+
 const screenWidth = Dimensions.get("window").width;
 
-const ProfileForm = ({ onValidationChange, onSave }) => {
-  const { name, email, userAddress, phone, profileImage, _id, reviews, ratings, userId, service } = useCurrentUserDetails();
+const ProfileForm = ({ onValidationChange, onSave, onProfileUpdate }) => {
+  const {
+    name,
+    email,
+    userAddress,
+    phone,
+    profileImage,
+    _id,
+    reviews,
+    ratings,
+    userId,
+    service,
+  } = useCurrentUserDetails();
   const { setIsSuccessModalOpen } = useModal();
+  const { setUser } = useAuth();
 
   const [formData, setFormData] = useState({
-    fullName: name || '',
-    email: email || '',
-    phone: phone || '',
-    address: userAddress || '',
+    fullName: name || "",
+    email: email || "",
+    phone: phone || "",
+    address: userAddress || "",
   });
 
   const [isEditing, setIsEditing] = useState(false);
   const [errors, setErrors] = useState({});
   const [isSaving, setIsSaving] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
-  const [loadingspin, setLoadingspin] = useState(false)
+  const [loadingspin, setLoadingspin] = useState(false);
 
   const validateForm = () => {
     const newErrors = {};
@@ -42,7 +57,6 @@ const ProfileForm = ({ onValidationChange, onSave }) => {
     return isValid;
   };
 
-
   // Only validate after user has interacted with the form
   useEffect(() => {
     if (hasInteracted) {
@@ -52,10 +66,11 @@ const ProfileForm = ({ onValidationChange, onSave }) => {
 
   // Check if form is initially valid (for first-time users)
   useEffect(() => {
-    const isInitiallyValid = formData.fullName.trim() && 
-                           (formData.email.trim() === '' || /\S+@\S+\.\S+/.test(formData.email)) && 
-                           formData.phone.trim() && 
-                           formData.address.trim();
+    const isInitiallyValid =
+      formData.fullName.trim() &&
+      (formData.email.trim() === "" || /\S+@\S+\.\S+/.test(formData.email)) &&
+      formData.phone.trim() &&
+      formData.address.trim();
     onValidationChange && onValidationChange(isInitiallyValid);
   }, []);
 
@@ -76,20 +91,19 @@ const ProfileForm = ({ onValidationChange, onSave }) => {
     setFormData((prev) => {
       const updatedForm = { ...prev, [name]: value };
       if (errors[name]) {
-        setErrors(prev => ({ ...prev, [name]: '' }));
+        setErrors((prev) => ({ ...prev, [name]: "" }));
       }
       return updatedForm;
     });
   };
   const [refreshKey, setRefreshKey] = useState(0);
-   const { updateProfile, loading, error } = useUpdateProfile();
+  const { updateProfile, loading, error } = useUpdateProfile();
 
   const handleSave = async () => {
     setLoadingspin(true);
-    if (!validateForm()) return; // optional, validate before saving
+    if (!validateForm()) return; 
     setIsSaving(true);
 
-    // Map frontend formData keys to backend table columns
     const updates = {
       full_name: formData.fullName,
       email: formData.email,
@@ -97,36 +111,52 @@ const ProfileForm = ({ onValidationChange, onSave }) => {
     };
 
     const result = await updateProfile(updates);
-    console.log("result", result)
+    console.log("result", result);
     if (result?.data?.updated) {
       setIsSuccessModalOpen(true);
       setIsEditing(false);
       setRefreshKey((prev) => prev + 1);
+      setUser((prev) => ({
+        ...prev,
+        name: formData.fullName,
+        email: formData.email,
+        address: formData.address,
+      }));
+      onProfileUpdate?.();
     } else {
       alert("Failed to update profile");
     }
-    setLoadingspin(false)
+    setLoadingspin(false);
     setIsSaving(false);
   };
 
-
   const handleCancel = () => {
     setFormData({
-      fullName: name || '',
-      email: email || '',
-      phone: phone || '',
-      address: userAddress || '',
+      fullName: name || "",
+      email: email || "",
+      phone: phone || "",
+      address: userAddress || "",
     });
     setErrors({});
     setIsEditing(false);
   };
 
-  const renderInputField = (name, icon, placeholder, keyboardType = 'default', additionalProps = {}) => (
+  const renderInputField = (
+    name,
+    icon,
+    placeholder,
+    keyboardType = "default",
+    additionalProps = {}
+  ) => (
     <View style={styles.inputGroup}>
       <FontAwesome name={icon} size={18} color="#0097B3" style={styles.icon} />
       <View style={styles.inputContainer}>
         <TextInput
-          style={[styles.input, errors[name] && styles.inputError, name === "phone" ? styles.inputBlur : null]}
+          style={[
+            styles.input,
+            errors[name] && styles.inputError,
+            name === "phone" ? styles.inputBlur : null,
+          ]}
           value={formData[name]}
           onChangeText={(text) => handleInputChange(name, text)}
           onFocus={() => setHasInteracted(true)} // Mark interaction on focus
@@ -136,7 +166,9 @@ const ProfileForm = ({ onValidationChange, onSave }) => {
           editable={name === "phone" ? false : isEditing}
           {...additionalProps}
         />
-        {hasInteracted && errors[name] && <Text style={styles.errorText}>{errors[name]}</Text>}
+        {hasInteracted && errors[name] && (
+          <Text style={styles.errorText}>{errors[name]}</Text>
+        )}
       </View>
     </View>
   );

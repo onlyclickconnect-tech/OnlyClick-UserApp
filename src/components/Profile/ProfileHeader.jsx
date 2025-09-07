@@ -2,13 +2,30 @@ import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Alert, Animated, Easing, Image, Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { deleteAvatar, uploadAvatar } from "../../app/api/userServices";
+import {
+  deleteAvatar,
+  uploadAvatar,
+} from "../../app/api/userServices";
 import useCurrentUserDetails from "../../hooks/useCurrentUserDetails";
 import useDimension from "../../hooks/useDimensions";
 import SuccessIndicator from "../common/SuccessIndicator";
 
-const ProfileHeader = ({ isGeneral = true, setIsGeneral = () => {} }) => {
-  const { name, email, profileImage, userId } = useCurrentUserDetails();
+const ProfileHeader = ({
+  isGeneral = true,
+  setIsGeneral = () => {},
+  onProfileUpdate,
+}) => {
+  const { name, email, profileImage, userId, refreshUserDetails, setUser } =
+    useCurrentUserDetails();
+  useEffect(() => {
+    refreshUserDetails?.();
+  }, []);
+  useEffect(() => {
+    setUserName(name || "User's Name");
+  }, [name]);
+  useEffect(() => {
+    setSelectedImage(profileImage);
+  }, [profileImage]);
   const sliderPosition = useRef(new Animated.Value(isGeneral ? 0 : 1)).current;
   const { screenWidth } = useDimension();
   const [isEditingName, setIsEditingName] = useState(false);
@@ -43,11 +60,12 @@ const ProfileHeader = ({ isGeneral = true, setIsGeneral = () => {} }) => {
         setTempImageUri(null);
         return;
       }
+       
 
-      // On success, update the selected image
-      setSelectedImage(imageUri);
+      // setSelectedImage(result?.avatar_url || imageUri);
       setTempImageUri(null);
       setShowSuccessModal(true);
+      onProfileUpdate?.();
     } catch (error) {
       console.log("Upload error:", error);
       Alert.alert(
@@ -59,7 +77,6 @@ const ProfileHeader = ({ isGeneral = true, setIsGeneral = () => {} }) => {
       setIsUpdatingPhoto(false);
     }
   };
-
 
   // Confirm image selection
   const confirmImageSelection = (imageUri) => {
@@ -81,18 +98,22 @@ const ProfileHeader = ({ isGeneral = true, setIsGeneral = () => {} }) => {
   // Camera function
   const takePhoto = async () => {
     if (isUpdatingPhoto) return; // Prevent multiple clicks during upload
-    
+
     try {
-      const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+      const permissionResult =
+        await ImagePicker.requestCameraPermissionsAsync();
       if (!permissionResult.granted) {
-        Alert.alert("Permission required", "Camera permission is needed to take photos");
+        Alert.alert(
+          "Permission required",
+          "Camera permission is needed to take photos"
+        );
         return;
       }
-      
+
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
-        quality: 0.8,
+        quality: 0.3,
         allowsMultipleSelection: false,
       });
 
@@ -103,9 +124,9 @@ const ProfileHeader = ({ isGeneral = true, setIsGeneral = () => {} }) => {
     } catch (error) {
       console.log("Camera error:", error);
       Alert.alert(
-        "Camera Error", 
+        "Camera Error",
         "There was an issue accessing your camera. Please check camera permissions and try again.",
-        [{ text: 'OK', style: 'default' }]
+        [{ text: "OK", style: "default" }]
       );
     }
   };
@@ -113,14 +134,18 @@ const ProfileHeader = ({ isGeneral = true, setIsGeneral = () => {} }) => {
   // Gallery function
   const pickFromGallery = async () => {
     if (isUpdatingPhoto) return; // Prevent multiple clicks during upload
-    
+
     try {
-      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      const permissionResult =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permissionResult.granted) {
-        Alert.alert("Permission required", "Gallery permission is needed to select photos");
+        Alert.alert(
+          "Permission required",
+          "Gallery permission is needed to select photos"
+        );
         return;
       }
-      
+
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
@@ -136,11 +161,11 @@ const ProfileHeader = ({ isGeneral = true, setIsGeneral = () => {} }) => {
     } catch (error) {
       console.log("Gallery error:", error);
       // More specific error handling for PhotoPicker issues
-      if (error.message && error.message.includes('PhotoPicker')) {
+      if (error.message && error.message.includes("PhotoPicker")) {
         Alert.alert(
-          "Gallery Error", 
+          "Gallery Error",
           "There was an issue accessing your photo library. Please try again or use the camera option.",
-          [{ text: 'OK', style: 'default' }]
+          [{ text: "OK", style: "default" }]
         );
       } else {
         Alert.alert("Error", `Failed to pick image: ${error.message}`);
@@ -150,7 +175,7 @@ const ProfileHeader = ({ isGeneral = true, setIsGeneral = () => {} }) => {
 
   // Remove photo function
   const removePhoto = () => {
-    if (isUpdatingPhoto) return; 
+    if (isUpdatingPhoto) return;
 
     Alert.alert(
       "Remove Profile Picture",
@@ -194,16 +219,18 @@ const ProfileHeader = ({ isGeneral = true, setIsGeneral = () => {} }) => {
 
   const toggleWidth = Math.min(screenWidth * 0.9, 340);
   const padding = 4; // Internal padding of the toggle container
-  const sliderWidth = (toggleWidth - (padding * 2)) / 2; // Half width minus padding
+  const sliderWidth = (toggleWidth - padding * 2) / 2; // Half width minus padding
 
   const sliderStyle = {
     width: sliderWidth,
-    transform: [{
-      translateX: sliderPosition.interpolate({
-        inputRange: [0, 1],
-        outputRange: [0, sliderWidth],
-      })
-    }]
+    transform: [
+      {
+        translateX: sliderPosition.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0, sliderWidth],
+        }),
+      },
+    ],
   };
 
   useEffect(() => {
@@ -227,28 +254,33 @@ const ProfileHeader = ({ isGeneral = true, setIsGeneral = () => {} }) => {
         <View style={styles.confirmModalContainer}>
           <View style={styles.confirmModalHeader}>
             <Ionicons name="camera" size={32} color="#0097B3" />
-            <Text style={styles.confirmModalTitle}>Confirm Profile Picture</Text>
+            <Text style={styles.confirmModalTitle}>
+              Confirm Profile Picture
+            </Text>
           </View>
-          
+
           {tempImageUri && (
             <View style={styles.previewImageContainer}>
-              <Image source={{ uri: tempImageUri }} style={styles.previewImage} />
+              <Image
+                source={{ uri: tempImageUri }}
+                style={styles.previewImage}
+              />
             </View>
           )}
-          
+
           <Text style={styles.confirmModalText}>
             Do you want to set this as your profile picture?
           </Text>
-          
+
           <View style={styles.confirmModalButtons}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.confirmCancelButton}
               onPress={handleCancelImage}
             >
               <Text style={styles.confirmCancelButtonText}>Cancel</Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={styles.confirmButton}
               onPress={handleConfirmImage}
             >
@@ -299,26 +331,26 @@ const ProfileHeader = ({ isGeneral = true, setIsGeneral = () => {} }) => {
       return;
     }
 
-    Alert.alert(
-      "Profile Picture",
-      "Choose an option",
-      [
-        {
-          text: "Take Photo",
-          onPress: takePhoto,
-        },
-        {
-          text: "Choose from Gallery",
-          onPress: pickFromGallery,
-        },
-        ...(profileImage ? [{
-          text: "Remove Photo",
-          style: "destructive",
-          onPress: removePhoto,
-        }] : []),
-        { text: "Cancel", style: "cancel" }
-      ]
-    );
+    Alert.alert("Profile Picture", "Choose an option", [
+      {
+        text: "Take Photo",
+        onPress: takePhoto,
+      },
+      {
+        text: "Choose from Gallery",
+        onPress: pickFromGallery,
+      },
+      ...(profileImage
+        ? [
+            {
+              text: "Remove Photo",
+              style: "destructive",
+              onPress: removePhoto,
+            },
+          ]
+        : []),
+      { text: "Cancel", style: "cancel" },
+    ]);
   };
 
   return (
@@ -327,8 +359,11 @@ const ProfileHeader = ({ isGeneral = true, setIsGeneral = () => {} }) => {
       <SuccessModal />
 
       <View style={styles.profileSection}>
-        <TouchableOpacity 
-          style={[styles.profileIconContainer, isUpdatingPhoto && styles.profileIconContainerLoading]} 
+        <TouchableOpacity
+          style={[
+            styles.profileIconContainer,
+            isUpdatingPhoto && styles.profileIconContainerLoading,
+          ]}
           onPress={handleProfileImagePress}
           disabled={isUpdatingPhoto}
         >
@@ -340,11 +375,14 @@ const ProfileHeader = ({ isGeneral = true, setIsGeneral = () => {} }) => {
           ) : (
             <>
               {selectedImage || profileImage ? (
-                <Image 
+                <Image
                   source={{
-                    uri: selectedImage || profileImage || 'https://img.myloview.com/posters/default-profile-picture-avatar-photo-placeholder-vector-illustration-700-197279432.jpg' 
+                    uri:
+                      selectedImage ||
+                      profileImage ||
+                      "https://img.myloview.com/posters/default-profile-picture-avatar-photo-placeholder-vector-illustration-700-197279432.jpg",
                   }}
-                  style={styles.profileImage} 
+                  style={styles.profileImage}
                 />
               ) : (
                 <FontAwesome name="user" size={60} color="gray" />
@@ -358,30 +396,34 @@ const ProfileHeader = ({ isGeneral = true, setIsGeneral = () => {} }) => {
 
         <View style={styles.userInfo}>
           <Text style={styles.username}>{userName}</Text>
-          <Text style={styles.userid}>ID: {userId || 'N/A'}</Text>
-          <Text style={styles.email}>{email || 'No email provided'}</Text>
+          <Text style={styles.userid}>ID: {userId || "N/A"}</Text>
+          <Text style={styles.email}>{email || "No email provided"}</Text>
         </View>
       </View>
 
       <View style={styles.toggleContainer}>
         <Animated.View style={[styles.slider, sliderStyle]} />
-        
-        <TouchableOpacity 
+
+        <TouchableOpacity
           style={styles.toggleButton}
           onPress={() => setIsGeneral(true)}
           activeOpacity={0.8}
         >
-          <Text style={[styles.toggleText, isGeneral && styles.activeToggleText]}>
+          <Text
+            style={[styles.toggleText, isGeneral && styles.activeToggleText]}
+          >
             General
           </Text>
         </TouchableOpacity>
-        
-        <TouchableOpacity 
+
+        <TouchableOpacity
           style={styles.toggleButton}
           onPress={() => setIsGeneral(false)}
           activeOpacity={0.8}
         >
-          <Text style={[styles.toggleText, !isGeneral && styles.activeToggleText]}>
+          <Text
+            style={[styles.toggleText, !isGeneral && styles.activeToggleText]}
+          >
             Advanced
           </Text>
         </TouchableOpacity>
