@@ -1,4 +1,4 @@
-import api from "./api";
+import api from "../api/api";
 
 export const addToCart = async (new_item) => {
   
@@ -16,3 +16,14 @@ export const addToCart = async (new_item) => {
     return {error};
   }
 };
+
+export const removeOneFromCart = async (service_id) => {
+  try {
+    const { data } = await api.post("/api/v1/removefromcart", { service_id });
+    return { data };
+  } catch (error) {
+    console.error("Error removing item:", error.response?.data || error.message);
+    return { error };
+  }
+};
+
