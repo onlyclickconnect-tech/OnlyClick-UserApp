@@ -22,9 +22,11 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 import AppHeader from '../../../../components/common/AppHeader';
 import fetchCart from '../../../../data/getdata/getCart';
+import { removeOneFromCart } from '../../../api/cart';
 
 export default function Cart() {
   const router = useRouter();
+
   const { selectedLocation, updateSelectedLocation } = useAppStates();
 
   const [showLocationModal, setShowLocationModal] = useState(false);
@@ -36,6 +38,9 @@ export default function Cart() {
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedDateItem, setSelectedDateItem] = useState(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState(null);
+  const [service_charge, setSetservice_charge] = useState()
+  const [totalTax, setTotalTax] = useState()
+  const [total, setTotal] = useState()
 
   // Gesture handling for modals
   const modalY = useRef(new Animated.Value(0)).current;
@@ -122,7 +127,7 @@ export default function Cart() {
 
   // Mobile number state management
   const [showMobileModal, setShowMobileModal] = useState(false);
-  const [mobileNumber, setMobileNumber] = useState("+91 98765 43210"); // Default number
+  const [mobileNumber, setMobileNumber] = useState(""); // Default number
   const [tempMobileNumber, setTempMobileNumber] = useState("");
 
   // Interactive kindness reminder
@@ -314,9 +319,13 @@ export default function Cart() {
 
   useEffect(() => {
     const getcartDatahandler = async () => {
-      const { arr } = await fetchCart();
-      console.log(arr);
+      const { serviceCharge,tax,arr,phno,address,totalAmount } = await fetchCart();
+      setTotal(totalAmount)
+      setTotalTax(tax);
+      setSetservice_charge(serviceCharge);
       setCartData(arr)
+      updateSelectedLocation(address);
+      setMobileNumber(phno);
     }
     getcartDatahandler()
   }, [])
@@ -334,19 +343,22 @@ export default function Cart() {
     Alert.alert('Update Quantity', `Updated quantity for item`);
   };
 
-  const handleRemoveItem = (categoryIndex, itemIndex) => {
-    Alert.alert(
-      'Remove Item',
-      'Are you sure you want to remove this item from cart?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Remove', style: 'destructive', onPress: () => {
-            console.log('Item removed');
-          }
-        }
-      ]
-    );
+  const handleRemoveItem = (service_id) => {
+    console.log(service_id);
+    const {data, error} = removeOneFromCart(service_id);
+    console.log(data, error);
+    // Alert.alert(
+    //   'Remove Item',
+    //   'Are you sure you want to remove this item from cart?',
+    //   [
+    //     { text: 'Cancel', style: 'cancel' },
+    //     {
+    //       text: 'Remove', style: 'destructive', onPress: () => {
+    //         console.log('Item removed');
+    //       }
+    //     }
+    //   ]
+    // );
   };
 
   const handleProceedNow = () => {
@@ -419,7 +431,7 @@ export default function Cart() {
 
         <TouchableOpacity
           style={styles.removeButton}
-          onPress={() => handleRemoveItem(categoryIndex, itemIndex)}
+          onPress={() => handleRemoveItem(item.service_id)}
         >
           <Ionicons name="trash-outline" size={18} color="#F44336" />
         </TouchableOpacity>
@@ -1084,7 +1096,7 @@ export default function Cart() {
                     <Text style={styles.billTotalLabel}>Total Amount</Text>
                     <Text style={styles.billTotalSubtext}>All taxes included</Text>
                   </View>
-                  <Text style={styles.billTotalAmount}>₹{calculateGrandTotal() + 50 + Math.round(calculateGrandTotal() * 0.18)}</Text>
+                  <Text style={styles.billTotalAmount}>₹{calculateGrandTotal() + service_charge + totalTax}</Text>
                 </View>
               </View>
 
@@ -1340,7 +1352,7 @@ export default function Cart() {
           <View style={styles.enhancedPaymentFooter}>
             <View style={styles.paymentAmountSummary}>
               <Text style={styles.payAmountLabel}>Total Amount</Text>
-              <Text style={styles.payAmountValue}>₹{calculateGrandTotal() + 50 + Math.round(calculateGrandTotal() * 0.18)}</Text>
+              <Text style={styles.payAmountValue}>₹{total}</Text>
             </View>
             <TouchableOpacity
               style={styles.enhancedPayButton}
@@ -1439,17 +1451,17 @@ export default function Cart() {
           <View style={styles.summaryDivider} />
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Service Fee</Text>
-            <Text style={styles.summaryAmount}>₹50</Text>
+            <Text style={styles.summaryAmount}>{'₹'+Math.round(service_charge)}</Text>
           </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Taxes</Text>
-            <Text style={styles.summaryAmount}>₹{Math.round(calculateGrandTotal() * 0.18)}</Text>
+            <Text style={styles.summaryAmount}>₹{Math.round(totalTax)}</Text>
           </View>
 
           <View style={styles.summaryDivider} />
           <View style={styles.summaryRow}>
             <Text style={styles.totalLabel}>Total Amount</Text>
-            <Text style={styles.totalAmount}>₹{calculateGrandTotal() + 50 + Math.round(calculateGrandTotal() * 0.18)}</Text>
+            <Text style={styles.totalAmount}>₹{Math.round(total)}</Text>
           </View>
         </View>
 
