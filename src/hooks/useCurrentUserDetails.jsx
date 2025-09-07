@@ -5,6 +5,7 @@ function useCurrentUserDetails() {
     user = { user },
     isLoggedIn = { isLoggedIn }
   ) => {};
+  const refreshUserDetails = () => {};
   return {
     name: user.name,
     email: user.email,
@@ -19,6 +20,8 @@ function useCurrentUserDetails() {
     isLoggedIn,
     authToken: user.authToken,
     refreshToken: user.refreshToken,
+    refreshUserDetails,
+    setUser,
   };
 }
 
