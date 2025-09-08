@@ -196,10 +196,21 @@ export default function Bookings() {
                         <Text style={styles.infoText} numberOfLines={1}>{item.location}</Text>
                       </View>
 
-                      <View style={styles.infoRow}>
-                        <Ionicons name="construct-outline" size={16} color="#666" />
-                        <Text style={styles.infoText}>{item.provider}</Text>
-                      </View>
+                      {/* Only show provider info if booking is not pending */}
+                      {item.status !== 'Pending' && (
+                        <View style={styles.infoRow}>
+                          <Ionicons name="construct-outline" size={16} color="#666" />
+                          <Text style={styles.infoText}>{item.provider}</Text>
+                        </View>
+                      )}
+
+                      {/* Show pending message for pending bookings */}
+                      {item.status === 'Pending' && (
+                        <View style={styles.infoRow}>
+                          <Ionicons name="time-outline" size={16} color="#FFA500" />
+                          <Text style={styles.infoText}>Provider will be assigned soon</Text>
+                        </View>
+                      )}
                     </View>
 
                     {/* Show OTP on the right side for accepted bookings */}
@@ -225,10 +236,10 @@ export default function Bookings() {
                           time: item.time,
                           location: item.location,
                           status: item.status,
-                          provider: item.provider,
+                          provider: item.status !== 'Pending' ? item.provider : 'Provider not assigned yet',
                           price: item.price,
                           category: item.category,
-                          contact: item.contact || item.Contact,
+                          contact: item.status !== 'Pending' ? (item.contact || item.Contact) : null,
                           description: item.description,
                           otp: item.otp,
                           taskMaster: JSON.stringify(item.taskMaster),

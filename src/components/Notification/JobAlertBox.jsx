@@ -11,6 +11,25 @@ export default function JobAlertBox({ notification }) {
         borderWidth: 2,
         marginVertical: 10,
         flexDirection: "row",
+        justifyContent: "center",
+        alignItems: "center",
+        borderColor: "#b3b3b3",
+        borderRadius: 20
+      }}
+    >
+      <Text style={{ fontSize: 16, color: "#666", textAlign: "center" }}>
+        No new job alerts
+      </Text>
+    </View>
+    /*
+    <View
+      style={{
+        width: "100%",
+        height: 90,
+        padding: 10,
+        borderWidth: 2,
+        marginVertical: 10,
+        flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
         borderColor: "#b3b3b3",
@@ -59,6 +78,7 @@ export default function JobAlertBox({ notification }) {
         {notification.date}
       </Text>
     </View>
+    */
   );
 }
 
