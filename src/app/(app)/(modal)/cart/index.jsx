@@ -80,11 +80,7 @@ export default function Cart() {
   const modalY = useRef(new Animated.Value(0)).current;
   const modalOpacity = useRef(new Animated.Value(1)).current;
 
-  useEffect(() => {
-    console.log(selectedDate);
-    console.log(selectedTimeSlot);
-    console.log(selectedDateItem);
-  }, [selectedDate, selectedTimeSlot])
+
 
 
   const panResponder = useRef(
@@ -278,8 +274,9 @@ export default function Cart() {
     setTotalTax(tax);
     setSetservice_charge(serviceCharge);
     setCartData(arr);
-    rawcart(rawCartData);
-    updateSelectedLocation(address);
+    setRawcart(rawCartData);
+    console.log("this is address",selectedLocationObject);
+    setLocation({additionalInfo: "", city: "", district: "", houseNumber: address, pincode: ""});
     // Only set mobile number from server if no mobile number is set in AppStates
     if (!selectedMobileNumber && phno) {
       setMobileNumber(phno);
@@ -302,25 +299,19 @@ export default function Cart() {
     if (selectedMobileNumber) {
       setMobileNumber(selectedMobileNumber);
     }
-    console.log('Mobile number updated:', selectedMobileNumber);
   }, [selectedMobileNumber]);
 
   // Listen for location object updates from AppStates context
   useEffect(() => {
-    console.log('selectedLocationObject changed:', selectedLocationObject);
     if (selectedLocationObject && Object.keys(selectedLocationObject).length > 0) {
       setLocation(selectedLocationObject);
     }
   }, [selectedLocationObject]);
 
-  // Add separate useEffect to log location state changes
-  useEffect(() => {
-    console.log('location state updated:', location);
-  }, [location]);
+
 
   // Add separate useEffect to log mobile number state changes
   useEffect(() => {
-    console.log('mobileNumber state updated:', mobileNumber);
   }, [mobileNumber]);
 
 
@@ -382,7 +373,6 @@ export default function Cart() {
     setDeletingItemId(service_id);
     try {
       const {data, error} = await removeAllFromCart(service_id);
-      console.log(data, error);
       
       if (error) {
         Alert.alert('Error', 'Failed to clear cart');
@@ -427,20 +417,19 @@ export default function Cart() {
     const bookingdata = {
       items: rawcart,
       ph_no: mobileNumber,
-      location: location,
+      location: location.houseNumber+" "+location.city+" "+location.district+" "+location.pincode +" "+location.additionalInfo,
       dateitem: {
         dateNumber: selectedDateItem.dayNumber,
-        day: dayNumber,
-        month: month
+        day: selectedDateItem.dayNumber,
+        month: selectedDateItem.month
       },
       time: {
         label: selectedTimeSlot.label,
         time: selectedTimeSlot.time
       },
-      paymentmethod: paymentmethod
+      paymentmethod: selectedPaymentMethod
     }
-    const { data, error } = await confirmbookings(bookingdata);
-    console.log(data);
+    const { data, error } = confirmbookings(bookingdata);
 
 
     if (error) {
@@ -485,7 +474,6 @@ export default function Cart() {
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Clear All', style: 'destructive', onPress: () => {
-            console.log('Cart cleared');
           }
         }
       ]
