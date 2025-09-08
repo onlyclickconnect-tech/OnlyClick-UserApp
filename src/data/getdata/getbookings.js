@@ -7,6 +7,8 @@ export default async function getbookings() {
     .select("*");
 
 
+    console.log("data",data);
+
   if (error) {
     console.error("Supabase error:", error);
     return { arr: [], error };
@@ -28,7 +30,7 @@ export default async function getbookings() {
   };
 
   const formatdata = (element) => {
-    const [date, time] = getdateTime(element.date_time_created);
+    const [date, time] = getdateTime(element.time_slot);
 
     return {
       id: element.id,
