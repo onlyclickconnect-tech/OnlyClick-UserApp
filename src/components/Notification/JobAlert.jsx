@@ -1,5 +1,4 @@
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import JobAlertBox from "./JobAlertBox";
 
 export default function JobAlert() {
   const notifications = [
@@ -48,7 +47,7 @@ export default function JobAlert() {
   ];
   return (
     <ScrollView style={{ flex: 1, backgroundColor: "white" }}>
-      <View
+      {/* <View
         style={{
           flexDirection: "row",
           justifyContent: "space-between",
@@ -73,12 +72,19 @@ export default function JobAlert() {
             borderColor: "#b3b3b3",
           }}
         ></View>
+      </View> */}
+      <View style={{ flex: 1, paddingHorizontal: 15, paddingTop: 20, alignItems: "center" }}>
+        <Text style={{ fontSize: 16, color: "#666", textAlign: "center" }}>
+          No new booking updates
+        </Text>
       </View>
+      {/* 
       <View style={{ flex: 1, paddingHorizontal: 15 }}>
         {notifications.map((notification, index) => (
           <JobAlertBox key={index} notification={notification} />
         ))}
       </View>
+      */}
     </ScrollView>
   );
 }

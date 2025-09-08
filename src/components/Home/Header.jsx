@@ -35,7 +35,18 @@ function Header() {
   const styles = headerStyle();
   
   const searchService = async () => {
-    console.log("user searched");
+    if (search.trim()) {
+      // Navigate to services tab with search query
+      router.push({
+        pathname: '/protected/(tabs)/Services',
+        params: { searchQuery: search.trim() }
+      });
+    } else {
+      // Navigate to services tab without search query to clear any previous search
+      router.push('/protected/(tabs)/Services');
+    }
+    // Clear the search input after navigation
+    setSearch("");
   };
   
   useEffect(() => {

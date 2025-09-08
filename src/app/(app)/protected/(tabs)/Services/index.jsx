@@ -23,9 +23,9 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 function ServicesPage() {
   const router = useRouter();
-  const { selectedCategory: categoryParam } = useLocalSearchParams();
+  const { selectedCategory: categoryParam, searchQuery: urlSearchQuery } = useLocalSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedCategory, setSelectedCategory] = useState(categoryParam || "All");
   const [cartItems, setCartItems] = useState([]);
   const [categories, setCategories] = useState([]);
   const [services, setServices] = useState([]);
@@ -98,34 +98,45 @@ function ServicesPage() {
     }
   }, [categoryParam, categories]);
 
+  // Handle search query from navigation params
+  useEffect(() => {
+    setSearchQuery(urlSearchQuery || "");
+  }, [urlSearchQuery]);
 
-  // Filter services based on search and category
 
-  const filteredServices = (services || []).filter((service) => {
-    const matchesSearch =
-      service.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      service.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      service.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      service.sub_category?.toLowerCase().includes(searchQuery.toLowerCase());
+  // Filter and sort services based on search and category
+  const filteredServices = (services || [])
+    .filter((service) => {
+      const matchesSearch =
+        service.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        service.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        service.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        service.sub_category?.toLowerCase().includes(searchQuery.toLowerCase());
 
-    let categoryMatches = false;
-    if (selectedCategory === "All") {
-      categoryMatches = true;
-    } else {
-      // Find the category object to get its id
-      const categoryObj = categories.find(
-        (cat) => cat.name === selectedCategory
-      );
-      if (categoryObj) {
-        categoryMatches =
-          service.category === categoryObj.id ||
-          service.category.toLowerCase().replace(/\s+/g, "_") ===
-          categoryObj.id;
+      let categoryMatches = false;
+      if (selectedCategory === "All") {
+        categoryMatches = true;
+      } else {
+        // Find the category object to get its id
+        const categoryObj = categories.find(
+          (cat) => cat.name === selectedCategory
+        );
+        if (categoryObj) {
+          categoryMatches =
+            service.category === categoryObj.id ||
+            service.category.toLowerCase().replace(/\s+/g, "_") ===
+            categoryObj.id;
+        }
       }
-    }
 
-    return matchesSearch && categoryMatches;
-  });
+      return matchesSearch && categoryMatches;
+    })
+    .sort((a, b) => {
+      // Sort by price in ascending order (lowest price first)
+      const priceA = parseFloat(a.price) || 0;
+      const priceB = parseFloat(b.price) || 0;
+      return priceA - priceB;
+    });
 
   const handleCategoryPress = (category) => {
     setSelectedCategory(category.name);

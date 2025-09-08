@@ -1,5 +1,4 @@
-import { ScrollView, StyleSheet, View } from "react-native";
-import PlatformUpdateBox from "./PlatformUpdateBox";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 export default function PlatformUpdate() {
   const notifications = [
@@ -44,17 +43,10 @@ export default function PlatformUpdate() {
       style={{ flex: 1, backgroundColor: "white" }}
       contentContainerStyle={{ paddingBottom: 20 }}
     >
-      <View
-        style={{
-          flex: 1,
-          paddingHorizontal: 15,
-          top: 20,
-          alignItems: "center",
-        }}
-      >
-        {notifications.map((notification, index) => (
-          <PlatformUpdateBox key={index} notification={notification} />
-        ))}
+      <View style={{ flex: 1, paddingHorizontal: 15, paddingTop: 20, alignItems: "center" }}>
+        <Text style={{ fontSize: 16, color: "#666", textAlign: "center" }}>
+          No new updates
+        </Text>
       </View>
     </ScrollView>
   );

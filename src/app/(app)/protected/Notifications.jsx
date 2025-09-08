@@ -4,7 +4,7 @@ import { Dimensions, StyleSheet, View } from "react-native";
 import AppHeader from "../../../components/common/AppHeader";
 import SinglePageSwitch from "../../../components/common/SinglePageSwitch";
 import JobAlert from "../../../components/Notification/JobAlert";
-import PlatformUpdates from "../../../components/Notification/PlatformUpdate";
+import PlatformUpdate from "../../../components/Notification/PlatformUpdate";
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 export default function Notifications() {
 
@@ -22,7 +22,7 @@ export default function Notifications() {
         leftText={"Booking Updates"}
         rightText={"App Updates"}
         leftElement={<JobAlert />}
-        rightElement={<PlatformUpdates />}
+        rightElement={<PlatformUpdate />}
       />
     </View>
   );
