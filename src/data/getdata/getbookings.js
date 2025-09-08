@@ -6,6 +6,7 @@ export default async function getbookings() {
     .from("bookings")
     .select("*");
 
+
   if (error) {
     console.error("Supabase error:", error);
     return { arr: [], error };
@@ -17,7 +18,11 @@ export default async function getbookings() {
   }
 
   const getdateTime = (timestamp) => {
+    if (!timestamp) return ["", ""]; // fallback if null
+
     const [date, timeWithZone] = timestamp.split("T");
+    if (!timeWithZone) return [date, ""];
+
     const time = timeWithZone.split("+")[0];
     return [date, time];
   };
