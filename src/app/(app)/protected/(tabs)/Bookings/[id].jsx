@@ -661,10 +661,6 @@ export default function BookingDetails() {
             >
               <Text style={styles.cancelButtonText}>Cancel Booking</Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.rescheduleButton}>
-              <Text style={styles.rescheduleButtonText}>Reschedule</Text>
-            </TouchableOpacity>
           </View>
         )}
           </View>
@@ -874,25 +870,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
-  },
-  rescheduleButton: {
-    flex: 1,
-    backgroundColor: '#3898B3',
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  rescheduleButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
   },
   loadingContainer: {
     flex: 1,
