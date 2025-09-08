@@ -7,6 +7,8 @@ export const AppStatesProvider = ({ children }) => {
   const [isAppOpenedFirstTime, setIsAppOpenedFirstTime] = useState(null);
   const [isProfileCompleted, setIsProfileCompleted] = useState(null);
   const [selectedLocation, setSelectedLocation] = useState("Tap to set location");
+  const [selectedLocationObject, setSelectedLocationObject] = useState({});
+  const [selectedMobileNumber, setSelectedMobileNumber] = useState("");
 
   useEffect(() => {
     const getAppFirstOpenState = async () => {
@@ -35,6 +37,26 @@ export const AppStatesProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
+    const getSelectedMobileNumber = async () => {
+      const savedMobileNumber = await AsyncStorage.getItem("selectedMobileNumber");
+      if (savedMobileNumber) {
+        setSelectedMobileNumber(savedMobileNumber);
+      }
+    };
+    getSelectedMobileNumber();
+  }, []);
+
+  useEffect(() => {
+    const getSelectedLocationObject = async () => {
+      const savedLocationObject = await AsyncStorage.getItem("selectedLocationObject");
+      if (savedLocationObject) {
+        setSelectedLocationObject(JSON.parse(savedLocationObject));
+      }
+    };
+    getSelectedLocationObject();
+  }, []);
+
+  useEffect(() => {
     if (isAppOpenedFirstTime === false) {
       const setAppFirstOpenState = async () => {
         await AsyncStorage.setItem("appFirstOpenState", "false");
@@ -53,6 +75,16 @@ export const AppStatesProvider = ({ children }) => {
     await AsyncStorage.setItem("selectedLocation", location);
   };
 
+  const updateSelectedLocationObject = async (locationObj) => {
+    setSelectedLocationObject(locationObj);
+    await AsyncStorage.setItem("selectedLocationObject", JSON.stringify(locationObj));
+  };
+
+  const updateSelectedMobileNumber = async (mobileNumber) => {
+    setSelectedMobileNumber(mobileNumber);
+    await AsyncStorage.setItem("selectedMobileNumber", mobileNumber);
+  };
+
   return (
     <AppStatesContext.Provider
       value={{ 
@@ -63,7 +95,13 @@ export const AppStatesProvider = ({ children }) => {
         markProfileCompleted,
         selectedLocation,
         setSelectedLocation,
-        updateSelectedLocation
+        updateSelectedLocation,
+        selectedLocationObject,
+        setSelectedLocationObject,
+        updateSelectedLocationObject,
+        selectedMobileNumber,
+        setSelectedMobileNumber,
+        updateSelectedMobileNumber
       }}
     >
       {children}

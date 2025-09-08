@@ -185,20 +185,32 @@ export default function Bookings() {
                   </View>
 
                   <View style={styles.cardBody}>
-                    <View style={styles.infoRow}>
-                      <Ionicons name="calendar-outline" size={16} color="#666" />
-                      <Text style={styles.infoText}>{formatDate(item.date)} at {formatTime(item.time)}</Text>
+                    <View style={styles.cardBodyLeft}>
+                      <View style={styles.infoRow}>
+                        <Ionicons name="calendar-outline" size={16} color="#666" />
+                        <Text style={styles.infoText}>{formatDate(item.date)} at {formatTime(item.time)}</Text>
+                      </View>
+
+                      <View style={styles.infoRow}>
+                        <Ionicons name="location-outline" size={16} color="#666" />
+                        <Text style={styles.infoText} numberOfLines={1}>{item.location}</Text>
+                      </View>
+
+                      <View style={styles.infoRow}>
+                        <Ionicons name="construct-outline" size={16} color="#666" />
+                        <Text style={styles.infoText}>{item.provider}</Text>
+                      </View>
                     </View>
 
-                    <View style={styles.infoRow}>
-                      <Ionicons name="location-outline" size={16} color="#666" />
-                      <Text style={styles.infoText} numberOfLines={1}>{item.location}</Text>
-                    </View>
-
-                    <View style={styles.infoRow}>
-                      <Ionicons name="construct-outline" size={16} color="#666" />
-                      <Text style={styles.infoText}>{item.provider}</Text>
-                    </View>
+                    {/* Show OTP on the right side for accepted bookings */}
+                    {item.status === 'Accepted' && item.otp && (
+                      <View style={styles.otpContainer}>
+                        <View style={styles.otpBadge}>
+                          <Text style={styles.otpNumber}>{item.otp}</Text>
+                        </View>
+                        <Text style={styles.otpLabel}>OTP</Text>
+                      </View>
+                    )}
                   </View>
 
                   <View style={styles.cardFooter}>
@@ -459,7 +471,13 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   cardBody: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
     marginBottom: 12,
+  },
+  cardBodyLeft: {
+    flex: 1,
   },
   infoRow: {
     flexDirection: 'row',
@@ -471,6 +489,39 @@ const styles = StyleSheet.create({
     color: '#666',
     marginLeft: 8,
     flex: 1,
+  },
+  otpText: {
+    color: '#4CAF50',
+    fontWeight: '600',
+    fontSize: 15,
+  },
+  otpContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 16,
+  },
+  otpBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E8F5E8',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 2,
+    borderColor: '#4CAF50',
+    marginBottom: 4,
+  },
+  otpNumber: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#000000ff',
+    marginLeft: 6,
+  },
+  otpLabel: {
+    fontSize: 12,
+    color: '#4CAF50',
+    fontWeight: '600',
+    textAlign: 'center',
   },
   cardFooter: {
     flexDirection: 'row',

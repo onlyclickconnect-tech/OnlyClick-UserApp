@@ -1,5 +1,4 @@
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -13,7 +12,6 @@ import {
   StatusBar,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View
 } from 'react-native';
@@ -29,9 +27,33 @@ import confirmbookings from '../../../api/confirmbookings.js'
 export default function Cart() {
   const router = useRouter();
 
-  const { selectedLocation, updateSelectedLocation } = useAppStates();
+  const { selectedLocation, updateSelectedLocation, selectedMobileNumber, updateSelectedMobileNumber, selectedLocationObject, updateSelectedLocationObject } = useAppStates();
 
-  const [showLocationModal, setShowLocationModal] = useState(false);
+  // Helper function to format mobile number safely
+  const formatMobileNumber = (number) => {
+    if (!number || typeof number !== 'string' || number.length < 10) {
+      return "Tap to set mobile number";
+    }
+    return `+91 ${number.slice(0, 5)} ${number.slice(5)}`;
+  };
+
+  // Helper function to format location object for display
+  const formatLocationDisplay = (locationObj) => {
+    if (!locationObj || Object.keys(locationObj).length === 0) {
+      return "Tap to set location";
+    }
+    
+    // Extract and format location parts in proper order
+    const parts = [];
+    if (locationObj.houseNumber) parts.push(locationObj.houseNumber);
+    if (locationObj.district) parts.push(locationObj.district);
+    if (locationObj.city) parts.push(locationObj.city);
+    if (locationObj.pincode) parts.push(locationObj.pincode);
+    if (locationObj.additionalInfo) parts.push(locationObj.additionalInfo);
+    
+    return parts.length > 0 ? parts.join(', ') : "Tap to set location";
+  };
+
   const [showCancellationPolicy, setShowCancellationPolicy] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showDateTimeModal, setShowDateTimeModal] = useState(false);
@@ -47,10 +69,12 @@ export default function Cart() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [updatingItemId, setUpdatingItemId] = useState(null);
+
+  const [mobileNumber, setMobileNumber] = useState("");
+  const [location, setLocation] = useState({});
+
   const [paymentmethod, setPaymentmethod] = useState();
 
-
-  const [location, setLocation] = useState({})
 
   // Gesture handling for modals
   const modalY = useRef(new Animated.Value(0)).current;
@@ -95,11 +119,9 @@ export default function Cart() {
               useNativeDriver: true,
             }),
           ]).start(() => {
-            setShowLocationModal(false);
             setShowCancellationPolicy(false);
             setShowPaymentModal(false);
             setShowDateTimeModal(false);
-            setShowMobileModal(false);
             modalY.setValue(0);
             modalOpacity.setValue(1);
           });
@@ -137,23 +159,6 @@ export default function Cart() {
     })
   ).current;
 
-  // Location state management
-  const [isLocationLoading, setIsLocationLoading] = useState(false);
-  const [manualLocation, setManualLocation] = useState("");
-  const [isManualLocationEditing, setIsManualLocationEditing] = useState(false);
-
-  // Location form fields
-  const [houseNumber, setHouseNumber] = useState("");
-  const [road, setRoad] = useState("");
-  const [district, setDistrict] = useState("");
-  const [city, setCity] = useState("");
-  const [additionalInfo, setAdditionalInfo] = useState("");
-  const [pincode, setPincode] = useState("");
-
-  // Mobile number state management
-  const [showMobileModal, setShowMobileModal] = useState(false);
-  const [mobileNumber, setMobileNumber] = useState(""); // Default number
-  const [tempMobileNumber, setTempMobileNumber] = useState("");
 
   // Interactive kindness reminder
   const [hasClickedKindness, setHasClickedKindness] = useState(false);
@@ -175,112 +180,6 @@ export default function Cart() {
     "😊 A smile goes a long way",
     "🏠 Keep workspace clean for them"
   ];
-
-  // Initialize location on component mount
-  useEffect(() => {
-    // Only update manualLocation if user is not actively editing
-    if (!isManualLocationEditing) {
-      setManualLocation(selectedLocation || "");
-    }
-  }, [selectedLocation, isManualLocationEditing]);
-
-  // Location management functions
-  const getCurrentLocation = async () => {
-    setIsLocationLoading(true);
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert("Permission required", "Location permission is needed to get your current location");
-        setIsLocationLoading(false);
-        return;
-      }
-
-      const currentLocation = await Location.getCurrentPositionAsync({});
-      const addressResult = await Location.reverseGeocodeAsync({
-        latitude: currentLocation.coords.latitude,
-        longitude: currentLocation.coords.longitude,
-      });
-
-      if (addressResult.length > 0) {
-        const addr = addressResult[0];
-        const formattedAddress = `${addr.name || ''} ${addr.street || ''}, ${addr.city || ''}, ${addr.region || ''}`.trim();
-        updateSelectedLocation(formattedAddress);
-        setManualLocation(formattedAddress);
-        setIsManualLocationEditing(false);
-        setShowLocationModal(false);
-      }
-    } catch (error) {
-      Alert.alert("Error", "Failed to get current location");
-    }
-    setIsLocationLoading(false);
-  };
-
-  const saveManualLocation = () => {
-    // Stitch together all the location fields
-    const locationParts = [];
-
-    if (houseNumber.trim()) locationParts.push(houseNumber.trim());
-    if (road.trim()) locationParts.push(road.trim());
-    if (district.trim()) locationParts.push(district.trim());
-    if (city.trim()) locationParts.push(city.trim());
-    if (additionalInfo.trim()) locationParts.push(additionalInfo.trim());
-    if (pincode.trim()) locationParts.push(pincode.trim());
-
-    const fullAddress = locationParts.join(', ');
-
-    if (fullAddress) {
-      updateSelectedLocation(fullAddress);
-      setIsManualLocationEditing(false);
-      setShowLocationModal(false);
-    } else {
-      Alert.alert("Error", "Please fill at least one location field");
-    }
-  };
-
-  const clearLocationFields = () => {
-    setHouseNumber("");
-    setRoad("");
-    setDistrict("");
-    setCity("");
-    setAdditionalInfo("");
-    setPincode("");
-  };
-
-  // Mobile number management functions
-  const openMobileModal = () => {
-    setShowMobileModal(true);
-    // Extract only the number part (without +91) for editing
-    const numberOnly = mobileNumber.replace('+91 ', '').replace(/\s/g, '');
-    setTempMobileNumber(numberOnly);
-  };
-
-  const handleMobileNumberChange = (text) => {
-    // Simple approach - just limit to 10 digits, no formatting while typing
-    const numbersOnly = text.replace(/\D/g, '');
-    if (numbersOnly.length <= 10) {
-      setTempMobileNumber(numbersOnly);
-    }
-  };
-
-  const saveMobileNumber = () => {
-    if (tempMobileNumber && tempMobileNumber.trim()) {
-      // Remove spaces and validate
-      const cleanNumber = tempMobileNumber.replace(/\s/g, '');
-      if (cleanNumber.length === 10 && /^\d{10}$/.test(cleanNumber)) {
-        // Format as +91 XXXXX XXXXX for display
-        const formattedNumber = `+91 ${cleanNumber.slice(0, 5)} ${cleanNumber.slice(5)}`;
-        setMobileNumber(formattedNumber);
-        setShowMobileModal(false);
-      } else {
-        Alert.alert("Invalid Number", "Please enter a valid 10-digit mobile number");
-      }
-    }
-  };
-
-  const cancelMobileEdit = () => {
-    setTempMobileNumber("");
-    setShowMobileModal(false);
-  };
 
   // Helper function to compare dates without time
   // This fixes the issue where selected dates weren't highlighting properly
@@ -381,12 +280,48 @@ export default function Cart() {
     setCartData(arr);
     rawcart(rawCartData);
     updateSelectedLocation(address);
-    setMobileNumber(phno);
+    // Only set mobile number from server if no mobile number is set in AppStates
+    if (!selectedMobileNumber && phno) {
+      setMobileNumber(phno);
+    }
   };
 
   useEffect(() => {
     fetchCartData();
   }, [])
+
+  // Initial setup: set mobile number from AppStates if available
+  useEffect(() => {
+    if (selectedMobileNumber) {
+      setMobileNumber(selectedMobileNumber);
+    }
+  }, []);
+
+  // Listen for mobile number updates from AppStates context
+  useEffect(() => {
+    if (selectedMobileNumber) {
+      setMobileNumber(selectedMobileNumber);
+    }
+    console.log('Mobile number updated:', selectedMobileNumber);
+  }, [selectedMobileNumber]);
+
+  // Listen for location object updates from AppStates context
+  useEffect(() => {
+    console.log('selectedLocationObject changed:', selectedLocationObject);
+    if (selectedLocationObject && Object.keys(selectedLocationObject).length > 0) {
+      setLocation(selectedLocationObject);
+    }
+  }, [selectedLocationObject]);
+
+  // Add separate useEffect to log location state changes
+  useEffect(() => {
+    console.log('location state updated:', location);
+  }, [location]);
+
+  // Add separate useEffect to log mobile number state changes
+  useEffect(() => {
+    console.log('mobileNumber state updated:', mobileNumber);
+  }, [mobileNumber]);
 
 
   const calculateCategoryTotal = (items) => {
@@ -633,254 +568,6 @@ export default function Cart() {
         )}
       </View>
     </View>
-  );
-
-  const LocationModal = () => (
-    <Modal 
-      visible={showLocationModal} 
-      transparent 
-      animationType="slide"
-      onRequestClose={() => {
-        setShowLocationModal(false);
-        clearLocationFields();
-      }}
-    >
-      <View style={styles.locationModalOverlay}>
-        <View style={styles.locationModalContainer}>
-          {/* Header */}
-          <View style={styles.locationModalHeader}>
-            <Text style={styles.locationModalTitle}>📍 Enter Your Address</Text>
-            <TouchableOpacity 
-              style={styles.locationCloseButton}
-              onPress={() => {
-                setShowLocationModal(false);
-                clearLocationFields();
-              }}
-            >
-              <Ionicons name="close" size={24} color="#666" />
-            </TouchableOpacity>
-          </View>
-
-          {/* Scrollable Form Content */}
-          <ScrollView 
-            style={styles.locationFormScroll}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-          >
-            {/* House Number */}
-            <View style={styles.locationFieldContainer}>
-              <Text style={styles.locationFieldLabel}>House No./Building Name *</Text>
-              <View style={styles.locationInputWrapper}>
-                <Ionicons name="home-outline" size={18} color="#3898B3" style={styles.locationInputIcon} />
-                <TextInput
-                  style={styles.locationTextInput}
-                  placeholder="Enter house/flat number or building name"
-                  placeholderTextColor="#999"
-                  value={houseNumber}
-                  onChangeText={setHouseNumber}
-                  autoCapitalize="words"
-                  returnKeyType="next"
-                />
-              </View>
-            </View>
-
-            {/* Road/Street */}
-            <View style={styles.locationFieldContainer}>
-              <Text style={styles.locationFieldLabel}>Road/Street Name *</Text>
-              <View style={styles.locationInputWrapper}>
-                <Ionicons name="map-outline" size={18} color="#3898B3" style={styles.locationInputIcon} />
-                <TextInput
-                  style={styles.locationTextInput}
-                  placeholder="Enter road or street name"
-                  placeholderTextColor="#999"
-                  value={road}
-                  onChangeText={setRoad}
-                  autoCapitalize="words"
-                  returnKeyType="next"
-                />
-              </View>
-            </View>
-
-            {/* Area/District and City Row */}
-            <View style={styles.locationRowContainer}>
-              <View style={styles.locationHalfField}>
-                <Text style={styles.locationFieldLabel}>Area/District *</Text>
-                <View style={styles.locationInputWrapper}>
-                  <Ionicons name="business-outline" size={18} color="#3898B3" style={styles.locationInputIcon} />
-                  <TextInput
-                    style={styles.locationTextInput}
-                    placeholder="Area/District"
-                    placeholderTextColor="#999"
-                    value={district}
-                    onChangeText={setDistrict}
-                    autoCapitalize="words"
-                    returnKeyType="next"
-                  />
-                </View>
-              </View>
-
-              <View style={styles.locationHalfField}>
-                <Text style={styles.locationFieldLabel}>City *</Text>
-                <View style={styles.locationInputWrapper}>
-                  <Ionicons name="location-outline" size={18} color="#3898B3" style={styles.locationInputIcon} />
-                  <TextInput
-                    style={styles.locationTextInput}
-                    placeholder="City name"
-                    placeholderTextColor="#999"
-                    value={city}
-                    onChangeText={setCity}
-                    autoCapitalize="words"
-                    returnKeyType="next"
-                  />
-                </View>
-              </View>
-            </View>
-
-            {/* Landmark */}
-            <View style={styles.locationFieldContainer}>
-              <Text style={styles.locationFieldLabel}>
-                Landmark/Additional Details 
-                <Text style={styles.locationOptionalText}> (Optional)</Text>
-              </Text>
-              <View style={styles.locationInputWrapper}>
-                <Ionicons name="information-circle-outline" size={18} color="#3898B3" style={styles.locationInputIcon} />
-                <TextInput
-                  style={styles.locationTextInput}
-                  placeholder="Near landmark, floor details, gate info, etc."
-                  placeholderTextColor="#999"
-                  value={additionalInfo}
-                  onChangeText={setAdditionalInfo}
-                  autoCapitalize="words"
-                  returnKeyType="next"
-                />
-              </View>
-            </View>
-
-            {/* Pincode */}
-            <View style={styles.locationFieldContainer}>
-              <Text style={styles.locationFieldLabel}>Pincode *</Text>
-              <View style={styles.locationInputWrapper}>
-                <Ionicons name="mail-outline" size={18} color="#3898B3" style={styles.locationInputIcon} />
-                <TextInput
-                  style={styles.locationTextInput}
-                  placeholder="Enter 6-digit pincode"
-                  placeholderTextColor="#999"
-                  value={pincode}
-                  onChangeText={(text) => {
-                    const numbersOnly = text.replace(/\D/g, '');
-                    if (numbersOnly.length <= 6) {
-                      setPincode(numbersOnly);
-                    }
-                  }}
-                  keyboardType="numeric"
-                  maxLength={6}
-                  returnKeyType="done"
-                />
-              </View>
-            </View>
-          </ScrollView>
-
-          {/* Action Buttons */}
-          <View style={styles.locationButtonContainer}>
-            <TouchableOpacity
-              style={styles.locationCancelButton}
-              onPress={() => {
-                setShowLocationModal(false);
-                clearLocationFields();
-              }}
-            >
-              <Text style={styles.locationCancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.locationSaveButton,
-                (!houseNumber.trim() || !road.trim() || !district.trim() || !city.trim() || !pincode.trim()) && styles.locationSaveButtonDisabled
-              ]}
-              onPress={saveManualLocation}
-              disabled={!houseNumber.trim() || !road.trim() || !district.trim() || !city.trim() || !pincode.trim()}
-            >
-              <Text style={styles.locationSaveButtonText}>Save Address</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </Modal>
-  );
-
-  const MobileNumberModal = () => (
-    <Modal
-      visible={showMobileModal}
-      transparent
-      animationType="none"
-      onRequestClose={cancelMobileEdit}
-    >
-      <Animated.View style={[styles.modalOverlay, { opacity: modalOpacity }]}>
-        <Animated.View
-          style={[styles.modalContainer, { transform: [{ translateY: modalY }] }]}
-          {...panResponder.panHandlers}
-        >
-          {/* Gesture Indicator Bar */}
-          <View style={styles.gestureIndicator}>
-            <View style={styles.indicatorBar} />
-          </View>
-
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>📱 Update Mobile Number</Text>
-            <TouchableOpacity
-              onPress={cancelMobileEdit}
-              style={styles.closeButton}
-            >
-              <Ionicons name="close" size={24} color="#666" />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.modalContent}>
-            {/* Mobile Number Input Section */}
-            <View style={styles.manualSection}>
-              <Text style={styles.sectionTitle}>Enter your mobile number</Text>
-              <View style={styles.inputContainer}>
-                <Text style={styles.countryCodePrefix}>+91</Text>
-                <TextInput
-                  style={styles.textInput}
-                  placeholder="9876543210"
-                  placeholderTextColor="#999"
-                  value={tempMobileNumber}
-                  onChangeText={handleMobileNumberChange}
-                  keyboardType="numeric"
-                  maxLength={10}
-                  autoFocus
-                />
-              </View>
-              <Text style={styles.inputHint}>
-                This number will be used to contact you for service coordination
-              </Text>
-            </View>
-
-            {/* Action Buttons */}
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={cancelMobileEdit}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.saveButton,
-                  (!tempMobileNumber || !tempMobileNumber.trim()) && styles.saveButtonDisabled
-                ]}
-                onPress={saveMobileNumber}
-                disabled={!tempMobileNumber || !tempMobileNumber.trim()}
-              >
-                <Text style={styles.saveButtonText}>Save Number</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Animated.View>
-      </Animated.View>
-    </Modal>
   );
 
   const CancellationPolicyModal = () => (
@@ -1242,7 +929,7 @@ export default function Cart() {
                   <View style={styles.bookingDetailItem}>
                     <Text style={styles.bookingDetailLabel}>Location</Text>
                     <Text style={styles.bookingDetailValue} numberOfLines={1}>
-                      {selectedLocation}
+                      {formatLocationDisplay(location)}
                     </Text>
                   </View>
                 </View>
@@ -1677,42 +1364,56 @@ export default function Cart() {
         <TouchableOpacity
           style={styles.locationCard}
           onPress={() => {
-            setManualLocation(selectedLocation || "");
-            setIsManualLocationEditing(false);
-            setShowLocationModal(true);
+            router.push('/(app)/(modal)/cart/location');
           }}
         >
           <View style={styles.locationHeader}>
             <Ionicons
-              name={isLocationLoading ? "refresh" : "location"}
+              name={Object.keys(location).length > 0 ? "location" : "location-outline"}
               size={20}
-              color={isLocationLoading ? "#FF9800" : "#3898B3"}
+              color={Object.keys(location).length > 0 ? "#3898B3" : "#999"}
             />
             <Text style={styles.locationTitle}>Service Location</Text>
+            {Object.keys(location).length > 0 && (
+              <Ionicons name="checkmark-circle" size={20} marginLeft="auto" color="#4CAF50" />
+            )}
           </View>
-          <Text style={styles.locationAddress}>
-            {isLocationLoading ? "Getting location..." : selectedLocation || "Tap to set location"}
+          <Text style={[
+            styles.locationAddress,
+            Object.keys(location).length === 0 && styles.placeholderText
+          ]}>
+            {formatLocationDisplay(location)}
           </Text>
           <Text style={styles.changeLocationLink}>
-            {isLocationLoading ? "Please wait..." : "Tap to change"}
+            {Object.keys(location).length > 0 ? "Tap to change" : "Tap to set"}
           </Text>
         </TouchableOpacity>
 
         {/* Mobile Number Section */}
         <TouchableOpacity
           style={styles.locationCard}
-          onPress={openMobileModal}
+          onPress={() => {
+            router.push('/(app)/(modal)/cart/mobile-number');
+          }}
         >
           <View style={styles.locationHeader}>
             <Ionicons
-              name="call"
+              name={mobileNumber ? "call" : "call-outline"}
               size={20}
               color="#3898B3"
             />
             <Text style={styles.locationTitle}>Mobile Number</Text>
+            {mobileNumber && (
+              <Ionicons
+                name="checkmark-circle"
+                size={20}
+                color="#4CAF50"
+                style={{ marginLeft: 'auto' }}
+              />
+            )}
           </View>
-          <Text style={styles.locationAddress}>
-            {mobileNumber || "Tap to set mobile number"}
+          <Text style={mobileNumber ? styles.locationAddress : styles.placeholderText}>
+            {formatMobileNumber(mobileNumber)}
           </Text>
           <Text style={styles.changeLocationLink}>
             Tap to change
@@ -1802,8 +1503,6 @@ export default function Cart() {
         </TouchableOpacity>
       </View>
 
-      <LocationModal />
-      <MobileNumberModal />
       <CancellationPolicyModal />
       <DateTimeModal />
       <PaymentModal />
@@ -1893,6 +1592,12 @@ const styles = StyleSheet.create({
   locationAddress: {
     fontSize: 14,
     color: '#666',
+    marginBottom: 5,
+  },
+  placeholderText: {
+    fontSize: 14,
+    color: '#999',
+    fontStyle: 'italic',
     marginBottom: 5,
   },
   changeLocationLink: {
