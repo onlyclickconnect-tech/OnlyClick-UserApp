@@ -54,14 +54,14 @@ export default async function fetchCart() {
 
         rawData.items.forEach((item) => {
             const category = item.category || "Uncategorized";
-
+            
             if (!grouped[category]) {
                 grouped[category] = {
                     category,
                     items: []
                 };
             }
-
+            
             grouped[category].items.push({
                 id: item.id,
                 name: item.title || "Unnamed Service",
@@ -71,11 +71,12 @@ export default async function fetchCart() {
                 service_id: item.service_id
             });
         });
-
+        
         return Object.values(grouped);
     }
-
+    
     const arr = transformCartData(data[0].cart);
-
-    return { arr, phno, address, serviceCharge, tax,totalAmount, error: null };
+    
+    rawCartData = data[0].cart.items
+    return { arr, phno, address, serviceCharge, tax,totalAmount,rawCartData, error: null };
 }

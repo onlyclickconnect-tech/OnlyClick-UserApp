@@ -22,6 +22,7 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 import AppHeader from '../../../../components/common/AppHeader';
 import fetchCart from '../../../../data/getdata/getCart';
 import { addOneInCart, removeAllFromCart, removeOneFromCart } from '../../../api/cart';
+import confirmbookings from '../../../api/confirmbookings.js'
 
 export default function Cart() {
   const router = useRouter();
@@ -68,12 +69,23 @@ export default function Cart() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [updatingItemId, setUpdatingItemId] = useState(null);
+
   const [mobileNumber, setMobileNumber] = useState("");
   const [location, setLocation] = useState({});
+
+  const [paymentmethod, setPaymentmethod] = useState();
+
 
   // Gesture handling for modals
   const modalY = useRef(new Animated.Value(0)).current;
   const modalOpacity = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    console.log(selectedDate);
+    console.log(selectedTimeSlot);
+    console.log(selectedDateItem);
+  }, [selectedDate, selectedTimeSlot])
+
 
   const panResponder = useRef(
     PanResponder.create({
@@ -147,6 +159,7 @@ export default function Cart() {
     })
   ).current;
 
+
   // Interactive kindness reminder
   const [hasClickedKindness, setHasClickedKindness] = useState(false);
 
@@ -174,23 +187,29 @@ export default function Cart() {
     if (!date1 || !date2) return false;
     return date1.toDateString() === date2.toDateString();
   };
-  const generateDates = () => {
-    const dates = [];
-    const today = new Date();
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
-      dates.push({
-        date: date,
-        dayName: date.toLocaleDateString('en-US', { weekday: 'short' }),
-        dayNumber: date.getDate().toString().padStart(2, '0'),
-        month: date.toLocaleDateString('en-US', { month: 'short' }),
-        isToday: i === 0,
-        isTomorrow: i === 1
-      });
-    }
-    return dates;
-  };
+
+  const [dates, setdates] = useState([])
+  useEffect(() => {
+    const generateDates = () => {
+      const dates = [];
+      const today = new Date();
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(today);
+        date.setDate(today.getDate() + i);
+        dates.push({
+          date: date,
+          dayName: date.toLocaleDateString('en-US', { weekday: 'short' }),
+          dayNumber: date.getDate().toString().padStart(2, '0'),
+          month: date.toLocaleDateString('en-US', { month: 'short' }),
+          isToday: i === 0,
+          isTomorrow: i === 1
+        });
+      }
+      setdates(dates)
+    };
+    generateDates();
+  }, [])
+
 
   const timeSlots = [
     { id: 1, time: '09:00 AM', label: 'Morning', available: true },
@@ -250,14 +269,16 @@ export default function Cart() {
   // ];
 
   const [cartData, setCartData] = useState([])
+  const [rawcart, setRawcart] = useState()
 
   // Function to fetch cart data from server
   const fetchCartData = async () => {
-    const { serviceCharge, tax, arr, phno, address, totalAmount } = await fetchCart();
+    const { serviceCharge, tax, arr, phno, address, totalAmount, rawCartData } = await fetchCart();
     setTotal(totalAmount);
     setTotalTax(tax);
     setSetservice_charge(serviceCharge);
     setCartData(arr);
+    rawcart(rawCartData);
     updateSelectedLocation(address);
     // Only set mobile number from server if no mobile number is set in AppStates
     if (!selectedMobileNumber && phno) {
@@ -402,20 +423,59 @@ export default function Cart() {
     setShowPaymentModal(true);
   };
 
-  const handlePayment = () => {
-    Alert.alert(
-      'Payment Successful',
-      'Your booking has been confirmed! You will receive an SMS confirmation shortly.',
-      [
-        {
-          text: 'OK', onPress: () => {
-            setShowPaymentModal(false);
-            router.push('/protected/(tabs)/Bookings');
-          }
+  const handlePayment = async () => {
+    const bookingdata = {
+      items: rawcart,
+      ph_no: mobileNumber,
+      location: location,
+      dateitem: {
+        dateNumber: selectedDateItem.dayNumber,
+        day: dayNumber,
+        month: month
+      },
+      time: {
+        label: selectedTimeSlot.label,
+        time: selectedTimeSlot.time
+      },
+      paymentmethod: paymentmethod
+    }
+    const { data, error } = await confirmbookings(bookingdata);
+    console.log(data);
+
+
+    if (error) {
+  Alert.alert(
+    'Sorry! Unable to book',
+    'There was an error processing your booking. Please try again later.',
+    [
+      {
+        text: 'OK',
+        onPress: () => {
+          setShowPaymentModal(false);
+          router.push('/protected/(tabs)/Bookings');
         }
-      ]
-    );
-  };
+      }
+    ]
+  );
+} else {
+  Alert.alert(
+    'Your booking has been confirmed!', // title
+    '', // message can be empty if not needed
+    [
+      {
+        text: 'OK',
+        onPress: () => {
+          setShowPaymentModal(false);
+          router.push('/protected/(tabs)/Bookings');
+        }
+      }
+    ]
+  );
+}
+
+    }
+
+
 
   const handleClearCart = () => {
     Alert.alert(
@@ -674,7 +734,7 @@ export default function Cart() {
             <View style={styles.sectionCard}>
               <Text style={styles.sectionTitle}>Choose Date</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.datesScrollView}>
-                {generateDates().map((dateItem, index) => (
+                {dates.map((dateItem, index) => (
                   <TouchableOpacity
                     key={index}
                     style={[
