@@ -22,7 +22,7 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 import AppHeader from '../../../../components/common/AppHeader';
 import fetchCart from '../../../../data/getdata/getCart';
 import { addOneInCart, removeAllFromCart, removeOneFromCart } from '../../../api/cart';
-import confirmbookings from '../../../api/confirmbookings.js'
+import confirmbookings from '../../../api/confirmbookings.js';
 
 export default function Cart() {
   const router = useRouter();
@@ -58,7 +58,7 @@ export default function Cart() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showDateTimeModal, setShowDateTimeModal] = useState(false);
   const [showServiceFeeTooltip, setShowServiceFeeTooltip] = useState(false);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('UPI');
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('Online Payment');
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedDateItem, setSelectedDateItem] = useState(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState(null);
@@ -68,6 +68,7 @@ export default function Cart() {
   const [deletingItemId, setDeletingItemId] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [isPaymentLoading, setIsPaymentLoading] = useState(false);
   const [updatingItemId, setUpdatingItemId] = useState(null);
 
   const [mobileNumber, setMobileNumber] = useState("");
@@ -414,6 +415,7 @@ export default function Cart() {
   };
 
   const handlePayment = async () => {
+    setIsPaymentLoading(true);
     const bookingdata = {
       items: rawcart,
       ph_no: mobileNumber,
@@ -462,7 +464,8 @@ export default function Cart() {
   );
 }
 
-    }
+    setIsPaymentLoading(false);
+  }
 
 
 
@@ -1012,11 +1015,6 @@ export default function Cart() {
                     <Text style={styles.billTotalAmount}>₹{Math.round(calculateGrandTotal() + service_charge + totalTax)}</Text>
                   </View>
                 </View>
-
-                <View style={styles.savingsBanner}>
-                  <Ionicons name="gift" size={18} color="#4CAF50" />
-                  <Text style={styles.savingsText}>🎉 You&apos;re saving ₹120 on this booking!</Text>
-                </View>
               </View>
             )}
 
@@ -1030,49 +1028,19 @@ export default function Cart() {
               <View style={styles.paymentMethodsList}>
                 {[
                   {
-                    key: 'UPI',
-                    icon: 'phone-portrait',
-                    label: 'UPI Payment',
-                    subtitle: 'Pay using any UPI app',
-                    options: [
-                      { type: 'upi_id', label: 'Enter UPI ID', placeholder: 'your-id@paytm' },
-                      { type: 'qr', label: 'Scan QR Code', icon: 'qr-code-outline' },
-                      { type: 'app', label: 'Pay with App', apps: ['PhonePe', 'Paytm', 'Google Pay'] }
-                    ]
-                  },
-                  {
-                    key: 'Credit/Debit Card',
+                    key: 'Online Payment',
                     icon: 'card',
-                    label: 'Credit/Debit Card',
-                    subtitle: 'Visa, Mastercard, Rupay',
+                    label: 'Online Payment',
+                    subtitle: 'Pay online using a Secure Payment Gateway',
                     options: [
-                      { type: 'saved_cards', label: 'Saved Cards', cards: ['**** 1234', '**** 5678'] },
-                      { type: 'new_card', label: 'Add New Card', fields: ['number', 'expiry', 'cvv', 'name'] }
+                      { type: 'online_note', label: 'Note', text: 'Complete secure payment to complete your booking' }
                     ]
                   },
                   {
-                    key: 'Net Banking',
-                    icon: 'globe',
-                    label: 'Net Banking',
-                    subtitle: 'All major banks supported',
-                    options: [
-                      { type: 'bank_list', label: 'Select Bank', banks: ['SBI', 'HDFC', 'ICICI', 'Axis', 'Kotak'] }
-                    ]
-                  },
-                  {
-                    key: 'Wallet',
-                    icon: 'wallet',
-                    label: 'Digital Wallet',
-                    subtitle: 'Paytm, PhonePe, etc.',
-                    options: [
-                      { type: 'wallet_list', label: 'Select Wallet', wallets: ['Paytm', 'PhonePe', 'Amazon Pay', 'MobiKwik'] }
-                    ]
-                  },
-                  {
-                    key: 'Cash on Delivery',
+                    key: 'Pay on Service',
                     icon: 'cash',
                     label: 'Pay on Service',
-                    subtitle: 'Cash payment to provider',
+                    subtitle: 'Payment to provider',
                     options: [
                       { type: 'cash_note', label: 'Note', text: 'Pay directly to the service provider when they arrive' }
                     ]
@@ -1130,107 +1098,12 @@ export default function Cart() {
                       <View style={styles.paymentOptionsExpanded}>
                         {method.options.map((option, index) => (
                           <View key={index} style={styles.paymentOption}>
-                            {/* UPI Options */}
-                            {option.type === 'upi_id' && (
-                              <View style={styles.upiIdContainer}>
-                                <Text style={styles.optionTitle}>{option.label}</Text>
-                                <View style={styles.inputContainer}>
-                                  <Ionicons name="at" size={16} color="#666" style={styles.inputIcon} />
-                                  <Text style={styles.inputPlaceholder}>{option.placeholder}</Text>
-                                </View>
-                              </View>
-                            )}
-
-                            {option.type === 'qr' && (
-                              <TouchableOpacity style={styles.qrOption}>
-                                <Ionicons name="qr-code-outline" size={20} color="#3898B3" />
-                                <Text style={styles.optionText}>{option.label}</Text>
-                              </TouchableOpacity>
-                            )}
-
-                            {option.type === 'app' && (
-                              <View style={styles.appContainer}>
-                                <Text style={styles.optionTitle}>{option.label}</Text>
-                                <View style={styles.appsGrid}>
-                                  {option.apps.map((app, appIndex) => (
-                                    <TouchableOpacity key={appIndex} style={styles.appOption}>
-                                      <View style={styles.appIcon}>
-                                        <Text style={styles.appIconText}>{app[0]}</Text>
-                                      </View>
-                                      <Text style={styles.appName}>{app}</Text>
-                                    </TouchableOpacity>
-                                  ))}
-                                </View>
-                              </View>
-                            )}
-
-                            {/* Card Options */}
-                            {option.type === 'saved_cards' && (
-                              <View style={styles.savedCardsContainer}>
-                                <Text style={styles.optionTitle}>{option.label}</Text>
-                                {option.cards.map((card, cardIndex) => (
-                                  <TouchableOpacity key={cardIndex} style={styles.savedCardOption}>
-                                    <Ionicons name="card" size={16} color="#3898B3" />
-                                    <Text style={styles.savedCardText}>{card}</Text>
-                                    <Ionicons name="chevron-forward" size={14} color="#666" />
-                                  </TouchableOpacity>
-                                ))}
-                              </View>
-                            )}
-
-                            {option.type === 'new_card' && (
-                              <View style={styles.newCardContainer}>
-                                <Text style={styles.optionTitle}>{option.label}</Text>
-                                <View style={styles.cardFields}>
-                                  <View style={styles.inputContainer}>
-                                    <Ionicons name="card" size={16} color="#666" style={styles.inputIcon} />
-                                    <Text style={styles.inputPlaceholder}>Card Number</Text>
-                                  </View>
-                                  <View style={styles.cardRow}>
-                                    <View style={[styles.inputContainer, { flex: 1, marginRight: 8 }]}>
-                                      <Text style={styles.inputPlaceholder}>MM/YY</Text>
-                                    </View>
-                                    <View style={[styles.inputContainer, { flex: 1 }]}>
-                                      <Text style={styles.inputPlaceholder}>CVV</Text>
-                                    </View>
-                                  </View>
-                                  <View style={styles.inputContainer}>
-                                    <Ionicons name="person" size={16} color="#666" style={styles.inputIcon} />
-                                    <Text style={styles.inputPlaceholder}>Cardholder Name</Text>
-                                  </View>
-                                </View>
-                              </View>
-                            )}
-
-                            {/* Bank List */}
-                            {option.type === 'bank_list' && (
-                              <View style={styles.bankListContainer}>
-                                <Text style={styles.optionTitle}>{option.label}</Text>
-                                <View style={styles.banksGrid}>
-                                  {option.banks.map((bank, bankIndex) => (
-                                    <TouchableOpacity key={bankIndex} style={styles.bankOption}>
-                                      <View style={styles.bankIcon}>
-                                        <Text style={styles.bankIconText}>{bank}</Text>
-                                      </View>
-                                    </TouchableOpacity>
-                                  ))}
-                                </View>
-                              </View>
-                            )}
-
-                            {/* Wallet List */}
-                            {option.type === 'wallet_list' && (
-                              <View style={styles.walletListContainer}>
-                                <Text style={styles.optionTitle}>{option.label}</Text>
-                                <View style={styles.walletsGrid}>
-                                  {option.wallets.map((wallet, walletIndex) => (
-                                    <TouchableOpacity key={walletIndex} style={styles.walletOption}>
-                                      <View style={styles.walletIcon}>
-                                        <Text style={styles.walletIconText}>{wallet[0]}</Text>
-                                      </View>
-                                      <Text style={styles.walletName}>{wallet}</Text>
-                                    </TouchableOpacity>
-                                  ))}
+                            {/* Online Payment Note */}
+                            {option.type === 'online_note' && (
+                              <View style={styles.cashNoteContainer}>
+                                <View style={styles.cashNoteContent}>
+                                  <Ionicons name="shield-checkmark" size={20} color="#4CAF50" />
+                                  <Text style={styles.cashNoteText}>{option.text}</Text>
                                 </View>
                               </View>
                             )}
@@ -1252,14 +1125,6 @@ export default function Cart() {
                 ))}
               </View>
             </View>
-
-            {/* Security Notice */}
-            <View style={styles.securityNotice}>
-              <Ionicons name="shield-checkmark" size={18} color="#4CAF50" />
-              <Text style={styles.securityText}>
-                🔒 Your payment is secured with 256-bit SSL encryption
-              </Text>
-            </View>
           </ScrollView>
 
           {/* Enhanced Pay Button */}
@@ -1269,13 +1134,26 @@ export default function Cart() {
               <Text style={styles.payAmountValue}>₹{Math.round(total)}</Text>
             </View>
             <TouchableOpacity
-              style={styles.enhancedPayButton}
+              style={[styles.enhancedPayButton, isPaymentLoading && styles.disabledPayButton]}
               onPress={handlePayment}
+              disabled={isPaymentLoading}
             >
               <View style={styles.payButtonContent}>
-                <Ionicons name="card" size={22} color="#fff" />
-                <Text style={styles.enhancedPayButtonText}>Pay Securely</Text>
-                <Ionicons name="arrow-forward" size={18} color="#fff" />
+                {isPaymentLoading ? (
+                  <ActivityIndicator size="small" color="#fff" style={{ marginRight: 8 }} />
+                ) : (
+                  <Ionicons 
+                    name={selectedPaymentMethod === 'Online Payment' ? "card" : "checkmark-circle"} 
+                    size={22} 
+                    color="#fff" 
+                  />
+                )}
+                <Text style={styles.enhancedPayButtonText}>
+                  {isPaymentLoading ? 'Processing...' : (selectedPaymentMethod === 'Online Payment' ? 'Pay Securely' : 'Confirm Booking')}
+                </Text>
+                {!isPaymentLoading && (
+                  <Ionicons name="arrow-forward" size={18} color="#fff" />
+                )}
               </View>
             </TouchableOpacity>
           </View>
@@ -2326,23 +2204,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#3898B3',
   },
-  savingsBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#E8F5E8',
-    borderRadius: 8,
-    padding: 12,
-    marginTop: 12,
-    borderWidth: 1,
-    borderColor: '#C8E6C9',
-  },
-  savingsText: {
-    fontSize: 13,
-    color: '#2E7D32',
-    fontWeight: '600',
-    marginLeft: 8,
-    flex: 1,
-  },
 
   // Payment Methods Section
   paymentMethodsSection: {
@@ -2657,25 +2518,6 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
 
-  // Security Notice
-  securityNotice: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F0F8FF',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: '#E3F2FD',
-  },
-  securityText: {
-    fontSize: 12,
-    color: '#2E7D32',
-    marginLeft: 8,
-    flex: 1,
-    fontWeight: '500',
-  },
-
   // Enhanced Payment Footer
   enhancedPaymentFooter: {
     borderTopWidth: 1,
@@ -2709,6 +2551,11 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
+  },
+  disabledPayButton: {
+    backgroundColor: '#B0B0B0',
+    elevation: 0,
+    shadowOpacity: 0,
   },
   payButtonContent: {
     flexDirection: 'row',
