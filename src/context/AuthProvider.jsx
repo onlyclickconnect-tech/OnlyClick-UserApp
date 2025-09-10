@@ -35,55 +35,160 @@ export default function AuthProvider({ children }) {
   const [authToken, setAuthToken] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
+  // useEffect(() => {
+  //   async function fetchUser() {
+  //     const {
+  //       data: { session },
+  //       error,
+  //     } = await supabase.auth.getSession();
+
+  //     if (error || !session?.user) {
+  //       console.error("No authenticated user found:", error);
+  //       setIsLoggedIn(false);
+  //       return;
+  //     }
+
+  //     const currentUser = session.user;
+  //     const userId = currentUser.id;
+
+  //     const fullName = await getFullName(userId);
+  //     const avatar = await getProfileImage(userId);
+  //     const email = await getEmail(userId);
+  //     const phone = await getPhone(userId);
+  //     const address = await getAddress(userId);
+
+  //     setUser({
+  //       name: fullName || "",
+  //       address: address,
+  //       phone: phone,
+  //       email: email || "",
+  //       _id: userId,
+  //       taskMasterId: "",
+  //       service: "",
+  //       profileImage: avatar,
+  //       reviews: 0,
+  //       ratings: 0,
+  //       authToken: {
+  //         token: session.access_token,
+  //         expiryDate: "",
+  //       },
+  //       refreshToken: {
+  //         token: session.refresh_token,
+  //         expiryDate: "",
+  //       },
+  //     });
+
+  //     setIsLoggedIn(true);
+  //     setAuthToken(session.access_token || "");
+  //   }
+
+  //   fetchUser();
+  // }, []);
+
   useEffect(() => {
-    async function fetchUser() {
+    // Check for existing session on mount
+    const checkSession = async () => {
       const {
         data: { session },
-        error,
       } = await supabase.auth.getSession();
+      console.log("Initial session check:", session);
 
-      if (error || !session?.user) {
-        console.error("No authenticated user found:", error);
-        setIsLoggedIn(false);
-        return;
+      if (session?.user) {
+        console.log("Found existing session, setting up user");
+        const currentUser = session.user;
+        const userId = currentUser.id;
+
+        const fullName = await getFullName(userId);
+        const avatar = await getProfileImage(userId);
+        const email = await getEmail(userId);
+        const phone = await getPhone(userId);
+        const address = await getAddress(userId);
+
+        setUser({
+          name: fullName || "",
+          address: address,
+          phone: phone,
+          email: email || "",
+          _id: userId,
+          taskMasterId: "",
+          service: "",
+          profileImage: avatar,
+          reviews: 0,
+          ratings: 0,
+          authToken: {
+            token: session.access_token,
+            expiryDate: "",
+          },
+          refreshToken: {
+            token: session.refresh_token,
+            expiryDate: "",
+          },
+        });
+
+        setIsLoggedIn(true);
+        setAuthToken(session.access_token || "");
+        console.log(
+          "User setup complete, token:",
+          session.access_token?.substring(0, 20) + "..."
+        );
+      } else {
+        console.log("No existing session found");
       }
+    };
 
-      const currentUser = session.user;
-      const userId = currentUser.id;
+    checkSession();
 
-      const fullName = await getFullName(userId);
-      const avatar = await getProfileImage(userId);
-      const email = await getEmail(userId);
-      const phone = await getPhone(userId);
-      const address = await getAddress(userId);
+    // Listen for auth state changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state changed:", event, session);
 
-      setUser({
-        name: fullName || "",
-        address: address,
-        phone: phone,
-        email: email || "",
-        _id: userId,
-        taskMasterId: "",
-        service: "",
-        profileImage: avatar,
-        reviews: 0,
-        ratings: 0,
-        authToken: {
-          token: session.access_token,
-          expiryDate: "",
-        },
-        refreshToken: {
-          token: session.refresh_token,
-          expiryDate: "",
-        },
-      });
+      if (session?.user) {
+        console.log("New session detected, updating user");
+        const currentUser = session.user;
+        const userId = currentUser.id;
 
-      setIsLoggedIn(true);
-      setAuthToken(session.access_token || "");
-    }
+        const fullName = await getFullName(userId);
+        const avatar = await getProfileImage(userId);
+        const email = await getEmail(userId);
+        const phone = await getPhone(userId);
+        const address = await getAddress(userId);
 
-    fetchUser();
+        setUser({
+          name: fullName || "",
+          address: address,
+          phone: phone,
+          email: email || "",
+          _id: userId,
+          taskMasterId: "",
+          service: "",
+          profileImage: avatar,
+          reviews: 0,
+          ratings: 0,
+          authToken: {
+            token: session.access_token,
+            expiryDate: "",
+          },
+          refreshToken: {
+            token: session.refresh_token,
+            expiryDate: "",
+          },
+        });
+
+        setIsLoggedIn(true);
+        setAuthToken(session.access_token || "");
+      } else {
+        console.log("No session found, user logged out");
+        setIsLoggedIn(false);
+        setAuthToken("");
+      }
+    });
+
+    return () => subscription?.unsubscribe();
   }, []);
+
+
 
   const value = useMemo(
     () => ({
