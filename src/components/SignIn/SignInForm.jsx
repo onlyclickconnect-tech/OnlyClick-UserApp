@@ -1,14 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    StyleSheet,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import api from "../../app/api/api";
+import api from "../../app/api/api.js";
 import Text from "../ui/Text";
 
 export default function LoginScreen() {
@@ -27,15 +27,23 @@ export default function LoginScreen() {
     setLoading(true);
 
     try {
-      api.post(
-        "https://jqkb8s0g-5500.inc1.devtunnels.ms/api/v1/auth",
-        {
-          email,
-        }
-      );
+      console.log("LOGIN DEBUG");
+      console.log("API Base URL:", process.env.EXPO_PUBLIC_API_URL);
+      console.log("Email:", email);
 
+      const response = await api.post("/api/v1/auth", {
+        email,
+      });
+
+      console.log("Login response:", response.data);
       Alert.alert("Check your email", "Magic link sent!");
     } catch (err) {
+      console.log("API Base URL:", process.env.EXPO_PUBLIC_API_URL);
+      console.log("LOGIN ERROR");
+      console.log("Error:", err);
+      console.log("Error response:", err.response?.data);
+      console.log("Error status:", err.response?.status);
+
       if (err.response) {
         setError(err.response.data.error || "Something went wrong");
       } else {
@@ -45,6 +53,8 @@ export default function LoginScreen() {
       setLoading(false);
     }
   };
+
+
 
 
   return (
