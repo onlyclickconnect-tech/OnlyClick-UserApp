@@ -2,7 +2,8 @@ import axios from "axios";
 import supabase from "../../data/supabaseClient";
 
 const api = axios.create({
-  baseURL: process.env.EXPO_PUBLIC_API_URL,
+  baseURL: "https://jqkb8s0g-5500.inc1.devtunnels.ms/",
+  // process.env.EXPO_PUBLIC_API_URL,
   // Constants.expoConfig?.extra?.EXPO_PUBLIC_API_URL ||
   // "https://jqkb8s0g-5500.inc1.devtunnels.ms/",
 });
