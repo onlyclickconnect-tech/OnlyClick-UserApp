@@ -1,11 +1,11 @@
 import { useAuth } from "../context/AuthProvider";
 function useCurrentUserDetails() {
-  const { user, setUser, isLoggedIn } = useAuth();
+  const { user, setUser, isLoggedIn, refreshUserDetails } = useAuth();
   const changeUserDetails = (
     user = { user },
     isLoggedIn = { isLoggedIn }
   ) => {};
-  const refreshUserDetails = () => {};
+  
   return {
     name: user.name,
     email: user.email,
