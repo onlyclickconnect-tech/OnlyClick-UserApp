@@ -12,7 +12,7 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
-import Text from "../ui/Text"
+import Text from "../ui/Text";
 
 import getbookings from "../../data/getdata/getbookings";
 import gettestimonials from "../../data/getdata/gettestimonials";
@@ -206,7 +206,7 @@ export default function Data() {
             data={categories}
             renderItem={renderCategoryItem}
             keyExtractor={(item) => item.id}
-            numColumns={3}
+            numColumns={4}
             scrollEnabled={false}
             contentContainerStyle={styles.categoriesContainer}
           />
@@ -244,17 +244,19 @@ export default function Data() {
       </View>
 
       {/* Customer Testimonials Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Customer Testimonials</Text>
-        <FlatList
-          data={testimonials}
-          renderItem={renderTestimonialItem}
-          keyExtractor={(item) => item.id.toString()}
-          horizontal                              // Enable horizontal scrolling
-          showsHorizontalScrollIndicator={false}  // Hide scroll indicator
-          contentContainerStyle={styles.testimonialsContainer}  // Add container style
-        />
-      </View>
+      {testimonials.length > 0 && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Customer Testimonials</Text>
+          <FlatList
+            data={testimonials}
+            renderItem={renderTestimonialItem}
+            keyExtractor={(item) => item.id.toString()}
+            horizontal                              // Enable horizontal scrolling
+            showsHorizontalScrollIndicator={false}  // Hide scroll indicator
+            contentContainerStyle={styles.testimonialsContainer}  // Add container style
+          />
+        </View>
+      )}
 
       {/* Recent Bookings Section */}
       {bookings.length > 0 && (
@@ -279,6 +281,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 20,
+    marginBottom: 170,
   },
   section: {
     marginBottom: 32,
@@ -316,7 +319,7 @@ const styles = StyleSheet.create({
     height: 90,
     borderRadius: 30,
     justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 4,
 
   },

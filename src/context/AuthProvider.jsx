@@ -190,6 +190,48 @@ export default function AuthProvider({ children }) {
 
 
 
+  // Function to refresh user details
+  const refreshUserDetails = async () => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    
+    if (session?.user) {
+      console.log("Refreshing user details...");
+      const currentUser = session.user;
+      const userId = currentUser.id;
+
+      const fullName = await getFullName(userId);
+      const avatar = await getProfileImage(userId);
+      const email = await getEmail(userId);
+      const phone = await getPhone(userId);
+      const address = await getAddress(userId);
+
+      setUser({
+        name: fullName || "",
+        address: address,
+        phone: phone,
+        email: email || "",
+        _id: userId,
+        taskMasterId: "",
+        service: "",
+        profileImage: avatar,
+        reviews: 0,
+        ratings: 0,
+        authToken: {
+          token: session.access_token,
+          expiryDate: "",
+        },
+        refreshToken: {
+          token: session.refresh_token,
+          expiryDate: "",
+        },
+      });
+      
+      console.log("User details refreshed successfully");
+    }
+  };
+
   const value = useMemo(
     () => ({
       user,
@@ -198,6 +240,7 @@ export default function AuthProvider({ children }) {
       setIsLoggedIn,
       authToken,
       setAuthToken,
+      refreshUserDetails,
     }),
     [user, isLoggedIn, authToken]
   );
