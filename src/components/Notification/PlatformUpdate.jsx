@@ -1,4 +1,5 @@
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
+import Text from "../ui/Text";
 
 export default function PlatformUpdate() {
   const notifications = [

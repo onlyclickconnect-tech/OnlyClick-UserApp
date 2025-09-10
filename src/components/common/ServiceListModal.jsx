@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   View,
-  Text,
   Modal,
   TouchableOpacity,
   ScrollView,
@@ -10,6 +9,7 @@ import {
   Alert,
   Dimensions
 } from 'react-native';
+import Text from "../ui/Text";
 import { Ionicons } from '@expo/vector-icons';
 import serviceService from '../../services/serviceService';
 

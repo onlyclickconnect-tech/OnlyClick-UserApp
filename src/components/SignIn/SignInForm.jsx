@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View, ActivityIndicator} from 'react-native';
-
+import { StyleSheet,  TextInput, TouchableOpacity, View, ActivityIndicator} from 'react-native';
+import Text from "../ui/Text";
 const SignInForm = ({ phone, error, onPhoneChange, onSignIn, loading }) => {
     return (
         <View style={styles.content}>

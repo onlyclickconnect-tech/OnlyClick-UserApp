@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import Text from "../../../components/ui/Text"
 import ProfileForm from '../../../components/Profile/ProfileForm';
 import { useAppStates } from '../../../context/AppStates';
 import { useAuth } from '../../../context/AuthProvider';

@@ -9,10 +9,10 @@ import {
   Image,
   ScrollView,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View
 } from "react-native";
+import Text from "../ui/Text"
 
 import getbookings from "../../data/getdata/getbookings";
 import gettestimonials from "../../data/getdata/gettestimonials";

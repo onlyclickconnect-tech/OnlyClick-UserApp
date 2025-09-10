@@ -1,11 +1,10 @@
 import {
     StyleSheet,
-    Text,
     TextInput,
     TouchableOpacity,
     View
 } from 'react-native';
-
+import Text from "../ui/Text";
 const OTPDisplay = ({ otp, activeIndex, inputRef, onOtpChange }) => {
   const focusInput = () => {
     inputRef.current?.focus();

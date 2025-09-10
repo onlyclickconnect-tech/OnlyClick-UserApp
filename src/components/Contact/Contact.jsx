@@ -1,6 +1,7 @@
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import React from 'react';
-import { Text, TouchableOpacity, View, Linking } from 'react-native';
+import { TouchableOpacity, View, Linking } from 'react-native';
+import Text from "../ui/Text"
 
 const Contact = () => {
 

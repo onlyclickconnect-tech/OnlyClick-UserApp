@@ -6,11 +6,11 @@ import {
     Dimensions,
     ScrollView,
     StyleSheet,
-    Text,
     TextInput,
     TouchableOpacity,
     View
 } from 'react-native';
+import Text from "../../../../components/ui/Text.jsx"
 import { useAppStates } from '../../../../context/AppStates';
 
 const { width: screenWidth } = Dimensions.get("window");

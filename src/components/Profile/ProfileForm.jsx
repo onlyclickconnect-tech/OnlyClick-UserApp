@@ -1,6 +1,7 @@
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from "react";
-import { Dimensions, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Dimensions, StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
+import Text from "../ui/Text"
 import { useAuth } from "../../context/AuthProvider";
 import { useModal } from '../../context/ModalProvider';
 import { useUpdateProfile } from '../../hooks/seeUpdateProfile';
