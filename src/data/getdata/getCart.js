@@ -27,7 +27,7 @@ export default async function fetchCart() {
         return {
             serviceCharge: totalServiceCharge,
             tax: totalTax,
-            totalAmount: subTotal + totalServiceCharge + totalTax
+            totalAmount: Math.round(subTotal + totalServiceCharge + totalTax)
         };
     }
 
