@@ -1,24 +1,24 @@
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet,  TextInput, TouchableOpacity, View, ActivityIndicator} from 'react-native';
+import { ActivityIndicator, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 import Text from "../ui/Text";
-const SignInForm = ({ phone, error, onPhoneChange, onSignIn, loading }) => {
+
+const SignInForm = ({ email, error, onEmailChange, onSignIn, loading }) => {
     return (
         <View style={styles.content}>
             <Text style={styles.title}>Login to your account</Text>
             
             <View style={styles.inputContainer}>
-                <View style={[styles.phoneInputWrapper, error ? styles.phoneInputError : null]}>
-                    <View style={styles.countryCodeContainer}>
-                        <Text style={styles.flagEmoji}>🇮🇳 </Text>
-                        <Text style={styles.countryCode}>+91</Text>
-                    </View>
+                <View style={[styles.emailInputWrapper, error ? styles.emailInputError : null]}>
+                    <Ionicons name="mail-outline" size={20} color="#666" style={styles.emailIcon} />
                     <TextInput
-                        style={styles.phoneInput}
-                        placeholder="Phone number"
+                        style={styles.emailInput}
+                        placeholder="Enter your email"
                         placeholderTextColor="#999"
-                        keyboardType="phone-pad"
-                        value={phone}
-                        onChangeText={onPhoneChange}
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                        autoCorrect={false}
+                        value={email}
+                        onChangeText={onEmailChange}
                         editable={!loading}
                     />
                 </View>
@@ -38,7 +38,7 @@ const SignInForm = ({ phone, error, onPhoneChange, onSignIn, loading }) => {
                 {loading ? (
                     <ActivityIndicator color="#fff" />
                 ) : (
-                    <Text style={styles.signInButtonText}>Sign In</Text>
+                    <Text style={styles.signInButtonText}>Proceed</Text>
                 )}
             </TouchableOpacity>
         </View>
@@ -62,7 +62,7 @@ const styles = StyleSheet.create({
     inputContainer: {
         marginBottom: 20,
     },
-    phoneInputWrapper: {
+    emailInputWrapper: {
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#f8f9fa',
@@ -72,34 +72,19 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#e9ecef',
     },
-    phoneInputError: {
+    emailInputError: {
         borderColor: '#FF6B6B',
         backgroundColor: '#FFF5F5',
     },
-    countryCodeContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingRight: 12,
-        borderRightWidth: 1,
-        borderRightColor: '#dee2e6',
+    emailIcon: {
         marginRight: 12,
     },
-    flagEmoji: {
-        fontSize: 16,
-        marginRight: 6,
-    },
-    countryCode: {
-        fontSize: 16,
-        color: '#333',
-        fontWeight: '500',
-    },
-    phoneInput: {
+    emailInput: {
         flex: 1,
         fontSize: 18,
         paddingVertical: 16,
         color: '#333',
         fontWeight: '500',
-        letterSpacing: 1,
     },
     errorContainer: {
         flexDirection: 'row',

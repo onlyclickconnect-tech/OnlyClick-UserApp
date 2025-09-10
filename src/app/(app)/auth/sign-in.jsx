@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
-import { StatusBar, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Keyboard, StatusBar, View } from 'react-native';
 import SignInFooter from '../../../components/SignIn/SignInFooter';
 import SignInForm from '../../../components/SignIn/SignInForm';
 import SignInHeader from '../../../components/SignIn/SignInHeader';
@@ -10,37 +10,47 @@ import SignInIllustration from '../../../components/SignIn/SignInIllustration';
 import { sendOtp } from '../../../services/api/otp.api.js';
 
 export default function SignIn() {
-    const [phone, setPhone] = useState('');
+    const [email, setEmail] = useState('');
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [keyboardVisible, setKeyboardVisible] = useState(false);
 
-    const formatPhoneNumber = (text) => {
-        const digits = text.replace(/\D/g, '');
-        const limitedDigits = digits.slice(0, 10);
-        if (limitedDigits.length > 5) {
-            return limitedDigits.slice(0, 5) + ' ' + limitedDigits.slice(5);
-        }
-        return limitedDigits;
+    useEffect(() => {
+        const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
+            setKeyboardVisible(true);
+        });
+        const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
+            setKeyboardVisible(false);
+        });
+
+        return () => {
+            keyboardDidHideListener?.remove();
+            keyboardDidShowListener?.remove();
+        };
+    }, []);
+
+    const validateEmail = (email) => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
     };
 
-    const handlePhoneChange = (text) => {
-        const formatted = formatPhoneNumber(text);
-        setPhone(formatted);
+    const handleEmailChange = (text) => {
+        setEmail(text);
         if (error) setError('');
     };
 
     const handleSignIn = async () => {
-        const rawPhone = phone.replace(/\s/g, '');
-        if (rawPhone.length < 10) {
-            setError('Please enter a complete 10-digit mobile number');
+        if (!validateEmail(email)) {
+            setError('Please enter a valid email address');
             return;
         }
         setIsLoading(true);
         try {
-            await sendOtp(rawPhone);
-            router.push({ pathname: '/auth/otp', params: { phone: rawPhone } });
+            
+            await sendOtp(email);
+            router.push({ pathname: '/auth/magic-link-sent', params: { email: email } });
         } catch (err) {
-            setError('Failed to send OTP. Please try again.');
+            setError('Failed to send email. Please try again.');
         } finally {
             setIsLoading(false);
         }
@@ -49,12 +59,12 @@ export default function SignIn() {
     return (
         <View style={styles.container}>
             <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-            <SignInHeader />
+            {!keyboardVisible && <SignInHeader />}
             <SignInIllustration />
             <SignInForm 
-                phone={phone}
+                email={email}
                 error={error}
-                onPhoneChange={handlePhoneChange}
+                onEmailChange={handleEmailChange}
                 onSignIn={handleSignIn}
                 loading={isLoading}
             />
