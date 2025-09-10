@@ -4,10 +4,10 @@ import {
   Platform,
   StatusBar as RNStatusBar,
   StyleSheet,
-  Text,
   View
 } from 'react-native';
 import PressableScale from './PressableScale';
+import Text from "../ui/Text";
 
 import { useState } from 'react';
 

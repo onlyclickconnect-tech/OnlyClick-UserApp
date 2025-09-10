@@ -1,5 +1,6 @@
-import { Image, StyleSheet, Text, View } from "react-native";
+import { Image, StyleSheet, View } from "react-native";
 import React from "react";
+import Text from "../ui/Text";
 
 export default function JobAlertBox({ notification }) {
   return (

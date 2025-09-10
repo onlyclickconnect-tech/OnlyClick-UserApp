@@ -4,10 +4,10 @@ import {
   StyleSheet,
   Pressable,
   Image,
-  Text,
   TouchableOpacity,
   TextInput,
 } from "react-native";
+import Text from "../ui/Text";
 import useDimension from "../../hooks/useDimensions";
 import { useModal } from "../../context/ModalProvider";
 import { useEffect, useState } from "react";

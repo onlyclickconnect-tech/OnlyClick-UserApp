@@ -1,5 +1,5 @@
-import { StyleSheet, Text, TouchableOpacity } from 'react-native';
-
+import { StyleSheet, TouchableOpacity } from 'react-native';
+import Text from "../ui/Text";
 const OTPResend = ({ countdown, onResend }) => {
   return (
     <TouchableOpacity onPress={onResend} style={styles.resendContainer}>

@@ -11,10 +11,10 @@ import {
   ScrollView,
   StatusBar,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View
 } from 'react-native';
+import Text from "../../../../components/ui/Text.jsx";
 import { useAppStates } from '../../../../context/AppStates';
 import RazorpayCheckout from 'react-native-razorpay';
 
@@ -2722,9 +2722,10 @@ const styles = StyleSheet.create({
     right: -8,
     backgroundColor: '#FF9800',
     borderRadius: 10,
-    paddingHorizontal: 5,
+    paddingHorizontal: 8, // Increased from 5 to 8 for more space
     paddingVertical: 2,
     zIndex: 1,
+    minWidth: 70, // Added minimum width to ensure consistent badge size
   },
   tomorrowText: {
     fontSize: 10,

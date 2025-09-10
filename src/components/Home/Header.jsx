@@ -10,11 +10,11 @@ import { useEffect, useState } from "react";
 import {
   Alert,
   Modal,
-  Text,
   TextInput,
   TouchableOpacity,
   View
 } from "react-native";
+import Text from "../ui/Text"
 import { useAppStates } from "../../context/AppStates";
 import useCurrentUserDetails from "../../hooks/useCurrentUserDetails";
 import useDimension from "../../hooks/useDimensions";

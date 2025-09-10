@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { Dimensions, Image, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, Image, ScrollView, StyleSheet, View } from 'react-native';
+import Text from "../ui/Text";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 

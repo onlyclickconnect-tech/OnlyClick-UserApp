@@ -1,4 +1,5 @@
-import { Text, View } from "react-native";
+import { View } from "react-native";
+import Text from "../components/ui/Text"
 import { useRouter } from "expo-router";
 import * as NavigationBar from "expo-navigation-bar/src/NavigationBar.android";
 import { useCallback, useEffect } from "react";

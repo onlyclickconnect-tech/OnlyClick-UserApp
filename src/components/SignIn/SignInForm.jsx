@@ -1,49 +1,113 @@
-import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View, ActivityIndicator} from 'react-native';
+import { Ionicons } from "@expo/vector-icons";
+import { useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import api from "../../app/api/api.js";
+import Text from "../ui/Text";
 
-const SignInForm = ({ phone, error, onPhoneChange, onSignIn, loading }) => {
-    return (
-        <View style={styles.content}>
-            <Text style={styles.title}>Login to your account</Text>
-            
-            <View style={styles.inputContainer}>
-                <View style={[styles.phoneInputWrapper, error ? styles.phoneInputError : null]}>
-                    <View style={styles.countryCodeContainer}>
-                        <Text style={styles.flagEmoji}>🇮🇳 </Text>
-                        <Text style={styles.countryCode}>+91</Text>
-                    </View>
-                    <TextInput
-                        style={styles.phoneInput}
-                        placeholder="Phone number"
-                        placeholderTextColor="#999"
-                        keyboardType="phone-pad"
-                        value={phone}
-                        onChangeText={onPhoneChange}
-                        editable={!loading}
-                    />
-                </View>
-                {error ? (
-                    <View style={styles.errorContainer}>
-                        <Ionicons name="alert-circle" size={16} color="#FF6B6B" />
-                        <Text style={styles.errorText}>{error}</Text>
-                    </View>
-                ) : null}
-            </View>
+export default function LoginScreen() {
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-            <TouchableOpacity
-                style={[styles.signInButton, loading && { opacity: 0.7 }]}
-                onPress={onSignIn}
-                disabled={loading}
-            >
-                {loading ? (
-                    <ActivityIndicator color="#fff" />
-                ) : (
-                    <Text style={styles.signInButtonText}>Sign In</Text>
-                )}
-            </TouchableOpacity>
+  const handleLogin = async () => {
+    setError("");
+
+    if (!email || !email.includes("@")) {
+      setError("Please enter a valid email address");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      console.log("LOGIN DEBUG");
+      console.log("API Base URL:", process.env.EXPO_PUBLIC_API_URL);
+      console.log("Email:", email);
+
+      const response = await api.post("/api/v1/auth", {
+        email,
+      });
+
+      console.log("Login response:", response.data);
+      Alert.alert("Check your email", "Magic link sent!");
+    } catch (err) {
+      console.log("API Base URL:", process.env.EXPO_PUBLIC_API_URL);
+      console.log("LOGIN ERROR");
+      console.log("Error:", err);
+      console.log("Error response:", err.response?.data);
+      console.log("Error status:", err.response?.status);
+
+      if (err.response) {
+        setError(err.response.data.error || "Something went wrong");
+      } else {
+        setError(err.message);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+
+
+  return (
+    <View style={styles.content}>
+      <Text style={styles.title}>Login to your account</Text>
+
+      <View style={styles.inputContainer}>
+        <View
+          style={[
+            styles.emailInputWrapper,
+            error ? styles.emailInputError : null,
+          ]}
+        >
+          <Ionicons
+            name="mail-outline"
+            size={20}
+            color="#666"
+            style={styles.emailIcon}
+          />
+          <TextInput
+            style={styles.emailInput}
+            placeholder="Enter your email"
+            placeholderTextColor="#999"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+            value={email}
+            onChangeText={setEmail}
+            editable={!loading}
+          />
         </View>
-    );
-};
+        {error ? (
+          <View style={styles.errorContainer}>
+            <Ionicons name="alert-circle" size={16} color="#FF6B6B" />
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        ) : null}
+      </View>
+
+      <TouchableOpacity
+        style={[styles.signInButton, loading && { opacity: 0.7 }]}
+        onPress={handleLogin}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.signInButtonText}>Proceed</Text>
+        )}
+      </TouchableOpacity>
+    </View>
+  );
+}
 
 const styles = StyleSheet.create({
     content: {
@@ -62,7 +126,7 @@ const styles = StyleSheet.create({
     inputContainer: {
         marginBottom: 20,
     },
-    phoneInputWrapper: {
+    emailInputWrapper: {
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: '#f8f9fa',
@@ -72,34 +136,19 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#e9ecef',
     },
-    phoneInputError: {
+    emailInputError: {
         borderColor: '#FF6B6B',
         backgroundColor: '#FFF5F5',
     },
-    countryCodeContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingRight: 12,
-        borderRightWidth: 1,
-        borderRightColor: '#dee2e6',
+    emailIcon: {
         marginRight: 12,
     },
-    flagEmoji: {
-        fontSize: 16,
-        marginRight: 6,
-    },
-    countryCode: {
-        fontSize: 16,
-        color: '#333',
-        fontWeight: '500',
-    },
-    phoneInput: {
+    emailInput: {
         flex: 1,
         fontSize: 18,
         paddingVertical: 16,
         color: '#333',
         fontWeight: '500',
-        letterSpacing: 1,
     },
     errorContainer: {
         flexDirection: 'row',
@@ -131,5 +180,3 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
 });
-
-export default SignInForm;

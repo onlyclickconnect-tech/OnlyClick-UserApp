@@ -1,5 +1,5 @@
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import Text from "../ui/Text";
 export default function SuccessMessage({ onContinue }) {
   return (
     <View style={styles.container}>

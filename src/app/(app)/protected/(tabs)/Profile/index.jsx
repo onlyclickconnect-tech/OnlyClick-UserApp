@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router as Router } from 'expo-router';
 import { useEffect, useState } from "react";
-import { Alert, Dimensions, Platform, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Dimensions, Platform, ScrollView, StatusBar, StyleSheet, TouchableOpacity, View } from "react-native";
+import Text from "../../../../../components/ui/Text"
 import AdvancedOptions from "../../../../../components/Profile/AdvancedOptions";
 import BottomLinks from "../../../../../components/Profile/BottomLinks";
 import ProfileForm from "../../../../../components/Profile/ProfileForm";

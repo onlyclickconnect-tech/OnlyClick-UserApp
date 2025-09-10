@@ -1,8 +1,8 @@
 import Constants from 'expo-constants';
 import * as Location from 'expo-location';
 import { useState } from 'react';
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-
+import { Alert, StyleSheet, TouchableOpacity, View } from 'react-native';
+import Text from "../ui/Text";
 const SuccessWelcome = ({ onComplete }) => {
   const [locationGranted, setLocationGranted] = useState(false);
   const [notificationGranted, setNotificationGranted] = useState(false);

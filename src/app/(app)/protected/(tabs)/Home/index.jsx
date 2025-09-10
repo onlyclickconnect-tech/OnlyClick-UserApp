@@ -1,4 +1,5 @@
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
+import Text from "../../../../../components/ui/Text"
 import Header from "../../../../../components/Home/Header";
 import Info from "../../../../../components/Home/Info";
 import Data from "../../../../../components/Home/Data";

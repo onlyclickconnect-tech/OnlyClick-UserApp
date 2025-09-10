@@ -1,7 +1,7 @@
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Animated, Easing, Image, Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, Animated, Easing, Image, Modal, StyleSheet, TouchableOpacity, View } from "react-native";
 import {
   deleteAvatar,
   uploadAvatar,
@@ -9,6 +9,7 @@ import {
 import useCurrentUserDetails from "../../hooks/useCurrentUserDetails";
 import useDimension from "../../hooks/useDimensions";
 import SuccessIndicator from "../common/SuccessIndicator";
+import Text from "../ui/Text";
 
 const ProfileHeader = ({
   isGeneral = true,
@@ -28,7 +29,6 @@ const ProfileHeader = ({
   }, [profileImage]);
   const sliderPosition = useRef(new Animated.Value(isGeneral ? 0 : 1)).current;
   const { screenWidth } = useDimension();
-  const [isEditingName, setIsEditingName] = useState(false);
   const [userName, setUserName] = useState(name || "User's Name");
   const [selectedImage, setSelectedImage] = useState(profileImage);
   const [isUpdatingPhoto, setIsUpdatingPhoto] = useState(false);
@@ -65,6 +65,9 @@ const ProfileHeader = ({
       // setSelectedImage(result?.avatar_url || imageUri);
       setTempImageUri(null);
       setShowSuccessModal(true);
+      
+      // Immediately refresh user details to update the profile image
+      refreshUserDetails?.();
       onProfileUpdate?.();
     } catch (error) {
       console.log("Upload error:", error);
@@ -294,11 +297,13 @@ const ProfileHeader = ({
 
   // Success Modal Component
   const SuccessModal = () => {
-    // Auto-close the modal after 1 second
+    // Auto-close the modal after 1 second and refresh user details
     useEffect(() => {
       if (showSuccessModal) {
         const timer = setTimeout(() => {
           setShowSuccessModal(false);
+          // Refresh user details to get the updated profile image
+          refreshUserDetails?.();
         }, 1000);
 
         return () => clearTimeout(timer);

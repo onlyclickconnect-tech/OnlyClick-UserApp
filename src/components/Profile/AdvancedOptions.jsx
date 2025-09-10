@@ -1,7 +1,8 @@
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from "react";
-import { Alert, Dimensions, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { Alert, Dimensions, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
+import Text from "../../components/ui/Text"
 import { useAuth } from '../../context/AuthProvider';
 
 const screenWidth = Dimensions.get("window").width;
