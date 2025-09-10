@@ -16,6 +16,8 @@ import {
   View
 } from 'react-native';
 import { useAppStates } from '../../../../context/AppStates';
+import RazorpayCheckout from 'react-native-razorpay';
+
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -23,9 +25,11 @@ import AppHeader from '../../../../components/common/AppHeader';
 import fetchCart from '../../../../data/getdata/getCart';
 import { addOneInCart, removeAllFromCart, removeOneFromCart } from '../../../api/cart';
 import confirmbookings from '../../../api/confirmbookings.js';
+import { confirmRazorpayPayment, createRazorpayOrder } from '../../../api/razoroay.js';
 
 export default function Cart() {
   const router = useRouter();
+
 
   const { selectedLocation, updateSelectedLocation, selectedMobileNumber, updateSelectedMobileNumber, selectedLocationObject, updateSelectedLocationObject } = useAppStates();
 
@@ -42,7 +46,7 @@ export default function Cart() {
     if (!locationObj || Object.keys(locationObj).length === 0) {
       return "Tap to set location";
     }
-    
+
     // Extract and format location parts in proper order
     const parts = [];
     if (locationObj.houseNumber) parts.push(locationObj.houseNumber);
@@ -50,7 +54,7 @@ export default function Cart() {
     if (locationObj.city) parts.push(locationObj.city);
     if (locationObj.pincode) parts.push(locationObj.pincode);
     if (locationObj.additionalInfo) parts.push(locationObj.additionalInfo);
-    
+
     return parts.length > 0 ? parts.join(', ') : "Tap to set location";
   };
 
@@ -276,8 +280,7 @@ export default function Cart() {
     setSetservice_charge(serviceCharge);
     setCartData(arr);
     setRawcart(rawCartData);
-    console.log("this is address",selectedLocationObject);
-    setLocation({additionalInfo: "", city: "", district: "", houseNumber: address, pincode: ""});
+    setLocation({ additionalInfo: "", city: "", district: "", houseNumber: address, pincode: "" });
     // Only set mobile number from server if no mobile number is set in AppStates
     if (!selectedMobileNumber && phno) {
       setMobileNumber(phno);
@@ -373,8 +376,8 @@ export default function Cart() {
   const handleRemoveItem = async (service_id) => {
     setDeletingItemId(service_id);
     try {
-      const {data, error} = await removeAllFromCart(service_id);
-      
+      const { data, error } = await removeAllFromCart(service_id);
+
       if (error) {
         Alert.alert('Error', 'Failed to clear cart');
       } else {
@@ -396,7 +399,7 @@ export default function Cart() {
     // Prevent proceeding if cart is empty or total is 0
     if (isCartEmptyOrZero()) {
       Alert.alert(
-        'Cart Empty', 
+        'Cart Empty',
         'Please add items to your cart before proceeding.',
         [{ text: 'OK', style: 'default' }]
       );
@@ -414,12 +417,12 @@ export default function Cart() {
     setShowPaymentModal(true);
   };
 
-  const handlePayment = async () => {
+  const createbookings = async () => {
     setIsPaymentLoading(true);
     const bookingdata = {
       items: rawcart,
       ph_no: mobileNumber,
-      location: location.houseNumber+" "+location.city+" "+location.district+" "+location.pincode +" "+location.additionalInfo,
+      location: location.houseNumber + " " + location.city + " " + location.district + " " + location.pincode + " " + location.additionalInfo,
       dateitem: {
         dateNumber: selectedDateItem.dayNumber,
         day: selectedDateItem.dayNumber,
@@ -435,39 +438,103 @@ export default function Cart() {
 
 
     if (error) {
-  Alert.alert(
-    'Sorry! Unable to book',
-    'There was an error processing your booking. Please try again later.',
-    [
-      {
-        text: 'OK',
-        onPress: () => {
-          setShowPaymentModal(false);
-          router.push('/protected/(tabs)/Bookings');
-        }
-      }
-    ]
-  );
-} else {
-  Alert.alert(
-    'Your booking has been confirmed!', // title
-    '', // message can be empty if not needed
-    [
-      {
-        text: 'OK',
-        onPress: () => {
-          setShowPaymentModal(false);
-          router.push('/protected/(tabs)/Bookings');
-        }
-      }
-    ]
-  );
-}
-
-    setIsPaymentLoading(false);
+      Alert.alert(
+        'Sorry! Unable to book',
+        'There was an error processing your booking. Please try again later.',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              setShowPaymentModal(false);
+              router.push('/protected/(tabs)/Bookings');
+            }
+          }
+        ]
+      );
+    } else {
+      Alert.alert(
+        'Your booking has been confirmed!', // title
+        '', // message can be empty if not needed
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              setShowPaymentModal(false);
+              router.push('/protected/(tabs)/Bookings');
+            }
+          }
+        ]
+      );
+    }
+    setIsPaymentLoading(true);
   }
 
 
+
+
+  const handlePayment = async () => {
+    setIsPaymentLoading(true);
+    console.log("payment method", selectedPaymentMethod);
+    if (selectedPaymentMethod == "Online Payment") {
+      try {
+        const { data, error } = await createRazorpayOrder([], 50000); // your API call
+        const order = data;
+
+        var options = {
+          description: "Test Payment",
+          image: "https://yourcdn.com/logo.png", // optional
+          currency: "INR",
+          key: process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID, // ✅ Use env
+          amount: order.amount, // in paisa
+          order_id: order.id, // from backend
+          name: "OnlyClick",
+          prefill: {
+            email: "test@example.com",
+            contact: "9999999999",
+            name: "Test User",
+          },
+          theme: { color: "#3399cc" },
+        };
+
+        await RazorpayCheckout.open(options)
+          .then(async (data) => {
+            // Payment Success
+            payment_data = data;
+            // alert(`Success: ${data.razorpay_payment_id}`);
+            // TODO: verify payment on backend
+
+            const { data: confirmPaymentData, error: confirmPaymentError } = await confirmRazorpayPayment(data);
+            if (confirmPaymentError) {
+              throw new error(confirmPaymentError)
+            }
+
+            if (confirmPaymentData.success) {
+              createbookings();
+              setIsPaymentLoading(false);
+            }
+            else {
+              alert(`Sorry! Something went wrong. If the amount was debited from your account, please contact us for assistance.`);
+            }
+            setIsPaymentLoading(false);
+          })
+          .catch((error) => {
+            // Payment Failed
+            console.error("Payment Failed:", error);
+            alert(`Sorry! Something went wrong. If the amount was debited from your account, please contact us for assistance.`);
+            setIsPaymentLoading(false);
+          });
+
+
+      } catch (err) {
+        console.error("Error starting payment:", err);
+        setIsPaymentLoading(false);
+      }
+    }
+    else {
+      createbookings();
+      setIsPaymentLoading(false)
+    }
+  };
 
   const handleClearCart = () => {
     Alert.alert(
@@ -1142,10 +1209,10 @@ export default function Cart() {
                 {isPaymentLoading ? (
                   <ActivityIndicator size="small" color="#fff" style={{ marginRight: 8 }} />
                 ) : (
-                  <Ionicons 
-                    name={selectedPaymentMethod === 'Online Payment' ? "card" : "checkmark-circle"} 
-                    size={22} 
-                    color="#fff" 
+                  <Ionicons
+                    name={selectedPaymentMethod === 'Online Payment' ? "card" : "checkmark-circle"}
+                    size={22}
+                    color="#fff"
                   />
                 )}
                 <Text style={styles.enhancedPayButtonText}>
@@ -1168,9 +1235,9 @@ export default function Cart() {
         <View style={styles.deleteModalContent}>
           <View style={styles.deleteModalHeader}>
             <View style={styles.deleteIconContainer}>
-              
-                <Ionicons name="trash-outline" size={32} color="#F44336" />
-              
+
+              <Ionicons name="trash-outline" size={32} color="#F44336" />
+
             </View>
             <Text style={styles.deleteModalTitle}>Clear Cart</Text>
           </View>
@@ -1314,7 +1381,7 @@ export default function Cart() {
             <View style={styles.summaryDivider} />
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Service Fee</Text>
-              <Text style={styles.summaryAmount}>{'₹'+Math.round(service_charge)}</Text>
+              <Text style={styles.summaryAmount}>{'₹' + Math.round(service_charge)}</Text>
             </View>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Taxes</Text>
@@ -1360,11 +1427,11 @@ export default function Cart() {
           ]}>
             Proceed Now
           </Text>
-          <Ionicons 
-            name="arrow-forward" 
-            size={16} 
-            color={isCartEmptyOrZero() ? "#999" : "#fff"} 
-            style={{ marginLeft: 8 }} 
+          <Ionicons
+            name="arrow-forward"
+            size={16}
+            color={isCartEmptyOrZero() ? "#999" : "#fff"}
+            style={{ marginLeft: 8 }}
           />
         </TouchableOpacity>
       </View>
