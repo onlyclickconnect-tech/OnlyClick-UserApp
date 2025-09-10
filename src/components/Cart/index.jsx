@@ -10,10 +10,10 @@ import {
   ScrollView,
   StatusBar,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View
 } from 'react-native';
+import Text from "../ui/Text"
 
 export default function Cart() {
   const router = useRouter();

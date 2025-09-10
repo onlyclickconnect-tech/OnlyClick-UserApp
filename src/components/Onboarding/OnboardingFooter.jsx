@@ -1,6 +1,6 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
-import { ActivityIndicator, Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-
+import { ActivityIndicator, Animated, StyleSheet, TouchableOpacity, View } from 'react-native';
+import Text from "../ui/Text"
 const OnboardingFooter = forwardRef(function OnboardingFooter({ onNext, onComplete, currentSlide, totalSlides, isLastSlide, isTransitioning, isCompleting }, ref) {
   const buttonAnim = useRef(new Animated.Value(0)).current;
 

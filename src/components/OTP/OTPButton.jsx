@@ -1,5 +1,5 @@
-import { StyleSheet, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
-
+import { StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import Text from "../ui/Text";
 const OTPButton = ({ otpLength, onSubmit, loading }) => {
   return (
     <TouchableOpacity

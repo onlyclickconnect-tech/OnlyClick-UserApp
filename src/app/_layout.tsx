@@ -2,7 +2,8 @@ import { Poppins_400Regular, Poppins_600SemiBold, Poppins_700Bold, useFonts } fr
 import { Stack } from "expo-router";
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
-import { Text, View } from "react-native";
+import {  View } from "react-native";
+import Text from "../components/ui/Text"
 import { AppStatesProvider } from "../context/AppStates";
 import AuthProvider from "../context/AuthProvider";
 import ModalProvider from "../context/ModalProvider";

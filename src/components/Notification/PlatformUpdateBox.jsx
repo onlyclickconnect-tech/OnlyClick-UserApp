@@ -1,13 +1,12 @@
 import {
   Image,
   StyleSheet,
-  Text,
   Touchable,
   TouchableOpacity,
   View,
 } from "react-native";
 import React from "react";
-
+import Text from "../ui/Text";
 export default function PlatformUpdateBox({ notification }) {
   return (
     <View

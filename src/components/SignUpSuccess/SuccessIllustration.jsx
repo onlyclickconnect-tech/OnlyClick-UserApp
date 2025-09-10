@@ -1,5 +1,5 @@
-import { Image, StyleSheet, Text, View } from 'react-native';
-
+import { Image, StyleSheet, View } from 'react-native';
+import Text from "../ui/Text";
 export default function SuccessIllustration() {
   return (
     <View style={styles.container}>

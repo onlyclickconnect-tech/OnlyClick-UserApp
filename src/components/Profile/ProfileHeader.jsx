@@ -1,7 +1,8 @@
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Animated, Easing, Image, Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Alert, Animated, Easing, Image, Modal, StyleSheet, TouchableOpacity, View } from "react-native";
+import Text from "../ui/Text"
 import {
   deleteAvatar,
   uploadAvatar,

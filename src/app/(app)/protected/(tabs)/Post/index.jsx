@@ -11,11 +11,11 @@ import {
   Modal,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   TouchableOpacity,
   View
 } from "react-native";
+import Text from "../../../../../components/ui/Text"
 import { createCustomPost } from "../../../../api/post";
 
 import AppHeader from '../../../../../components/common/AppHeader';

@@ -13,10 +13,11 @@ import {
   ScrollView,
   StatusBar,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View
 } from 'react-native';
+
+import Text from "../../../../../components/ui/Text"
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 

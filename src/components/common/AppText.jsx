@@ -1,4 +1,4 @@
-import { Text } from 'react-native';
+import Text from "../ui/Text"
 
 export default function AppText(props) {
   const { style, children, ...rest } = props;

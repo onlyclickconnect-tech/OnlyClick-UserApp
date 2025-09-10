@@ -8,11 +8,11 @@ import {
   Image,
   StatusBar,
   StyleSheet,
-  Text,
   TextInput,
   TouchableOpacity,
   View
 } from "react-native";
+import Text from "../../../../../components/ui/Text";
 import AppHeader from '../../../../../components/common/AppHeader';
 import PressableScale from '../../../../../components/common/PressableScale';
 import { allCategories, allServices, categoryImages } from "../../../../../data/servicesData";
