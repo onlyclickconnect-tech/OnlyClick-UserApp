@@ -11,8 +11,12 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     storage: AsyncStorage,
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true, //changed to true
+    detectSessionInUrl: false, //changed to true
   },
 })
+
+supabase.auth.onAuthStateChange((event, session) => {
+  console.log("Auth state changed:", event, session?.user?.id);
+});
 
 export default supabase

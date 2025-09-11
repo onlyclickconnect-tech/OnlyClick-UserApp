@@ -1,7 +1,6 @@
 import api from "./api.js";
 
 const confirmBookings = async (bookingData) => {
-  console.log(bookingData);
   try {
     const response = await api.post('/api/v1/confirmbookings', bookingData);
     console.log("Booking POST successful:", response.data);
