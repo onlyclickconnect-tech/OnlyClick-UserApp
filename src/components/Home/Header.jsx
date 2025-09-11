@@ -5,8 +5,8 @@ import FontAwesome from "@expo/vector-icons/FontAwesome";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Location from 'expo-location';
-import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
 import {
   Alert,
   Modal,
@@ -14,13 +14,14 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
-import Text from "../ui/Text"
 import { useAppStates } from "../../context/AppStates";
+import fetchCart from '../../data/getdata/getCart';
 import useCurrentUserDetails from "../../hooks/useCurrentUserDetails";
 import useDimension from "../../hooks/useDimensions";
 import headerStyle from "../../styles/Home/headerStyle";
 import Badge from "../common/Badge";
 import PressableScale from '../common/PressableScale';
+import Text from "../ui/Text";
 
 function Header() {
   const [hasNotification, setHasNotification] = useState(true);
@@ -29,10 +30,55 @@ function Header() {
   const [isLocationLoading, setIsLocationLoading] = useState(false);
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [manualLocation, setManualLocation] = useState("");
+  const [cartCount, setCartCount] = useState(0);
+  const [cartNavigationLoading, setCartNavigationLoading] = useState(false);
   const { userAddress } = useCurrentUserDetails();
   const { selectedLocation, updateSelectedLocation } = useAppStates();
   const router = useRouter();
   const styles = headerStyle();
+  
+  // Function to fetch and update cart count
+  const updateCartCount = async () => {
+    try {
+      const { arr } = await fetchCart();
+      const totalItems = arr.reduce((total, category) => 
+        total + category.items.reduce((catTotal, item) => catTotal + item.quantity, 0), 0
+      );
+      setCartCount(totalItems);
+    } catch (error) {
+      console.error('Error fetching cart count:', error);
+      setCartCount(0);
+    }
+  };
+
+  // Function to handle cart navigation with loading state
+  const handleCartNavigation = async () => {
+    if (cartNavigationLoading) return; // Prevent multiple clicks
+    
+    setCartNavigationLoading(true);
+    try {
+      await router.push('/(modal)/cart');
+    } catch (error) {
+      console.error('Error navigating to cart:', error);
+    } finally {
+      // Reset loading state after a short delay to prevent rapid clicks
+      setTimeout(() => {
+        setCartNavigationLoading(false);
+      }, 1000);
+    }
+  };
+
+  useEffect(() => {
+    // Fetch initial cart count
+    updateCartCount();
+  }, []);
+
+  // Update cart count when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      updateCartCount();
+    }, [])
+  );
   
   const searchService = async () => {
     if (search.trim()) {
@@ -235,9 +281,19 @@ function Header() {
             />
           </View>
 
-          <PressableScale accessibilityRole="button" onPress={() => router.push('/(modal)/cart')} style={styles.cartButton}>
+          <PressableScale 
+            accessibilityRole="button" 
+            onPress={handleCartNavigation} 
+            style={[styles.cartButton, cartNavigationLoading && styles.cartButtonDisabled]}
+            disabled={cartNavigationLoading}
+          >
             <View style={styles.cartInner}>
               <Feather name="shopping-cart" size={20} color="#3898B3" />
+              {cartCount > 0 && (
+                <View style={styles.cartBadge}>
+                  <Text style={styles.cartBadgeText}>{cartCount}</Text>
+                </View>
+              )}
             </View>
           </PressableScale>
         </View>

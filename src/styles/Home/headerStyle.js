@@ -122,6 +122,9 @@ export default function HeaderStyle() {
       justifyContent: 'center',
       backgroundColor: 'transparent'
     },
+    cartButtonDisabled: {
+      opacity: 0.6,
+    },
     cartInner: {
       width: 36,
       height: 36,
@@ -146,6 +149,11 @@ export default function HeaderStyle() {
       height: 18,
       alignItems: 'center',
       justifyContent: 'center'
+    },
+    cartBadgeText: {
+      color: '#fff',
+      fontSize: 12,
+      fontWeight: 'bold',
     },
   });
 
