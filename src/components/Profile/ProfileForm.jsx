@@ -1,13 +1,13 @@
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from "react";
 import { Dimensions, StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
-import Text from "../ui/Text"
 import { useAuth } from "../../context/AuthProvider";
 import { useModal } from '../../context/ModalProvider';
 import { useUpdateProfile } from '../../hooks/seeUpdateProfile';
 import useCurrentUserDetails from "../../hooks/useCurrentUserDetails";
 import LoadinScreen from '../common/LoadingScreen';
 import SuccessModal from '../common/SuccessModal';
+import Text from "../ui/Text";
 
 
 
@@ -26,8 +26,9 @@ const ProfileForm = ({ onValidationChange, onSave, onProfileUpdate }) => {
     userId,
     service,
   } = useCurrentUserDetails();
+  
   const { setIsSuccessModalOpen } = useModal();
-  const { setUser } = useAuth();
+  const { setUser, refreshUserDetails } = useAuth();
 
   const [formData, setFormData] = useState({
     fullName: name || "",
@@ -102,7 +103,10 @@ const ProfileForm = ({ onValidationChange, onSave, onProfileUpdate }) => {
 
   const handleSave = async () => {
     setLoadingspin(true);
-    if (!validateForm()) return; 
+    if (!validateForm()) {
+      setLoadingspin(false); // Add this line
+      return;
+    }
     setIsSaving(true);
 
     const updates = {
@@ -117,12 +121,10 @@ const ProfileForm = ({ onValidationChange, onSave, onProfileUpdate }) => {
       setIsSuccessModalOpen(true);
       setIsEditing(false);
       setRefreshKey((prev) => prev + 1);
-      setUser((prev) => ({
-        ...prev,
-        name: formData.fullName,
-        email: formData.email,
-        address: formData.address,
-      }));
+
+      // Refresh user data from database
+      await refreshUserDetails();
+
       onProfileUpdate?.();
     } else {
       alert("Failed to update profile");
@@ -130,6 +132,8 @@ const ProfileForm = ({ onValidationChange, onSave, onProfileUpdate }) => {
     setLoadingspin(false);
     setIsSaving(false);
   };
+
+
 
   const handleCancel = () => {
     setFormData({

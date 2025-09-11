@@ -15,12 +15,13 @@ import {
   View
 } from 'react-native';
 import RazorpayCheckout from 'react-native-razorpay';
+
 import Toast from 'react-native-toast-message';
+
 import Text from "../../../../components/ui/Text.jsx";
 import { useAppStates } from '../../../../context/AppStates';
 
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 import AppHeader from '../../../../components/common/AppHeader';
 import fetchCart from '../../../../data/getdata/getCart';
@@ -28,6 +29,7 @@ import { addOneInCart, removeAllFromCart, removeOneFromCart } from '../../../api
 import confirmbookings from '../../../api/confirmbookings.js';
 import { confirmRazorpayPayment, createRazorpayOrder } from '../../../api/razoroay.js';
 
+const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 export default function Cart() {
   const router = useRouter();
 
@@ -540,12 +542,12 @@ export default function Cart() {
 
     setIsPaymentLoading(true);
     console.log("payment method", selectedPaymentMethod);
-    if (selectedPaymentMethod == "Online Payment") {
+    if (selectedPaymentMethod === "Online Payment") {
       try {
         const { data, error } = await createRazorpayOrder([], 50000); // your API call
         const order = data;
 
-        var options = {
+        let options = {
           description: "Test Payment",
           image: "https://yourcdn.com/logo.png", // optional
           currency: "INR",
@@ -564,7 +566,6 @@ export default function Cart() {
         await RazorpayCheckout.open(options)
           .then(async (data) => {
             // Payment Success
-            payment_data = data;
             // alert(`Success: ${data.razorpay_payment_id}`);
             // TODO: verify payment on backend
 
@@ -771,7 +772,7 @@ export default function Cart() {
             <View style={styles.policyItem}>
               <Text style={styles.bulletPoint}>•</Text>
               <Text style={styles.policyText}>
-                <Text style={styles.boldText}>Late Cancellations:</Text> If you cancel within 2 hours of the scheduled appointment, a cancellation fee of 50% of the total service fee will be charged. This helps us cover the costs incurred by the service provider's time and travel.
+                <Text style={styles.boldText}>Late Cancellations:</Text> If you cancel within 2 hours of the scheduled appointment, a cancellation fee of 50% of the total service fee will be charged. This helps us cover the costs incurred by the service provider&apos;s time and travel.
               </Text>
             </View>
             <View style={styles.policyItem}>

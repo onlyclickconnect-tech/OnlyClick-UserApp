@@ -54,7 +54,7 @@ const OnboardingContainer = ({ onComplete }) => {
         const { data: { user }, error } = await supabase.auth.getUser()
 
         if (error || !user) {
-          // if Session invalid/expired
+          // // if Session invalid/expired
           await supabase.auth.signOut()
           return
         } else {

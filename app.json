@@ -60,7 +60,9 @@
       "router": {},
       "EXPO_PUBLIC_API_URL": "https://81cq2mbl-5500.inc1.devtunnels.ms/",
       "eas": {
-        "projectId": "de3f3fd5-8e23-40a3-9c89-8a7756d159bd"
+
+        "projectId": "49154165-ce38-4c75-a522-54d98a82bb22"
+
       }
     }
   }
