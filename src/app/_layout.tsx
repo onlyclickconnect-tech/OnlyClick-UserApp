@@ -31,7 +31,6 @@ export default function RootLayout() {
     const handleDeepLink = async ({ url }: { url: string }) => {
       console.log("Deep link received:", url);
 
-      // Handle auth callback URLs
       if (
         url.includes("/auth/callback") ||
         url.includes("access_token") ||
@@ -40,7 +39,6 @@ export default function RootLayout() {
         console.log("Processing magic link:", url);
 
         try {
-          // Import supabase
           const supabase = (await import("../data/supabaseClient")).default;
 
           // Extract tokens from URL
@@ -51,9 +49,29 @@ export default function RootLayout() {
             const accessToken = accessTokenMatch[1];
             const refreshToken = refreshTokenMatch[1];
 
-            console.log("Setting session with tokens");
+            console.log("Extracted tokens, calling backend callback...");
 
-            // Manually set the session
+            // Call your backend callback endpoint FIRST
+            try {
+              const api = (await import("../app/api/api.js")).default;
+              const callbackResponse = await api.post("/api/v1/callback", {
+                access_token: accessToken,
+                refresh_token: refreshToken,
+              });
+
+              console.log(
+                "Backend callback successful:",
+                callbackResponse.data
+              );
+            } catch (callbackError: any) {
+              console.error("Backend callback failed:", callbackError);
+              console.error(
+                "Callback error details:",
+                callbackError.response?.data
+              );
+            }
+
+            // Then set Supabase session
             const { data, error } = await supabase.auth.setSession({
               access_token: accessToken,
               refresh_token: refreshToken,
@@ -61,7 +79,10 @@ export default function RootLayout() {
 
             if (error) {
               console.error("Auth error:", error);
-            } else if (data.session) {
+              return;
+            }
+
+            if (data.session) {
               console.log("Session set successfully");
               router.replace("/(app)/protected/(tabs)/Home");
             }
@@ -73,13 +94,14 @@ export default function RootLayout() {
     };
 
     const sub = Linking.addEventListener("url", handleDeepLink);
-
     Linking.getInitialURL().then((url) => {
       if (url) handleDeepLink({ url });
     });
 
     return () => sub.remove();
   }, []);
+
+
 
 
 
