@@ -139,51 +139,72 @@ export default function AuthProvider({ children }) {
     checkSession();
 
     // Listen for auth state changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("Auth state changed:", event, session);
+   const {
+     data: { subscription },
+   } = supabase.auth.onAuthStateChange(async (event, session) => {
+     console.log("Auth state changed:", event, session);
 
-      if (session?.user) {
-        console.log("New session detected, updating user");
-        const currentUser = session.user;
-        const userId = currentUser.id;
+     if (event === "SIGNED_OUT" || !session?.user) {
+       console.log("User signed out, clearing state");
+       setUser({
+         name: "",
+         address: "",
+         phone: "",
+         email: "",
+         _id: "",
+         taskMasterId: "",
+         service: "",
+         profileImage: "",
+         reviews: 0,
+         ratings: 0,
+         authToken: { token: "", expiryDate: "" },
+         refreshToken: { token: "", expiryDate: "" },
+       });
+       setIsLoggedIn(false);
+       setAuthToken("");
+       return;
+     }
 
-        const fullName = await getFullName(userId);
-        const avatar = await getProfileImage(userId);
-        const email = await getEmail(userId);
-        const phone = await getPhone(userId);
-        const address = await getAddress(userId);
+     if (session?.user) {
+       console.log("New session detected, updating user");
+       const currentUser = session.user;
+       const userId = currentUser.id;
 
-        setUser({
-          name: fullName || "",
-          address: address,
-          phone: phone,
-          email: email || "",
-          _id: userId,
-          taskMasterId: "",
-          service: "",
-          profileImage: avatar,
-          reviews: 0,
-          ratings: 0,
-          authToken: {
-            token: session.access_token,
-            expiryDate: "",
-          },
-          refreshToken: {
-            token: session.refresh_token,
-            expiryDate: "",
-          },
-        });
+       const fullName = await getFullName(userId);
+       const avatar = await getProfileImage(userId);
+       const email = await getEmail(userId);
+       const phone = await getPhone(userId);
+       const address = await getAddress(userId);
 
-        setIsLoggedIn(true);
-        setAuthToken(session.access_token || "");
-      } else {
-        console.log("No session found, user logged out");
-        setIsLoggedIn(false);
-        setAuthToken("");
-      }
-    });
+       setUser({
+         name: fullName || "",
+         address: address,
+         phone: phone,
+         email: email || "",
+         _id: userId,
+         taskMasterId: "",
+         service: "",
+         profileImage: avatar,
+         reviews: 0,
+         ratings: 0,
+         authToken: {
+           token: session.access_token,
+           expiryDate: "",
+         },
+         refreshToken: {
+           token: session.refresh_token,
+           expiryDate: "",
+         },
+       });
+
+       setIsLoggedIn(true);
+       setAuthToken(session.access_token || "");
+     } else {
+       console.log("No session found, user logged out");
+       setIsLoggedIn(false);
+       setAuthToken("");
+     }
+   });
 
     return () => subscription?.unsubscribe();
   }, []);

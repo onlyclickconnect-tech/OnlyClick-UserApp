@@ -7,7 +7,7 @@ import Contact from "../../../../../components/Contact/Contact";
 import { useEffect } from "react";
 import supabase from "../../../../../data/supabaseClient";
 
-export default function index() {
+export default function HomeScreen() {
   // TO BE REMOVED 
   useEffect(() => {
     const tempfunc = async () => {

@@ -1,8 +1,9 @@
 import api from "./api";
 
-export const createRazorpayOrder  = async (booking_uuids, amount)=>{
+export const createRazorpayOrder  = async (rawcart, amount)=>{
+    delete rawcart.count; // this count is the no of times service is booked so its of no use.so I deleted it.
     try {
-        const { data } = await api.post("/api/v1/genrate_oid", { booking_uuids, amount });
+        const { data } = await api.post("/api/v1/genrate_oid", { rawcart, amount });
         console.log("till here okay", data);
         return data;
 
@@ -22,7 +23,7 @@ export const confirmRazorpayPayment = async (payment_data)=>{
         console.log('dataform confirm_payment', data)
         console.log(data);
         return{data, error};
-    }catch{
+    }catch(error){
         console.error("error confirming payment", error);
         return{error}
     }
