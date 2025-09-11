@@ -10,7 +10,7 @@ import {
   View
 } from 'react-native';
 
-import Text from "../../../../../components/ui/Text"
+import Text from "../../../../../components/ui/Text";
 
 import AppHeader from '../../../../../components/common/AppHeader';
 
@@ -68,9 +68,18 @@ export default function Bookings() {
   };
 
   const filteredBookings = activeTab === 'All'
-    ? [...bookings].sort((a, b) => new Date(b.bookingTime) - new Date(a.bookingTime))
-    : bookings.filter(booking => booking.status === activeTab).sort((a, b) => new Date(b.bookingTime) - new Date(a.bookingTime));
-
+    ? [...bookings].sort((a, b) => {
+        // Extract numeric part from booking ID (e.g., "BK0001" -> 1)
+        const aId = parseInt(a.bookingId.replace(/\D/g, '')) || 0;
+        const bId = parseInt(b.bookingId.replace(/\D/g, '')) || 0;
+        return bId - aId; // Higher numbers first
+      })
+    : bookings.filter(booking => booking.status === activeTab).sort((a, b) => {
+        // Extract numeric part from booking ID (e.g., "BK0001" -> 1)
+        const aId = parseInt(a.bookingId.replace(/\D/g, '')) || 0;
+        const bId = parseInt(b.bookingId.replace(/\D/g, '')) || 0;
+        return bId - aId; // Higher numbers first
+      });
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -173,6 +182,18 @@ export default function Bookings() {
                         <View style={[styles.statusDot, { backgroundColor: getStatusColor(item.status) }]} />
                         <Text style={styles.service_name}>{item.service_name}</Text>
                       </View>
+                      <View style={styles.bookingIdRow}>
+                        <Text style={styles.bookingIdText}>Booking ID: {item.bookingId}</Text>
+                      </View>
+                      {item.razorpay_oid !== "Pay after service " ? (
+                        <View style={styles.bookingIdRow}>
+                          <Text style={styles.razorpayOidText}>Payment ID: {item.razorpay_oid}</Text>
+                        </View>
+                      ) : (
+                        <View style={styles.bookingIdRow}>
+                          <Text style={styles.razorpayOidText}>Payment Mode: {item.razorpay_oid}</Text>
+                        </View>
+                      )}
                       <Text style={styles.category}>{item.category}</Text>
                     </View>
                     <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
@@ -248,6 +269,7 @@ export default function Bookings() {
                           estimatedDuration: item.estimatedDuration,
                           paymentMethod: item.paymentMethod,
                           bookingId: item.bookingId,
+                          razorpay_oid: item.razorpay_oid,
                           serviceNotes: item.serviceNotes
                         };
                         router.push({
@@ -458,6 +480,21 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1A1A1A',
     marginBottom: 4,
+  },
+  bookingIdRow: {
+    marginBottom: 6,
+  },
+  bookingIdText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#3898B3',
+    fontFamily: 'monospace',
+  },
+  razorpayOidText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#666',
+    fontFamily: 'monospace',
   },
   category: {
     fontSize: 12,

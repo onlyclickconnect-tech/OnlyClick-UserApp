@@ -14,9 +14,10 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import RazorpayCheckout from 'react-native-razorpay';
+import Toast from 'react-native-toast-message';
 import Text from "../../../../components/ui/Text.jsx";
 import { useAppStates } from '../../../../context/AppStates';
-import RazorpayCheckout from 'react-native-razorpay';
 
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
@@ -215,11 +216,11 @@ export default function Cart() {
   const timeSlots = [
     { id: 1, time: '09:00 AM', label: 'Morning', available: true },
     { id: 2, time: '10:00 AM', label: 'Morning', available: true },
-    { id: 3, time: '11:00 AM', label: 'Morning', available: false },
+    { id: 3, time: '11:00 AM', label: 'Morning', available: true },
     { id: 4, time: '12:00 PM', label: 'Afternoon', available: true },
     { id: 5, time: '01:00 PM', label: 'Afternoon', available: true },
     { id: 6, time: '02:00 PM', label: 'Afternoon', available: true },
-    { id: 7, time: '03:00 PM', label: 'Afternoon', available: false },
+    { id: 7, time: '03:00 PM', label: 'Afternoon', available: true },
     { id: 8, time: '04:00 PM', label: 'Evening', available: true },
     { id: 9, time: '05:00 PM', label: 'Evening', available: true },
     { id: 10, time: '06:00 PM', label: 'Evening', available: true },
@@ -345,7 +346,11 @@ export default function Cart() {
         // Increase quantity
         const { data, error } = await addOneInCart(item.service_id);
         if (error) {
-          Alert.alert('Error', 'Failed to increase quantity');
+          Toast.show({
+            type: 'error',
+            text1: 'Error',
+            text2: 'Failed to increase quantity',
+          });
         } else {
           // Refetch cart data to get updated quantities
           await fetchCartData();
@@ -354,7 +359,11 @@ export default function Cart() {
         // Decrease quantity
         const { data, error } = await removeOneFromCart(item.service_id);
         if (error) {
-          Alert.alert('Error', 'Failed to decrease quantity');
+          Toast.show({
+            type: 'error',
+            text1: 'Error',
+            text2: 'Failed to decrease quantity',
+          });
         } else {
           // Refetch cart data to get updated quantities
           await fetchCartData();
@@ -362,7 +371,11 @@ export default function Cart() {
       }
     } catch (error) {
       console.error('Error updating quantity:', error);
-      Alert.alert('Error', 'Failed to update quantity');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to update quantity',
+      });
     } finally {
       setUpdatingItemId(null);
     }
@@ -379,14 +392,22 @@ export default function Cart() {
       const { data, error } = await removeAllFromCart(service_id);
 
       if (error) {
-        Alert.alert('Error', 'Failed to clear cart');
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'Failed to clear cart',
+        });
       } else {
         // Refetch cart data from server instead of optimistic updates
         await fetchCartData();
       }
     } catch (error) {
       console.error('Error clearing cart:', error);
-      Alert.alert('Error', 'Failed to clear cart');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to clear cart',
+      });
     } finally {
       setDeletingItemId(null);
       // Close the modal after deletion completes
@@ -398,19 +419,44 @@ export default function Cart() {
   const handleProceedNow = () => {
     // Prevent proceeding if cart is empty or total is 0
     if (isCartEmptyOrZero()) {
-      Alert.alert(
-        'Cart Empty',
-        'Please add items to your cart before proceeding.',
-        [{ text: 'OK', style: 'default' }]
-      );
+      Toast.show({
+        type: 'error',
+        text1: 'Cart Empty',
+        text2: 'Please add items to your cart before proceeding.',
+      });
       return;
     }
+
+    // Check if location is selected
+    if (!selectedLocationObject || Object.keys(selectedLocationObject).length === 0) {
+      Toast.show({
+        type: 'error',
+        text1: 'Location Required',
+        text2: 'Please select your location before proceeding.',
+      });
+      return;
+    }
+
+    // Check if mobile number is selected
+    if (!selectedMobileNumber || selectedMobileNumber.trim() === '') {
+      Toast.show({
+        type: 'error',
+        text1: 'Mobile Number Required',
+        text2: 'Please set your mobile number before proceeding.',
+      });
+      return;
+    }
+
     setShowDateTimeModal(true);
   };
 
   const handleDateTimeConfirm = () => {
     if (!selectedDate || !selectedTimeSlot) {
-      Alert.alert('Selection Required', 'Please select both date and time slot to continue.');
+      Toast.show({
+        type: 'error',
+        text1: 'Selection Required',
+        text2: 'Please select both date and time slot to continue.',
+      });
       return;
     }
     setShowDateTimeModal(false);
@@ -473,6 +519,25 @@ export default function Cart() {
 
 
   const handlePayment = async () => {
+    // Final validation check for location and mobile number
+    if (!selectedLocationObject || Object.keys(selectedLocationObject).length === 0) {
+      Toast.show({
+        type: 'error',
+        text1: 'Location Required',
+        text2: 'Please select your location before proceeding with payment.',
+      });
+      return;
+    }
+
+    if (!selectedMobileNumber || selectedMobileNumber.trim() === '') {
+      Toast.show({
+        type: 'error',
+        text1: 'Mobile Number Required',
+        text2: 'Please set your mobile number before proceeding with payment.',
+      });
+      return;
+    }
+
     setIsPaymentLoading(true);
     console.log("payment method", selectedPaymentMethod);
     if (selectedPaymentMethod == "Online Payment") {
@@ -509,19 +574,45 @@ export default function Cart() {
             }
 
             if (confirmPaymentData.success) {
+              // Close all modals before showing success alert
+              setShowPaymentModal(false);
+              setShowDateTimeModal(false);
+              setShowCancellationPolicy(false);
+              setShowServiceFeeTooltip(false);
+              setShowDeleteModal(false);
               createbookings();
               setIsPaymentLoading(false);
+              // Show success alert
+              Alert.alert('Payment Successful', 'Your booking has been confirmed successfully!', [
+                { text: 'OK', onPress: () => router.push('/protected/(tabs)/Bookings') }
+              ]);
             }
             else {
-              alert(`Sorry! Something went wrong. If the amount was debited from your account, please contact us for assistance.`);
+              // Close all modals before showing error alert
+              setShowPaymentModal(false);
+              setShowDateTimeModal(false);
+              setShowCancellationPolicy(false);
+              setShowServiceFeeTooltip(false);
+              setShowDeleteModal(false);
+              setIsPaymentLoading(false);
+              Alert.alert('Payment Failed', 'Sorry! Something went wrong. If the amount was debited from your account, please contact us for assistance.', [
+                { text: 'OK', onPress: () => router.push('/protected/(tabs)/Bookings') }
+              ]);
             }
-            setIsPaymentLoading(false);
           })
           .catch((error) => {
             // Payment Failed
             console.error("Payment Failed:", error);
-            alert(`Sorry! Something went wrong. If the amount was debited from your account, please contact us for assistance.`);
+            // Close all modals before showing error alert
+            setShowPaymentModal(false);
+            setShowDateTimeModal(false);
+            setShowCancellationPolicy(false);
+            setShowServiceFeeTooltip(false);
+            setShowDeleteModal(false);
             setIsPaymentLoading(false);
+            Alert.alert('Payment Failed', 'Sorry! Something went wrong. If the amount was debited from your account, please contact us for assistance.', [
+              { text: 'OK', onPress: () => router.push('/protected/(tabs)/Bookings') }
+            ]);
           });
 
 
@@ -531,8 +622,17 @@ export default function Cart() {
       }
     }
     else {
+      // Cash on Delivery - close all modals and show success
+      setShowPaymentModal(false);
+      setShowDateTimeModal(false);
+      setShowCancellationPolicy(false);
+      setShowServiceFeeTooltip(false);
+      setShowDeleteModal(false);
       createbookings();
-      setIsPaymentLoading(false)
+      setIsPaymentLoading(false);
+      Alert.alert('Booking Confirmed', 'Your booking has been confirmed successfully! You can pay cash on delivery.', [
+        { text: 'OK', onPress: () => router.push('/protected/(tabs)/Bookings') }
+      ]);
     }
   };
 
@@ -878,32 +978,53 @@ export default function Cart() {
 
             {/* Duration Estimate */}
             <View style={styles.durationCard}>
-              <View style={styles.durationHeader}>
-                <Ionicons name="time-outline" size={20} color="#3898B3" />
-                <Text style={styles.durationTitle}>Estimated Duration</Text>
+              <View style={styles.durationContent}>
+                <View style={styles.durationIconContainer}>
+                  <Ionicons name="time-outline" size={24} color="#3898B3" />
+                </View>
+                <View style={styles.durationTextContainer}>
+                  <Text style={styles.durationTitle}>Estimated Duration</Text>
+                  <Text style={styles.durationTime}>~45 minutes</Text>
+                  <Text style={styles.durationNote}>May vary based on service complexity</Text>
+                </View>
               </View>
-              <Text style={styles.durationTime}>⏳ ~45 minutes</Text>
-              <Text style={styles.durationNote}>
-                Actual time may vary based on service complexity
-              </Text>
             </View>
 
             {/* Selection Summary */}
             {selectedDateItem && selectedTimeSlot && (
               <View style={styles.selectionSummary}>
-                <Text style={styles.summaryTitle}>Your Selection</Text>
-                <View style={styles.summaryRow}>
-                  <Ionicons name="calendar" size={16} color="#3898B3" />
-                  <Text style={styles.summaryText}>
-                    {selectedDateItem.dayName}, {selectedDateItem.dayNumber} {selectedDateItem.month}
-                    {selectedDateItem.isToday ? ' (Today)' : selectedDateItem.isTomorrow ? ' (Tomorrow)' : ''}
-                  </Text>
+                <View style={styles.selectionHeader}>
+                  <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
+                  <Text style={styles.summaryTitle}>Your Selection</Text>
                 </View>
-                <View style={styles.summaryRow}>
-                  <Ionicons name="time" size={16} color="#3898B3" />
-                  <Text style={styles.summaryText}>
-                    {selectedTimeSlot.time} ({selectedTimeSlot.label})
-                  </Text>
+
+                <View style={styles.selectionCard}>
+                  <View style={styles.selectionItem}>
+                    <View style={styles.selectionIconContainer}>
+                      <Ionicons name="calendar-outline" size={18} color="#3898B3" />
+                    </View>
+                    <View style={styles.selectionTextContainer}>
+                      <Text style={styles.selectionLabel}>Date</Text>
+                      <Text style={styles.selectionValue}>
+                        {selectedDateItem.dayName}, {selectedDateItem.dayNumber} {selectedDateItem.month}
+                        {selectedDateItem.isToday ? ' (Today)' : selectedDateItem.isTomorrow ? ' (Tomorrow)' : ''}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.selectionDivider} />
+
+                  <View style={styles.selectionItem}>
+                    <View style={styles.selectionIconContainer}>
+                      <Ionicons name="time-outline" size={18} color="#3898B3" />
+                    </View>
+                    <View style={styles.selectionTextContainer}>
+                      <Text style={styles.selectionLabel}>Time</Text>
+                      <Text style={styles.selectionValue}>
+                        {selectedTimeSlot.time} • {selectedTimeSlot.label}
+                      </Text>
+                    </View>
+                  </View>
                 </View>
               </View>
             )}
@@ -969,73 +1090,10 @@ export default function Cart() {
               return false;
             }}
           >
-            {/* Booking Summary Card */}
-            <View style={styles.bookingSummaryCard}>
-              <View style={styles.bookingSummaryHeader}>
-                <Ionicons name="calendar-outline" size={20} color="#3898B3" />
-                <Text style={styles.bookingSummaryTitle}>Booking Details</Text>
-              </View>
-
-              {selectedDateItem && selectedTimeSlot && (
-                <View style={styles.bookingDetailsRow}>
-                  <View style={styles.bookingDetailItem}>
-                    <Text style={styles.bookingDetailLabel}>Date & Time</Text>
-                    <Text style={styles.bookingDetailValue}>
-                      {selectedDateItem.dayName}, {selectedDateItem.dayNumber} {selectedDateItem.month} • {selectedTimeSlot.time}
-                    </Text>
-                  </View>
-                  <View style={styles.bookingDetailItem}>
-                    <Text style={styles.bookingDetailLabel}>Location</Text>
-                    <Text style={styles.bookingDetailValue} numberOfLines={1}>
-                      {formatLocationDisplay(location)}
-                    </Text>
-                  </View>
-                </View>
-              )}
-            </View>
-
-            {/* Services Overview */}
-            <View style={styles.servicesOverviewCard}>
-              <View style={styles.servicesOverviewHeader}>
-                <Ionicons name="construct" size={20} color="#3898B3" />
-                <Text style={styles.servicesOverviewTitle}>Services ({cartData.reduce((total, cat) => total + cat.items.length, 0)})</Text>
-                <Text style={styles.servicesOverviewTotal}>₹{calculateGrandTotal()}</Text>
-              </View>
-
-              {cartData.map((category, index) => (
-                <View key={index} style={styles.serviceCategory}>
-                  <View style={styles.serviceCategoryHeader}>
-                    <View style={styles.categoryIconWrapper}>
-                      <Ionicons
-                        name={category.category === 'Plumbing' ? 'water' : 'flash'}
-                        size={14}
-                        color="#3898B3"
-                      />
-                    </View>
-                    <Text style={styles.serviceCategoryName}>{category.category}</Text>
-                    <Text style={styles.serviceCategoryPrice}>₹{calculateCategoryTotal(category.items)}</Text>
-                  </View>
-
-                  {category.items.map((item, itemIndex) => (
-                    <View key={item.id} style={styles.serviceItem}>
-                      <View style={styles.serviceItemLeft}>
-                        <Text style={styles.serviceItemName}>{item.name}</Text>
-                        <Text style={styles.serviceItemQty}>Qty: {item.quantity}</Text>
-                      </View>
-                      <Text style={styles.serviceItemPrice}>₹{item.price * item.quantity}</Text>
-                    </View>
-                  ))}
-                </View>
-              ))}
-            </View>
-
-            {/* Bill Summary */}
+            {/* Bill Summary - Moved to Top */}
             {!isCartEmptyOrZero() && (
               <View style={styles.billSummaryCard}>
-                <View style={styles.billHeader}>
-                  <Ionicons name="receipt" size={20} color="#3898B3" />
-                  <Text style={styles.billTitle}>Bill Summary</Text>
-                </View>
+                
 
                 <View style={styles.billRows}>
                   <View style={styles.billRow}>
@@ -1085,7 +1143,7 @@ export default function Cart() {
               </View>
             )}
 
-            {/* Payment Methods */}
+            {/* Payment Methods - Moved to Middle */}
             <View style={styles.paymentMethodsSection}>
               <View style={styles.paymentMethodsHeader}>
                 <Ionicons name="wallet" size={20} color="#3898B3" />
@@ -1098,19 +1156,13 @@ export default function Cart() {
                     key: 'Online Payment',
                     icon: 'card',
                     label: 'Online Payment',
-                    subtitle: 'Pay online using a Secure Payment Gateway',
-                    options: [
-                      { type: 'online_note', label: 'Note', text: 'Complete secure payment to complete your booking' }
-                    ]
+                    subtitle: 'Pay online using a Secure Payment Gateway'
                   },
                   {
                     key: 'Pay on Service',
                     icon: 'cash',
                     label: 'Pay on Service',
-                    subtitle: 'Payment to provider',
-                    options: [
-                      { type: 'cash_note', label: 'Note', text: 'Pay directly to the service provider when they arrive' }
-                    ]
+                    subtitle: 'Payment to provider'
                   }
                 ].map((method) => (
                   <View key={method.key} style={styles.paymentMethodContainer}>
@@ -1151,46 +1203,71 @@ export default function Cart() {
                             <View style={styles.paymentMethodRadioInner} />
                           )}
                         </View>
-                        <Ionicons
-                          name={selectedPaymentMethod === method.key ? "chevron-up" : "chevron-down"}
-                          size={16}
-                          color="#666"
-                          style={{ marginLeft: 8 }}
-                        />
                       </View>
                     </TouchableOpacity>
-
-                    {/* Expanded Options */}
-                    {selectedPaymentMethod === method.key && (
-                      <View style={styles.paymentOptionsExpanded}>
-                        {method.options.map((option, index) => (
-                          <View key={index} style={styles.paymentOption}>
-                            {/* Online Payment Note */}
-                            {option.type === 'online_note' && (
-                              <View style={styles.cashNoteContainer}>
-                                <View style={styles.cashNoteContent}>
-                                  <Ionicons name="shield-checkmark" size={20} color="#4CAF50" />
-                                  <Text style={styles.cashNoteText}>{option.text}</Text>
-                                </View>
-                              </View>
-                            )}
-
-                            {/* Cash Note */}
-                            {option.type === 'cash_note' && (
-                              <View style={styles.cashNoteContainer}>
-                                <View style={styles.cashNoteContent}>
-                                  <Ionicons name="information-circle" size={20} color="#FF9800" />
-                                  <Text style={styles.cashNoteText}>{option.text}</Text>
-                                </View>
-                              </View>
-                            )}
-                          </View>
-                        ))}
-                      </View>
-                    )}
                   </View>
                 ))}
               </View>
+            </View>
+
+            {/* Booking Summary Card - Moved to Bottom */}
+            <View style={styles.bookingSummaryCard}>
+              <View style={styles.bookingSummaryHeader}>
+                <Ionicons name="calendar-outline" size={20} color="#3898B3" />
+                <Text style={styles.bookingSummaryTitle}>Booking Details</Text>
+              </View>
+
+              {selectedDateItem && selectedTimeSlot && (
+                <View style={styles.bookingDetailsRow}>
+                  <View style={styles.bookingDetailItem}>
+                    <Text style={styles.bookingDetailLabel}>Date & Time</Text>
+                    <Text style={styles.bookingDetailValue}>
+                      {selectedDateItem.dayName}, {selectedDateItem.dayNumber} {selectedDateItem.month} • {selectedTimeSlot.time}
+                    </Text>
+                  </View>
+                  <View style={styles.bookingDetailItem}>
+                    <Text style={styles.bookingDetailLabel}>Location</Text>
+                    <Text style={styles.bookingDetailValue} numberOfLines={1}>
+                      {formatLocationDisplay(location)}
+                    </Text>
+                  </View>
+                </View>
+              )}
+            </View>
+
+            {/* Services Overview - Moved to Bottom */}
+            <View style={styles.servicesOverviewCard}>
+              <View style={styles.servicesOverviewHeader}>
+                <Ionicons name="construct" size={20} color="#3898B3" />
+                <Text style={styles.servicesOverviewTitle}>Services ({cartData.reduce((total, cat) => total + cat.items.length, 0)})</Text>
+                <Text style={styles.servicesOverviewTotal}>₹{calculateGrandTotal()}</Text>
+              </View>
+
+              {cartData.map((category, index) => (
+                <View key={index} style={styles.serviceCategory}>
+                  <View style={styles.serviceCategoryHeader}>
+                    <View style={styles.categoryIconWrapper}>
+                      <Ionicons
+                        name={category.category === 'Plumbing' ? 'water' : 'flash'}
+                        size={14}
+                        color="#3898B3"
+                      />
+                    </View>
+                    <Text style={styles.serviceCategoryName}>{category.category}</Text>
+                    <Text style={styles.serviceCategoryPrice}>₹{calculateCategoryTotal(category.items)}</Text>
+                  </View>
+
+                  {category.items.map((item, itemIndex) => (
+                    <View key={item.id} style={styles.serviceItem}>
+                      <View style={styles.serviceItemLeft}>
+                        <Text style={styles.serviceItemName}>{item.name}</Text>
+                        <Text style={styles.serviceItemQty}>Qty: {item.quantity}</Text>
+                      </View>
+                      <Text style={styles.serviceItemPrice}>₹{item.price * item.quantity}</Text>
+                    </View>
+                  ))}
+                </View>
+              ))}
             </View>
           </ScrollView>
 
@@ -2203,14 +2280,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 4,
   },
-  billHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
-  },
   billTitle: {
     fontSize: 16,
     fontWeight: '600',
@@ -2788,59 +2857,110 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   durationCard: {
-    backgroundColor: '#F0F8FF',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#B3D9FF',
+    borderColor: '#E9ECEF',
   },
-  durationHeader: {
+  durationContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  durationIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#E3F2FD',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  durationTextContainer: {
+    flex: 1,
+  },
+  durationTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#666',
+    marginBottom: 2,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  durationTime: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1A1A1A',
+    marginBottom: 1,
+  },
+  durationNote: {
+    fontSize: 11,
+    color: '#888',
+    lineHeight: 14,
+  },
+  selectionSummary: {
+    backgroundColor: '#FFF',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E8F5E8',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  selectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 10,
   },
-  durationTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#3898B3',
-    marginLeft: 8,
-  },
-  durationTime: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1A1A1A',
-    marginBottom: 5,
-  },
-  durationNote: {
-    fontSize: 14,
-    color: '#666',
-    fontStyle: 'italic',
-  },
-  selectionSummary: {
-    backgroundColor: '#E8F5E8',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: '#A5D6A7',
-  },
   summaryTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     color: '#2E7D32',
-    marginBottom: 12,
+    marginLeft: 6,
   },
-  summaryRow: {
+  selectionCard: {
+    backgroundColor: '#F8F9FA',
+    borderRadius: 6,
+    padding: 10,
+  },
+  selectionItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    paddingVertical: 6,
   },
-  summaryText: {
-    fontSize: 14,
-    color: '#2E7D32',
-    marginLeft: 8,
+  selectionIconContainer: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#E3F2FD',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  selectionTextContainer: {
+    flex: 1,
+  },
+  selectionLabel: {
+    fontSize: 11,
+    color: '#666',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 1,
+  },
+  selectionValue: {
+    fontSize: 13,
+    color: '#1A1A1A',
     fontWeight: '500',
+  },
+  selectionDivider: {
+    height: 1,
+    backgroundColor: '#E9ECEF',
+    marginVertical: 6,
   },
   dateTimeFooter: {
     borderTopWidth: 1,

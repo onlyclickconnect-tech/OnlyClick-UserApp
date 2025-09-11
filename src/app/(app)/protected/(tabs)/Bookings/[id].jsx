@@ -17,7 +17,7 @@ import {
   View
 } from 'react-native';
 
-import Text from "../../../../../components/ui/Text"
+import Text from "../../../../../components/ui/Text";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -185,6 +185,7 @@ export default function BookingDetails() {
             estimatedDuration: params.estimatedDuration || '1-2 hours',
             paymentMethod: params.paymentMethod || 'Cash on Delivery',
             bookingId: params.bookingId || `BK${bookingId.toString().padStart(10, '0')}`,
+            razorpay_oid: params.razorpay_oid,
             serviceNotes: params.serviceNotes || 'Our technician will call 15 minutes before arrival.',
             bookingTime: params.date
           };
@@ -460,6 +461,7 @@ export default function BookingDetails() {
                         estimatedDuration: params.estimatedDuration || '1-2 hours',
                         paymentMethod: params.paymentMethod || 'Cash on Delivery',
                         bookingId: params.bookingId || `BK${(parseInt(params.id) || 1).toString().padStart(10, '0')}`,
+                        razorpay_oid: params.razorpay_oid,
                         serviceIncludes: params.serviceIncludes ? JSON.parse(params.serviceIncludes) : [
                           params.serviceName,
                           'Professional service',
@@ -501,6 +503,23 @@ export default function BookingDetails() {
             {formatDate(booking.date)} at {formatTime(booking.time)}
           </Text>
         </View>
+
+        {/* Booking ID Section */}
+        <View style={styles.bookingIdSection}>
+          <Text style={styles.bookingIdLabel}>Booking ID</Text>
+          <Text style={styles.bookingIdValue}>{booking.bookingId}</Text>
+        </View>
+
+        {/* Razorpay ID Section */}
+        {booking.razorpay_oid !== "Pay after service " ?(
+          <View style={styles.bookingIdRow}>
+            <Text style={styles.razorpayOidText}>Payment ID: {params.razorpay_oid}</Text>
+          </View>
+        ):(
+          <View style={styles.bookingIdRow}>
+            <Text style={styles.razorpayOidText}>Payment Mode: {booking.razorpay_oid}</Text>
+          </View>
+        )}
 
         {/* Status Section */}
         <View style={styles.statusSection}>
@@ -601,15 +620,6 @@ export default function BookingDetails() {
 
         {/* Service Details */}
         <View style={styles.infoCard}>
-          <Text style={styles.sectionTitle}>Service Details</Text>
-          
-          <View style={styles.descriptionSection}>
-            <Text style={styles.infoLabel}>Description</Text>
-            <Text style={styles.description}>{booking.description}</Text>
-          </View>
-
-          
-
           {booking.serviceNotes && (
             <View style={styles.notesSection}>
               <Text style={styles.infoLabel}>Important Notes</Text>
@@ -704,6 +714,36 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
   },
+  bookingIdSection: {
+    backgroundColor: '#fff',
+    padding: 20,
+    marginTop: 10,
+    alignItems: 'flex-start',
+  },
+  bookingIdLabel: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 4,
+  },
+  bookingIdValue: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#3898B3',
+    fontFamily: 'monospace',
+    letterSpacing: 1,
+  },
+  razorpayOidText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+    fontFamily: 'monospace',
+    letterSpacing: 0.4,
+  },
+  bookingIdRow: {
+    marginBottom: 8,
+    marginLeft: 24,
+  },
+
   statusSection: {
     backgroundColor: '#fff',
     padding: 20,

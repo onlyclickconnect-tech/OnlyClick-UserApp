@@ -49,6 +49,7 @@ export default async function getbookings() {
       estimatedDuration: element.estimated_duration || '1-2 hours',
       paymentMethod: element.payment_method || 'Cash on Delivery',
       bookingId: `BK${element.id.toString().padStart(10, '0')}`,
+      razorpay_oid: element.razorpay_oid || "Pay after service ",
       serviceNotes: element.service_notes || 'Our technician will call 15 minutes before arrival.',
       taskMaster: {
         name: element.tm_name,

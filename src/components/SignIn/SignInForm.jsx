@@ -1,20 +1,27 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
+  Modal,
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import api from "../../app/api/api.js";
+import SuccessIndicator from "../common/SuccessIndicator";
 import Text from "../ui/Text";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+
+  // Success modal stays open until user manually closes it
+  useEffect(() => {
+    // No auto-close timer - modal stays open indefinitely
+  }, [showSuccessModal]);
 
   const handleLogin = async () => {
     setError("");
@@ -36,7 +43,7 @@ export default function LoginScreen() {
       });
 
       console.log("Login response:", response.data);
-      Alert.alert("Check your email", "Magic link sent!");
+      setShowSuccessModal(true);
     } catch (err) {
       console.log("API Base URL:", process.env.EXPO_PUBLIC_API_URL);
       console.log("LOGIN ERROR");
@@ -54,12 +61,32 @@ export default function LoginScreen() {
     }
   };
 
-
-
+  // Success Modal Component
+  const SuccessModal = () => {
+    return (
+      <Modal
+        visible={showSuccessModal}
+        transparent
+        animationType="fade"
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.successModalContainer}>
+            <SuccessIndicator
+              title="Email Sent!"
+              subtitle="Check your inbox"
+              message="We've sent an email. Click the link to sign in to your account."
+              iconColor="#2082AA"
+            />
+          </View>
+        </View>
+      </Modal>
+    );
+  };
 
   return (
     <View style={styles.content}>
-      <Text style={styles.title}>Login to your account</Text>
+      <SuccessModal />
+      <Text style={styles.title}>Create/Login to your account</Text>
 
       <View style={styles.inputContainer}>
         <View
@@ -178,5 +205,29 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 16,
         fontWeight: '600',
+    },
+    // Modal Styles
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    successModalContainer: {
+        backgroundColor: 'white',
+        borderRadius: 20,
+        padding: 30,
+        margin: 20,
+        maxWidth: 400,
+        width: '90%',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 4,
+        },
+        shadowOpacity: 0.3,
+        shadowRadius: 5,
+        elevation: 8,
     },
 });

@@ -12,9 +12,11 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
-import Text from "../../../../../components/ui/Text";
+import Toast from 'react-native-toast-message';
 import AppHeader from '../../../../../components/common/AppHeader';
 import PressableScale from '../../../../../components/common/PressableScale';
+import Text from "../../../../../components/ui/Text";
+import fetchCart from '../../../../../data/getdata/getCart';
 import { allCategories, allServices, categoryImages } from "../../../../../data/servicesData";
 import { addToCart } from '../../../../api/cart';
 
@@ -32,8 +34,40 @@ function ServicesPage() {
   const [loading, setLoading] = useState(true);
   const [categoriesLoading, setCategoriesLoading] = useState(true); 
   const [overlayLoading, setOverlayLoading] = useState(false);
+  const [cartNavigationLoading, setCartNavigationLoading] = useState(false);
+
+  // Function to handle cart navigation with loading state
+  const handleCartNavigation = async () => {
+    if (cartNavigationLoading) return; // Prevent multiple clicks
+    
+    setCartNavigationLoading(true);
+    try {
+      await router.push("/(modal)/cart");
+    } catch (error) {
+      console.error('Error navigating to cart:', error);
+    } finally {
+      // Reset loading state after a short delay to prevent rapid clicking
+      setTimeout(() => {
+        setCartNavigationLoading(false);
+      }, 1000);
+    }
+  };
 
   const ITEM_CARD_HEIGHT = 170 + 16; // card height + marginBottom
+
+  // Function to fetch and update cart count
+  const updateCartCount = async () => {
+    try {
+      const { arr } = await fetchCart();
+      const totalItems = arr.reduce((total, category) => 
+        total + category.items.reduce((catTotal, item) => catTotal + item.quantity, 0), 0
+      );
+      setCartItems(Array(totalItems).fill({})); // Create array with length equal to total items
+    } catch (error) {
+      console.error('Error fetching cart count:', error);
+      setCartItems([]);
+    }
+  };
 
   useEffect(() => {
     const fetchServices = async () => {
@@ -70,6 +104,9 @@ function ServicesPage() {
       }
     };
     fetchCategories();
+
+    // Fetch initial cart count
+    updateCartCount();
   }, []);
 
   // Filter categories to show only those with services available
@@ -181,10 +218,20 @@ function ServicesPage() {
     // Show success feedback (you can customize this)
     setOverlayLoading(false) 
     if (error) {
-      alert(`Something went wrong. couldn't add to cart`);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Something went wrong. Couldn\'t add to cart',
+      });
     }
     else {
-      alert(`${service.title} added to cart!`);
+      Toast.show({
+        type: 'success',
+        text1: 'Success!',
+        text2: 'Added to cart successfully',
+      });
+      // Update cart count after successful addition
+      await updateCartCount();
     }
   }
 
@@ -301,8 +348,9 @@ function ServicesPage() {
         onBack={() => router.back()}
         rightElement={
           <PressableScale
-            style={styles.cartButton}
-            onPress={() => router.push("/(modal)/cart")}
+            style={[styles.cartButton, cartNavigationLoading && styles.cartButtonDisabled]}
+            onPress={handleCartNavigation}
+            disabled={cartNavigationLoading}
           >
             <View style={styles.cartIconContainer}>
               <Ionicons name="cart" size={24} color="#fff" />
@@ -459,6 +507,9 @@ const styles = StyleSheet.create({
   cartButton: {
     padding: 5,
     marginLeft: 10,
+  },
+  cartButtonDisabled: {
+    opacity: 0.6,
   },
   cartIconContainer: {
     position: 'relative',

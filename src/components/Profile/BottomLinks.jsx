@@ -18,7 +18,7 @@ const BottomLinks = () => {
       
       <TouchableOpacity style={styles.chatButton} onPress={handleWhatsApp}>
         <FontAwesome name="comments" size={18} color="white" style={styles.chatIcon} />
-        <Text style={styles.chatButtonText}>Chat</Text>
+        <Text style={styles.chatButtonText}>Contact Us</Text>
       </TouchableOpacity>
       
       <View style={styles.linksRow}>
