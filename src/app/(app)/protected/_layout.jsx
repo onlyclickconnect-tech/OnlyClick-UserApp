@@ -1,13 +1,28 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Stack, useRouter } from "expo-router";
+import { useEffect } from "react";
 import { View } from "react-native";
 import CustomServiceModal from "../../../components/common/CustomServiceModal";
 import EnterAmountModal from "../../../components/common/EnterAmountModal";
+import LoadingScreen from "../../../components/common/LoadingScreen";
 import PressableScale from "../../../components/common/PressableScale";
 import SuccessModal from "../../../components/common/SuccessModal";
+import { useAuth } from "../../../context/AuthProvider";
 
 export default function RootLayout() {
   const router = useRouter();
+  const { isLoggedIn, authToken } = useAuth();
+
+  useEffect(() => {
+    if (!isLoggedIn || !authToken) {
+      router.replace("/(app)/auth/sign-in");
+    }
+  }, [isLoggedIn, authToken]);
+
+  if (!isLoggedIn || !authToken) {
+    return <LoadingScreen />;
+  }
+
   return (
     <View style={{ flex: 1 }}>
       <Stack initialRouteName="(tabs)">

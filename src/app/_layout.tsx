@@ -10,14 +10,17 @@ import { AppStatesProvider } from "../context/AppStates";
 import AuthProvider from "../context/AuthProvider";
 import ModalProvider from "../context/ModalProvider";
 
+
 import * as Linking from "expo-linking";
 
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({ Poppins_400Regular, Poppins_600SemiBold, Poppins_700Bold });
   const router = useRouter();
+  
 
   useEffect(() => {
+    
     async function prepare() {
       await SplashScreen.preventAutoHideAsync();
     }
@@ -30,6 +33,7 @@ export default function RootLayout() {
     }
   }, [fontsLoaded]);
   useEffect(() => {
+    
     const handleDeepLink = async ({ url }: { url: string }) => {
       console.log("Deep link received:", url);
 
