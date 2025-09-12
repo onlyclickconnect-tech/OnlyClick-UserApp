@@ -3,7 +3,6 @@ import api from "./api.js";
 const confirmBookings = async (bookingData) => {
   try {
     const response = await api.post('/api/v1/confirmbookings', bookingData);
-    console.log("Booking POST successful:", response.data);
 
     return { data: response.data, error: null };
   } catch (err) {
@@ -24,7 +23,6 @@ const confirmBookings = async (bookingData) => {
       errorMessage = String(err.message);
     }
 
-    console.log("Error posting bookings:", errorMessage);
 
     return { data: null, error: errorMessage };
   }

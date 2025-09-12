@@ -59,7 +59,6 @@ export default function LocationScreen() {
   // Prefill form fields from saved location object
   useEffect(() => {
     if (selectedLocationObject && Object.keys(selectedLocationObject).length > 0) {
-      console.log('Prefilling location form with:', selectedLocationObject);
       setHouseNumber(selectedLocationObject.houseNumber || "");
       setDistrict(selectedLocationObject.district || "");
       setCity(selectedLocationObject.city || "");
@@ -94,7 +93,6 @@ export default function LocationScreen() {
       additionalInfo: additionalInfo.trim()
     };
     
-    console.log('Saving location object:', locationObj);
     
     setManualLocation(formattedAddress);
     updateSelectedLocation(formattedAddress);

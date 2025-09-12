@@ -38,7 +38,6 @@ const ProfilePage = () => {
   const handleSaveProfile = async (formData) => {
     try {
       // Here you would typically save to backend
-      console.log('Saving profile data:', formData);
       await markProfileCompleted();
       Alert.alert(
         "Profile Saved!",
@@ -46,7 +45,6 @@ const ProfilePage = () => {
         [
           {
             text: "Continue",
-            onPress: () => console.log("Profile saved")
           }
         ]
       );
@@ -86,28 +84,7 @@ const ProfilePage = () => {
         contentContainerStyle={[styles.scrollContent, { paddingTop: 16 }]}
         showsVerticalScrollIndicator={false}
       >
-        {showWelcomeMessage && (
-          <View style={styles.welcomeContainer}>
-            <View style={styles.welcomeHeader}>
-              <View style={styles.welcomeIconContainer}>
-                <Ionicons name="person-circle" size={24} color="#3898B3" />
-              </View>
-              <Text style={styles.welcomeTitle}>Complete Your Profile</Text>
-            </View>
-            <Text style={styles.welcomeText}>
-              Help us personalize your experience by filling out your profile
-              details. You can edit all information anytime.
-            </Text>
-            <View style={styles.progressIndicator}>
-              <View style={styles.progressBar}>
-                <View style={styles.progressFill} />
-              </View>
-              <Text style={styles.progressText}>
-                Your information is secure
-              </Text>
-            </View>
-          </View>
-        )}
+        
 
         <ProfileHeader
           key={refreshKey}
@@ -146,39 +123,7 @@ const ProfilePage = () => {
           )}
         </View>
 
-        {showWelcomeMessage && isGeneral && (
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={styles.saveButton}
-              onPress={handleSaveProfile}
-            >
-              <View style={styles.buttonContent}>
-                <Ionicons
-                  name="checkmark-circle"
-                  size={20}
-                  color="#fff"
-                  style={styles.buttonIcon}
-                />
-                <Text style={styles.saveButtonText}>
-                  Save Profile & Continue
-                </Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.skipButton}
-              onPress={() => router.replace("/(app)/protected/(tabs)/Home")}
-            >
-              <Text style={styles.skipButtonText}>Skip for now</Text>
-              <Ionicons
-                name="arrow-forward"
-                size={16}
-                color="#3898B3"
-                style={styles.skipIcon}
-              />
-            </TouchableOpacity>
-          </View>
-        )}
+        
 
         <BottomLinks />
       </ScrollView>

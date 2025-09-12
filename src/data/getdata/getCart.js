@@ -37,12 +37,10 @@ export default async function fetchCart() {
 
 
     if (error) {
-        console.error("Supabase error:", error);
         return { arr: [], error };
     }
 
     if (!data || data.length === 0 || !data[0].cart) {
-        console.warn("No cart data returned");
         return { arr: [], error: null };
     }
 

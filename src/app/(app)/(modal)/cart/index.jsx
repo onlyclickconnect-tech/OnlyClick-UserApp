@@ -373,7 +373,6 @@ export default function Cart() {
         }
       }
     } catch (error) {
-      console.error('Error updating quantity:', error);
       Toast.show({
         type: 'error',
         text1: 'Error',
@@ -405,7 +404,6 @@ export default function Cart() {
         await fetchCartData();
       }
     } catch (error) {
-      console.error('Error clearing cart:', error);
       Toast.show({
         type: 'error',
         text1: 'Error',
@@ -495,7 +493,6 @@ export default function Cart() {
     };
     const { data, error } = confirmbookings(bookingdata);
 
-    console.log("this is my data", data);
 
 
     if (error) {
@@ -554,7 +551,6 @@ export default function Cart() {
     }
 
     setIsPaymentLoading(true);
-    console.log("payment method", selectedPaymentMethod);
     if (selectedPaymentMethod === "Online Payment") {
       try {
         const { data, error } = await createRazorpayOrder(rawcart,total*100 ); // your API call
@@ -582,7 +578,6 @@ export default function Cart() {
             if (confirmPaymentError) {
               throw new error(confirmPaymentError)
             }
-            console.log("confirm payments ",data)
             if (confirmPaymentData.success) {
               // Close all modals before showing success alert
               setShowPaymentModal(false);
@@ -612,7 +607,6 @@ export default function Cart() {
           })
           .catch((error) => {
             // Payment Failed
-            console.error("Payment Failed:", error);
             // Close all modals before showing error alert
             setShowPaymentModal(false);
             setShowDateTimeModal(false);
@@ -627,7 +621,6 @@ export default function Cart() {
 
 
       } catch (err) {
-        console.error("Error starting payment:", err);
         setIsPaymentLoading(false);
       }
     }

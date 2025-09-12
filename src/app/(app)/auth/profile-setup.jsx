@@ -1,16 +1,14 @@
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
-  TouchableOpacity,
   View,
 } from "react-native";
+import StandaloneProfileForm from "../../../components/Profile/StandaloneProfileForm";
 import Text from "../../../components/ui/Text";
-import ProfileForm from "../../../components/Profile/ProfileForm";
 import { useAppStates } from "../../../context/AppStates";
 import { useAuth } from "../../../context/AuthProvider";
 import supabase from "../../../data/supabaseClient";
@@ -18,7 +16,6 @@ import supabase from "../../../data/supabaseClient";
 export default function ProfileSetup() {
   const { user, setUser } = useAuth();
   const { markProfileCompleted } = useAppStates();
-  const [isLoading, setIsLoading] = useState(false);
   const [isFormValid, setIsFormValid] = useState(false);
 
   const handleValidationChange = (isValid) => {
@@ -33,15 +30,12 @@ export default function ProfileSetup() {
       } = await supabase.auth.getUser();
 
       if (authError) {
-        console.error("Auth error:", authError.message);
         return;
       }
       if (!user) {
-        console.warn("No user logged in.");
         return;
       }
 
-      console.log("Current user:", user.id);
 
       // 2️⃣ Query the profile in oneclick.users
       const { data, error } = await supabase
@@ -52,7 +46,6 @@ export default function ProfileSetup() {
         .single();
 
       if (error) {
-        console.error("DB fetch error:", error.message);
         return;
       }
       
@@ -70,39 +63,9 @@ export default function ProfileSetup() {
     checkNewUser();
   }, []);
 
-  const handleContinue = async () => {
-    setIsLoading(true);
-
-    try {
-      // Mark profile as completed
-      await markProfileCompleted();
-
-      // Navigate to main app
-      setTimeout(() => {
-        setIsLoading(false);
-        router.replace("/(app)/protected/(tabs)/Home");
-      }, 1000);
-    } catch (error) {
-      setIsLoading(false);
-      Alert.alert("Error", "Failed to save profile. Please try again.");
-    }
-  };
-
-  const handleSkip = () => {
-    Alert.alert(
-      "Skip Profile Setup",
-      "You can complete your profile later from the Profile tab. Continue?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Skip",
-          onPress: async () => {
-            await markProfileCompleted();
-            router.replace("/(app)/protected/(tabs)/Home");
-          },
-        },
-      ]
-    );
+  const handleProceed = async () => {
+    // Navigate to main app since profile is already saved by StandaloneProfileForm
+    router.replace("/(app)/protected/(tabs)/Home");
   };
 
   return (
@@ -125,33 +88,12 @@ export default function ProfileSetup() {
         </View>
 
         <View style={styles.formContainer}>
-          <ProfileForm onValidationChange={handleValidationChange} />
+          <StandaloneProfileForm 
+            onValidationChange={handleValidationChange}
+            onProceed={handleProceed}
+          />
         </View>
       </ScrollView>
-
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={[
-            styles.continueButton,
-            (!isFormValid || isLoading) && styles.continueButtonDisabled,
-          ]}
-          onPress={handleContinue}
-          disabled={!isFormValid || isLoading}
-        >
-          <Text
-            style={[
-              styles.continueButtonText,
-              (!isFormValid || isLoading) && styles.continueButtonTextDisabled,
-            ]}
-          >
-            {isLoading
-              ? "Setting up..."
-              : !isFormValid
-              ? "Fill Required Fields"
-              : "Continue to App"}
-          </Text>
-        </TouchableOpacity>
-      </View>
     </KeyboardAvoidingView>
   );
 }
@@ -166,7 +108,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingBottom: 120, // Extra padding for button
+    paddingBottom: 30, // Reduced padding since no button at bottom
   },
   header: {
     paddingHorizontal: 30,
@@ -190,51 +132,5 @@ const styles = StyleSheet.create({
   formContainer: {
     flex: 1,
     paddingHorizontal: 10,
-  },
-  buttonContainer: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: "#fff",
-    padding: 30,
-    paddingBottom: Platform.OS === "ios" ? 40 : 30,
-    borderTopWidth: 1,
-    borderTopColor: "#f0f0f0",
-  },
-  continueButton: {
-    backgroundColor: "#3898B3",
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: "center",
-    marginBottom: 12,
-    shadowColor: "#3898B3",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  continueButtonDisabled: {
-    backgroundColor: "#9fc7c4",
-    shadowOpacity: 0,
-    elevation: 0,
-  },
-  continueButtonText: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "600",
-    letterSpacing: 0.5,
-  },
-  continueButtonTextDisabled: {
-    color: "#ffffff",
-  },
-  skipButton: {
-    paddingVertical: 16,
-    alignItems: "center",
-  },
-  skipButtonText: {
-    color: "#3898B3",
-    fontSize: 16,
-    fontWeight: "500",
   },
 });

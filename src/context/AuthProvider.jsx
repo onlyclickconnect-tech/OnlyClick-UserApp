@@ -91,10 +91,8 @@ export default function AuthProvider({ children }) {
       const {
         data: { session },
       } = await supabase.auth.getSession();
-      console.log("Initial session check:", session);
 
       if (session?.user) {
-        console.log("Found existing session, setting up user");
         const currentUser = session.user;
         const userId = currentUser.id;
 
@@ -127,12 +125,7 @@ export default function AuthProvider({ children }) {
 
         setIsLoggedIn(true);
         setAuthToken(session.access_token || "");
-        console.log(
-          "User setup complete, token:",
-          session.access_token?.substring(0, 20) + "..."
-        );
-      } else {
-        console.log("No existing session found");
+
       }
     };
 
@@ -142,31 +135,14 @@ export default function AuthProvider({ children }) {
    const {
      data: { subscription },
    } = supabase.auth.onAuthStateChange(async (event, session) => {
-     console.log("Auth state changed:", event, session);
 
      if (event === "SIGNED_OUT" || !session?.user) {
-       console.log("User signed out, clearing state");
-       setUser({
-         name: "",
-         address: "",
-         phone: "",
-         email: "",
-         _id: "",
-         taskMasterId: "",
-         service: "",
-         profileImage: "",
-         reviews: 0,
-         ratings: 0,
-         authToken: { token: "", expiryDate: "" },
-         refreshToken: { token: "", expiryDate: "" },
-       });
        setIsLoggedIn(false);
        setAuthToken("");
        return;
      }
 
      if (session?.user) {
-       console.log("New session detected, updating user");
        const currentUser = session.user;
        const userId = currentUser.id;
 
@@ -200,7 +176,6 @@ export default function AuthProvider({ children }) {
        setIsLoggedIn(true);
        setAuthToken(session.access_token || "");
      } else {
-       console.log("No session found, user logged out");
        setIsLoggedIn(false);
        setAuthToken("");
      }
@@ -218,7 +193,6 @@ export default function AuthProvider({ children }) {
     } = await supabase.auth.getSession();
     
     if (session?.user) {
-      console.log("Refreshing user details...");
       const currentUser = session.user;
       const userId = currentUser.id;
 
@@ -249,7 +223,6 @@ export default function AuthProvider({ children }) {
         },
       });
       
-      console.log("User details refreshed successfully");
     }
   };
 

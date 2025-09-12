@@ -34,11 +34,9 @@ export default function Bookings() {
     const getbookingsdata = async () => {
       const { arr, error } = await getbookings(); // ✅ use arr, not data
       if (error) {
-        console.error(error);
         setLoading(false);
         return;
       }
-      console.log("arr",arr);
       setbookings(arr); // ✅ directly set array
       setLoading(false);
     };

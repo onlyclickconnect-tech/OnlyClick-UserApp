@@ -55,15 +55,12 @@ const OnboardingContainer = ({ onComplete }) => {
       } = await supabase.auth.getUser();
 
       if (authError) {
-        console.error("Auth error:", authError.message);
         return;
       }
       if (!user) {
-        console.warn("No user logged in.");
         return;
       }
 
-      console.log("Current user:", user.id);
 
       // 2️⃣ Query the profile in oneclick.users
       const { data, error } = await supabase
@@ -74,7 +71,6 @@ const OnboardingContainer = ({ onComplete }) => {
         .single();
 
       if (error) {
-        console.error("DB fetch error:", error.message);
         return;
       }
 
@@ -122,7 +118,6 @@ const OnboardingContainer = ({ onComplete }) => {
             .single();
 
           if (error) {
-            console.error("DB fetch error:", error.message);
             return;
           }
 
@@ -134,7 +129,6 @@ const OnboardingContainer = ({ onComplete }) => {
 
         }
       } catch (err) {
-        console.error("Auth check failed:", err);
         return;
       } finally {
         setLoading(false);
@@ -185,7 +179,6 @@ const OnboardingContainer = ({ onComplete }) => {
 
     // Additional safety check
     if (currentSlide < 0 || currentSlide >= slides.length) {
-      console.warn("Invalid currentSlide index:", currentSlide);
       return;
     }
 
@@ -238,7 +231,6 @@ const OnboardingContainer = ({ onComplete }) => {
 
     // Additional safety check
     if (currentSlide < 0 || currentSlide >= slides.length) {
-      console.warn("Invalid currentSlide index:", currentSlide);
       return;
     }
 

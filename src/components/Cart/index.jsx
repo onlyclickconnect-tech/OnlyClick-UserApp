@@ -168,7 +168,6 @@ export default function Cart() {
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Remove', style: 'destructive', onPress: () => {
-          console.log('Item removed');
         }}
       ]
     );
@@ -181,7 +180,6 @@ export default function Cart() {
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Clear All', style: 'destructive', onPress: () => {
-          console.log('Cart cleared');
         }}
       ]
     );

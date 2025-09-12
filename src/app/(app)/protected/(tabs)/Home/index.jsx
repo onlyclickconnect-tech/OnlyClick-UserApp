@@ -13,7 +13,6 @@ export default function HomeScreen() {
     const tempfunc = async () => {
       const { data, error } = await supabase.auth.getSession()
       const token = data.session?.access_token;
-      console.log("Current Access Token:", token);
     }
     tempfunc()
   }, [])

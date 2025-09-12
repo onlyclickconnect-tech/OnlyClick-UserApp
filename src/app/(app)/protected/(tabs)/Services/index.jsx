@@ -44,7 +44,6 @@ function ServicesPage() {
     try {
       await router.push("/(modal)/cart");
     } catch (error) {
-      console.error('Error navigating to cart:', error);
     } finally {
       // Reset loading state after a short delay to prevent rapid clicking
       setTimeout(() => {
@@ -64,7 +63,6 @@ function ServicesPage() {
       );
       setCartItems(Array(totalItems).fill({})); // Create array with length equal to total items
     } catch (error) {
-      console.error('Error fetching cart count:', error);
       setCartItems([]);
     }
   };
@@ -76,7 +74,6 @@ function ServicesPage() {
         const data = await allServices();
         setServices(data || []);
       } catch (error) {
-        console.error('Error fetching services:', error);
       } finally {
         setLoading(false);
       }
@@ -98,7 +95,6 @@ function ServicesPage() {
           ...(Array.isArray(cats) ? cats : []),
         ]);
       } catch (error) {
-        console.error('Error fetching categories:', error);
       } finally {
         setCategoriesLoading(false);
       }
@@ -318,7 +314,6 @@ function ServicesPage() {
               }
               style={styles.serviceImage}
               resizeMode="cover"
-              onError={(e) => console.log('Image error:', e.nativeEvent?.error, 'for item:', item.title)}
             />
           </View>
           

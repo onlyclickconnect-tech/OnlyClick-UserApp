@@ -40,7 +40,6 @@ const ProfileHeader = ({
   const uploadImageToBackend = async (imageUri) => {
     setIsUpdatingPhoto(true);
     try {
-      console.log("Starting upload for:", imageUri);
 
       // Add timeout to prevent infinite loading
       const uploadPromise = uploadAvatar(imageUri);
@@ -50,7 +49,6 @@ const ProfileHeader = ({
 
       const result = await Promise.race([uploadPromise, timeoutPromise]);
 
-      console.log("Upload result:", result);
 
       if (result?.error) {
         Alert.alert(
@@ -70,7 +68,6 @@ const ProfileHeader = ({
       refreshUserDetails?.();
       onProfileUpdate?.();
     } catch (error) {
-      console.log("Upload error:", error);
       Alert.alert(
         "Error",
         `Upload failed: ${error.message || "Unknown error"}`
@@ -125,7 +122,6 @@ const ProfileHeader = ({
         confirmImageSelection(imageUri);
       }
     } catch (error) {
-      console.log("Camera error:", error);
       Alert.alert(
         "Camera Error",
         "There was an issue accessing your camera. Please check camera permissions and try again.",
@@ -162,7 +158,6 @@ const ProfileHeader = ({
         confirmImageSelection(imageUri);
       }
     } catch (error) {
-      console.log("Gallery error:", error);
       // More specific error handling for PhotoPicker issues
       if (error.message && error.message.includes("PhotoPicker")) {
         Alert.alert(
@@ -297,14 +292,14 @@ const ProfileHeader = ({
 
   // Success Modal Component
   const SuccessModal = () => {
-    // Auto-close the modal after 1 second and refresh user details
+    // Auto-close the modal after 2 seconds and refresh user details
     useEffect(() => {
       if (showSuccessModal) {
         const timer = setTimeout(() => {
           setShowSuccessModal(false);
           // Refresh user details to get the updated profile image
           refreshUserDetails?.();
-        }, 1000);
+        }, 2000); // 2 seconds
 
         return () => clearTimeout(timer);
       }
@@ -452,8 +447,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 20,
-    alignSelf: 'center',
-    width: '85%',
+    alignSelf: 'flex-start',
+    width: '100%',
     maxWidth: 400,
   },
   profileIconContainer: {
@@ -509,12 +504,13 @@ const styles = StyleSheet.create({
   },
   userid: {
     color: "#666",
-    fontSize: 14,
+    fontSize: 12,
     marginBottom: 4,
   },
   email: {
     color: "#666",
     fontSize: 14,
+    color: '#0b437cff',
   },
   toggleContainer: {
     flexDirection: "row",
@@ -655,6 +651,54 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 5,
     elevation: 8,
+  },
+  // Error Modal Styles
+  errorModalContainer: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 30,
+    margin: 20,
+    maxWidth: 400,
+    width: '90%',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 8,
+  },
+  errorModalHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  errorModalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#FF6B6B',
+    marginTop: 10,
+  },
+  errorModalMessage: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 25,
+    lineHeight: 22,
+  },
+  errorModalButton: {
+    backgroundColor: '#FF6B6B',
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    borderRadius: 8,
+    alignItems: 'center',
+    minWidth: 100,
+  },
+  errorModalButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 

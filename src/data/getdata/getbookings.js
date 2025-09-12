@@ -9,12 +9,10 @@ export default async function getbookings() {
 
 
   if (error) {
-    console.error("Supabase error:", error);
     return { arr: [], error };
   }
 
   if (!data) {
-    console.warn("No data returned from bookings");
     return { arr: [], error: null };
   }
 
@@ -29,7 +27,6 @@ export default async function getbookings() {
   };
 
   const formatdata = (element) => {
-    console.log(element.time_slot);
     const [date, time] = getdateTime(element.time_slot);
 
     return {

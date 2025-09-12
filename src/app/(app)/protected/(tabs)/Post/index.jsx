@@ -50,7 +50,6 @@ export default function PostRequest() {
         setSelectedImage(result.assets[0].uri);
       }
     } catch (error) {
-      console.log("Camera error:", error);
       Alert.alert("Error", `Failed to take photo: ${error.message}`);
     }
   };
@@ -75,7 +74,6 @@ export default function PostRequest() {
         setSelectedImage(result.assets[0].uri);
       }
     } catch (error) {
-      console.log("Gallery error:", error);
       Alert.alert("Error", `Failed to pick image: ${error.message}`);
     }
   };

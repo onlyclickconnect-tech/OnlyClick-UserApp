@@ -55,7 +55,6 @@ export const allCategories = async () => {
     .select("category");
 
   if (error) {
-    console.error(error);
     return [];
   }
 
@@ -75,7 +74,6 @@ export const allServices = async () => {
     .select("*");
 
   if (error) {
-    console.error(error);
     return [];
   }
   return data;
@@ -88,7 +86,6 @@ export const getServicesByCategory = async (categoryId) => {
     .eq("category", categoryId);
 
   if (error) {
-    console.error(error);
     return [];
   }
   return data;
@@ -104,7 +101,6 @@ export const getServiceById = async (serviceId) => {
     .single();
 
   if (error) {
-    console.error(error);
     return null;
   }
   return data;
@@ -121,7 +117,6 @@ export const searchServices = async (query) => {
     );
 
   if (error) {
-    console.error(error);
     return [];
   }
   return data;

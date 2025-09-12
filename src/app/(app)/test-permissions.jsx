@@ -6,7 +6,6 @@ export default function TestPermissions() {
   const router = useRouter();
 
   const handleComplete = () => {
-    console.log('Permissions setup completed!');
     router.back();
   };
 
