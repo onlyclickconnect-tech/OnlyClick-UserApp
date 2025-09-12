@@ -1,10 +1,19 @@
-import { router } from 'expo-router';
-import { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import Text from "../../../components/ui/Text"
-import ProfileForm from '../../../components/Profile/ProfileForm';
-import { useAppStates } from '../../../context/AppStates';
-import { useAuth } from '../../../context/AuthProvider';
+import { router } from "expo-router";
+import { useEffect, useState } from "react";
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import Text from "../../../components/ui/Text";
+import ProfileForm from "../../../components/Profile/ProfileForm";
+import { useAppStates } from "../../../context/AppStates";
+import { useAuth } from "../../../context/AuthProvider";
+import supabase from "../../../data/supabaseClient";
 
 export default function ProfileSetup() {
   const { user, setUser } = useAuth();
@@ -16,21 +25,66 @@ export default function ProfileSetup() {
     setIsFormValid(isValid);
   };
 
+  useEffect(() => {
+    const checkNewUser = async () => {
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
+
+      if (authError) {
+        console.error("Auth error:", authError.message);
+        return;
+      }
+      if (!user) {
+        console.warn("No user logged in.");
+        return;
+      }
+
+      console.log("Current user:", user.id);
+
+      // 2️⃣ Query the profile in oneclick.users
+      const { data, error } = await supabase
+      .schema('oneclick')
+        .from("users")
+        .select("full_name")
+        .eq("user_id", user.id)
+        .single();
+
+      if (error) {
+        console.error("DB fetch error:", error.message);
+        return;
+      }
+      
+      
+      if(data.full_name){
+          router.replace("/(app)/protected/(tabs)/Home");
+      }
+      else{
+        return;
+      }
+
+
+    };
+
+    checkNewUser();
+  }, []);
+
   const handleContinue = async () => {
     setIsLoading(true);
-    
+
     try {
       // Mark profile as completed
       await markProfileCompleted();
-      
+
       // Navigate to main app
       setTimeout(() => {
         setIsLoading(false);
-        router.replace('/(app)/protected/(tabs)/Home');
+        router.replace("/(app)/protected/(tabs)/Home");
       }, 1000);
     } catch (error) {
       setIsLoading(false);
-      Alert.alert('Error', 'Failed to save profile. Please try again.');
+      Alert.alert("Error", "Failed to save profile. Please try again.");
     }
   };
 
@@ -40,24 +94,24 @@ export default function ProfileSetup() {
       "You can complete your profile later from the Profile tab. Continue?",
       [
         { text: "Cancel", style: "cancel" },
-        { 
-          text: "Skip", 
+        {
+          text: "Skip",
           onPress: async () => {
             await markProfileCompleted();
-            router.replace('/(app)/protected/(tabs)/Home');
-          }
-        }
+            router.replace("/(app)/protected/(tabs)/Home");
+          },
+        },
       ]
     );
   };
 
   return (
-    <KeyboardAvoidingView 
+    <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 40 : 0}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 40 : 0}
     >
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
@@ -76,13 +130,25 @@ export default function ProfileSetup() {
       </ScrollView>
 
       <View style={styles.buttonContainer}>
-        <TouchableOpacity 
-          style={[styles.continueButton, (!isFormValid || isLoading) && styles.continueButtonDisabled]} 
+        <TouchableOpacity
+          style={[
+            styles.continueButton,
+            (!isFormValid || isLoading) && styles.continueButtonDisabled,
+          ]}
           onPress={handleContinue}
           disabled={!isFormValid || isLoading}
         >
-          <Text style={[styles.continueButtonText, (!isFormValid || isLoading) && styles.continueButtonTextDisabled]}>
-            {isLoading ? 'Setting up...' : (!isFormValid ? 'Fill Required Fields' : 'Continue to App')}
+          <Text
+            style={[
+              styles.continueButtonText,
+              (!isFormValid || isLoading) && styles.continueButtonTextDisabled,
+            ]}
+          >
+            {isLoading
+              ? "Setting up..."
+              : !isFormValid
+              ? "Fill Required Fields"
+              : "Continue to App"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -93,7 +159,7 @@ export default function ProfileSetup() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   scrollView: {
     flex: 1,
@@ -106,19 +172,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 30,
     paddingTop: 60,
     paddingBottom: 20,
-    alignItems: 'center',
+    alignItems: "center",
   },
   title: {
     fontSize: 28,
-    fontWeight: '700',
-    color: '#1a1a1a',
+    fontWeight: "700",
+    color: "#1a1a1a",
     marginBottom: 8,
-    textAlign: 'center',
+    textAlign: "center",
   },
   subtitle: {
     fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
+    color: "#666",
+    textAlign: "center",
     lineHeight: 22,
   },
   formContainer: {
@@ -126,49 +192,49 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   buttonContainer: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     padding: 30,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 30,
+    paddingBottom: Platform.OS === "ios" ? 40 : 30,
     borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
+    borderTopColor: "#f0f0f0",
   },
   continueButton: {
-    backgroundColor: '#3898B3',
+    backgroundColor: "#3898B3",
     paddingVertical: 16,
     borderRadius: 12,
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 12,
-    shadowColor: '#3898B3',
+    shadowColor: "#3898B3",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
   },
   continueButtonDisabled: {
-    backgroundColor: '#9fc7c4',
+    backgroundColor: "#9fc7c4",
     shadowOpacity: 0,
     elevation: 0,
   },
   continueButtonText: {
-    color: '#ffffff',
+    color: "#ffffff",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     letterSpacing: 0.5,
   },
   continueButtonTextDisabled: {
-    color: '#ffffff',
+    color: "#ffffff",
   },
   skipButton: {
     paddingVertical: 16,
-    alignItems: 'center',
+    alignItems: "center",
   },
   skipButtonText: {
-    color: '#3898B3',
+    color: "#3898B3",
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: "500",
   },
 });
