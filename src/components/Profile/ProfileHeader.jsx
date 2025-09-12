@@ -8,8 +8,12 @@ import {
 } from "../../app/api/userServices";
 import useCurrentUserDetails from "../../hooks/useCurrentUserDetails";
 import useDimension from "../../hooks/useDimensions";
+import { useModal } from "../../context/ModalProvider";
+import ErrorModal from "../common/ErrorModal";
+import RemoveSuccessModal from "../common/RemoveSuccessModal";
 import SuccessIndicator from "../common/SuccessIndicator";
 import Text from "../ui/Text";
+import SuccessModal from '../common/SuccessModal';
 
 const ProfileHeader = ({
   isGeneral = true,
@@ -18,6 +22,7 @@ const ProfileHeader = ({
 }) => {
   const { name, email, profileImage, userId, refreshUserDetails, setUser } =
     useCurrentUserDetails();
+  const { setIsSuccessModalOpen } = useModal();
   useEffect(() => {
     refreshUserDetails?.();
   }, []);
@@ -34,7 +39,14 @@ const ProfileHeader = ({
   const [isUpdatingPhoto, setIsUpdatingPhoto] = useState(false);
   const [tempImageUri, setTempImageUri] = useState(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showRemoveSuccessModal, setShowRemoveSuccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  // Debug useEffect for modal state
+  useEffect(() => {
+    console.log("showRemoveSuccessModal changed:", showRemoveSuccessModal);
+  }, [showRemoveSuccessModal]);
 
   // Upload image to backend
   const uploadImageToBackend = async (imageUri) => {
@@ -51,10 +63,8 @@ const ProfileHeader = ({
 
 
       if (result?.error) {
-        Alert.alert(
-          "Error",
-          "Failed to update profile picture. Please try again."
-        );
+        setErrorMessage("Failed to update profile picture. Please try again.");
+        setShowErrorModal(true);
         setTempImageUri(null);
         return;
       }
@@ -62,16 +72,18 @@ const ProfileHeader = ({
 
       // setSelectedImage(result?.avatar_url || imageUri);
       setTempImageUri(null);
-      setShowSuccessModal(true);
+      setIsSuccessModalOpen(true);
       
       // Immediately refresh user details to update the profile image
       refreshUserDetails?.();
       onProfileUpdate?.();
     } catch (error) {
+
       Alert.alert(
         "Error",
         `Upload failed: ${error.message || "Unknown error"}`
       );
+
       setTempImageUri(null);
     } finally {
       setIsUpdatingPhoto(false);
@@ -192,20 +204,20 @@ const ProfileHeader = ({
               const result = await deleteAvatar();
 
               if (result?.error) {
-                Alert.alert(
-                  "Error",
-                  "Failed to remove profile picture. Please try again."
-                );
+                setErrorMessage("Failed to remove profile picture. Please try again.");
+                setShowErrorModal(true);
                 return;
               }
 
               setSelectedImage(null);
-              Alert.alert("Success", "Profile picture removed successfully!");
+              console.log("Setting showRemoveSuccessModal to true");
+              setShowRemoveSuccessModal(true);
+              // Refresh user details to update the profile image state
+              refreshUserDetails?.();
+              onProfileUpdate?.();
             } catch (error) {
-              Alert.alert(
-                "Error",
-                "Failed to remove profile picture. Please try again."
-              );
+              setErrorMessage("Failed to remove profile picture. Please try again.");
+              setShowErrorModal(true);
             } finally {
               setIsUpdatingPhoto(false);
             }
@@ -290,6 +302,7 @@ const ProfileHeader = ({
     </Modal>
   );
 
+
   // Success Modal Component
   const SuccessModal = () => {
     // Auto-close the modal after 2 seconds and refresh user details
@@ -357,6 +370,19 @@ const ProfileHeader = ({
     <View style={styles.container}>
       <ConfirmImageModal />
       <SuccessModal />
+      <RemoveSuccessModal
+        visible={showRemoveSuccessModal}
+        onClose={() => {
+          console.log("RemoveSuccessModal onClose called");
+          setShowRemoveSuccessModal(false);
+        }}
+        autoCloseDelay={3000}
+      />
+      <ErrorModal
+        visible={showErrorModal}
+        onClose={() => setShowErrorModal(false)}
+        message={errorMessage}
+      />
 
       <View style={styles.profileSection}>
         <TouchableOpacity
