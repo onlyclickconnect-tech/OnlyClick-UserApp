@@ -286,7 +286,7 @@ export default function PostRequest() {
   return (
     <View style={styles.container}>
       <AppHeader
-        title={'📝 Post Request'}
+        title={'Post Request'}
         showBack
         onBack={() => router.back()}
         rightElement={
