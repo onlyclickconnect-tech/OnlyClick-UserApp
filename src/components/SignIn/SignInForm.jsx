@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import Constants from "expo-constants";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -6,7 +7,7 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 import api from "../../app/api/api.js";
 import SuccessIndicator from "../common/SuccessIndicator";
@@ -35,7 +36,10 @@ export default function LoginScreen() {
 
     try {
       console.log("LOGIN DEBUG");
-      console.log("API Base URL:", process.env.EXPO_PUBLIC_API_URL);
+      console.log(
+        "API Base URL:",
+        Constants.expoConfig?.extra?.expoPublicApiUrl
+      );
       console.log("Email:", email);
 
       const response = await api.post("/api/v1/auth", {
@@ -45,7 +49,10 @@ export default function LoginScreen() {
       console.log("Login response:", response.data);
       setShowSuccessModal(true);
     } catch (err) {
-      console.log("API Base URL:", process.env.EXPO_PUBLIC_API_URL);
+      console.log(
+        "API Base URL:",
+        Constants.expoConfig?.extra?.expoPublicApiUrl
+      );
       console.log("LOGIN ERROR");
       console.log("Error:", err);
       console.log("Error response:", err.response?.data);
@@ -64,11 +71,7 @@ export default function LoginScreen() {
   // Success Modal Component
   const SuccessModal = () => {
     return (
-      <Modal
-        visible={showSuccessModal}
-        transparent
-        animationType="fade"
-      >
+      <Modal visible={showSuccessModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.successModalContainer}>
             <SuccessIndicator
@@ -137,97 +140,97 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-    content: {
-        flex: 0.4,
-        paddingHorizontal: 30,
-        paddingTop: 0,
-        marginTop: 0,
+  content: {
+    flex: 0.4,
+    paddingHorizontal: 30,
+    paddingTop: 0,
+    marginTop: 0,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: "700",
+    marginBottom: 25,
+    color: "#333",
+    textAlign: "left",
+  },
+  inputContainer: {
+    marginBottom: 20,
+  },
+  emailInputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f8f9fa",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: "#e9ecef",
+  },
+  emailInputError: {
+    borderColor: "#FF6B6B",
+    backgroundColor: "#FFF5F5",
+  },
+  emailIcon: {
+    marginRight: 12,
+  },
+  emailInput: {
+    flex: 1,
+    fontSize: 18,
+    paddingVertical: 16,
+    color: "#333",
+    fontWeight: "500",
+  },
+  errorContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 8,
+    paddingHorizontal: 4,
+  },
+  errorText: {
+    color: "#FF6B6B",
+    fontSize: 14,
+    marginLeft: 6,
+    fontWeight: "500",
+  },
+  signInButton: {
+    backgroundColor: "#2082AA",
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: "center",
+    marginBottom: 16,
+    shadowColor: "#2082AA",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  signInButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  successModalContainer: {
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 30,
+    margin: 20,
+    maxWidth: 400,
+    width: "90%",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
     },
-    title: {
-        fontSize: 22,
-        fontWeight: '700',
-        marginBottom: 25,
-        color: '#333',
-        textAlign: 'left',
-    },
-    inputContainer: {
-        marginBottom: 20,
-    },
-    emailInputWrapper: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#f8f9fa',
-        borderRadius: 12,
-        paddingHorizontal: 16,
-        paddingVertical: 4,
-        borderWidth: 1,
-        borderColor: '#e9ecef',
-    },
-    emailInputError: {
-        borderColor: '#FF6B6B',
-        backgroundColor: '#FFF5F5',
-    },
-    emailIcon: {
-        marginRight: 12,
-    },
-    emailInput: {
-        flex: 1,
-        fontSize: 18,
-        paddingVertical: 16,
-        color: '#333',
-        fontWeight: '500',
-    },
-    errorContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginTop: 8,
-        paddingHorizontal: 4,
-    },
-    errorText: {
-        color: '#FF6B6B',
-        fontSize: 14,
-        marginLeft: 6,
-        fontWeight: '500',
-    },
-    signInButton: {
-        backgroundColor: '#2082AA',
-        paddingVertical: 14,
-        borderRadius: 12,
-        alignItems: 'center',
-        marginBottom: 16,
-        shadowColor: '#2082AA',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-        elevation: 4,
-    },
-    signInButtonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: '600',
-    },
-    // Modal Styles
-    modalOverlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    successModalContainer: {
-        backgroundColor: 'white',
-        borderRadius: 20,
-        padding: 30,
-        margin: 20,
-        maxWidth: 400,
-        width: '90%',
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 4,
-        },
-        shadowOpacity: 0.3,
-        shadowRadius: 5,
-        elevation: 8,
-    },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 8,
+  },
 });

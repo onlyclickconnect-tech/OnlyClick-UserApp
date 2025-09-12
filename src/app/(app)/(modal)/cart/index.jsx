@@ -18,6 +18,7 @@ import RazorpayCheckout from 'react-native-razorpay';
 
 import Toast from 'react-native-toast-message';
 
+import Constants from 'expo-constants';
 import Text from "../../../../components/ui/Text.jsx";
 import { useAppStates } from '../../../../context/AppStates';
 
@@ -563,7 +564,7 @@ export default function Cart() {
           description: "Test Payment",
           image: "https://avatars.githubusercontent.com/u/230859053?v=4", // optional
           currency: "INR",
-          key: process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID, // ✅ Use env
+          key: Constants.expoConfig?.extra?.expoPublicRazorPayKeyId, 
           amount: order.amount, // in paisa
           order_id: order.id, // from backend
           name: "OnlyClick",
