@@ -168,7 +168,7 @@ const ProfileForm = ({ onValidationChange, onSave, onProfileUpdate }) => {
           keyboardType={keyboardType}
           placeholder={placeholder}
           placeholderTextColor="#808080"
-          editable={name === "phone" ? false : isEditing}
+          editable={isEditing}
           {...additionalProps}
         />
         {hasInteracted && errors[name] && (

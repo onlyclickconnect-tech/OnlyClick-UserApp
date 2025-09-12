@@ -1,8 +1,9 @@
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from "react";
-import { Alert, Dimensions, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
-import Text from "../../components/ui/Text"
+import { Alert, Dimensions, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { deleteUser } from '../../app/api/delete.js';
+import Text from "../../components/ui/Text";
 import { useAuth } from '../../context/AuthProvider';
 
 const screenWidth = Dimensions.get("window").width;
@@ -18,21 +19,42 @@ const AdvancedOptions = () => {
   const [isEditingBank, setIsEditingBank] = useState(false);
   const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
 
-  const handleDeleteAccount = () => {
+  const handleDeleteAccount = async () => {
     Alert.alert(
-      'Delete account',
-      'This will permanently delete your account. Are you sure?',
+      "Delete account",
+      "This will permanently delete your account. Are you sure?",
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: () => {
-          // placeholder: clear auth and navigate to sign in
-          setUser(null);
-          setIsLoggedIn(false);
-          router.replace('/auth/sign-in');
-        } }
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              console.log("Starting delete process...");
+            
+              const data = await deleteUser();
+              console.log("User deleted successfully");
+
+              // Just clear local state - auth guards will handle redirect
+              router.replace('/intro')
+              setUser(null);
+              setIsLoggedIn(false);
+            } catch (error) {
+              console.error("Delete account error:", error);
+              Alert.alert(
+                "Error",
+                "Failed to delete account. Please try again."
+              );
+            }
+          },
+        },
       ]
     );
   };
+
+
+
+
 
   // const handleSaveBankDetails = () => {
   //   if (!bankDetails.accountNumber || !bankDetails.ifscCode || !bankDetails.accountHolderName) {

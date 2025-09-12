@@ -8,6 +8,7 @@ import SuccessModal from "../../../components/common/SuccessModal";
 
 export default function RootLayout() {
   const router = useRouter();
+
   return (
     <View style={{ flex: 1 }}>
       <Stack initialRouteName="(tabs)">

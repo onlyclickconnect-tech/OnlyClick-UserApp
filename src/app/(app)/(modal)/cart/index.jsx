@@ -465,24 +465,39 @@ export default function Cart() {
     setShowPaymentModal(true);
   };
 
-  const createbookings = async (paymentMethod = 'Online Payment') => {
+  const createbookings = async (razorpay_oid) => {
+
     setIsPaymentLoading(true);
     const bookingdata = {
       items: rawcart,
       ph_no: mobileNumber,
-      location: location.houseNumber + " " + location.city + " " + location.district + " " + location.pincode + " " + location.additionalInfo,
+      location:
+        location.houseNumber +
+        " " +
+        location.city +
+        " " +
+        location.district +
+        " " +
+        location.pincode +
+        " " +
+        location.additionalInfo,
       dateitem: {
         dateNumber: selectedDateItem.dayNumber,
         day: selectedDateItem.dayNumber,
-        month: selectedDateItem.month
+        month: selectedDateItem.month,
       },
       time: {
         label: selectedTimeSlot.label,
-        time: selectedTimeSlot.time
+        time: selectedTimeSlot.time,
       },
-      paymentmethod: paymentMethod
-    }
+
+      paymentmethod: selectedPaymentMethod,
+      razorpay_oid: razorpay_oid,
+    };
+
     const { data, error } = confirmbookings(bookingdata);
+
+    console.log("this is my data", data);
 
 
     if (error) {
@@ -547,22 +562,18 @@ export default function Cart() {
     console.log("payment method", selectedPaymentMethod);
     if (selectedPaymentMethod === "Online Payment") {
       try {
-        const { data, error } = await createRazorpayOrder([], 50000); // your API call
+        const { data, error } = await createRazorpayOrder(rawcart,total*100 ); // your API call
         const order = data;
 
         let options = {
           description: "Test Payment",
-          image: "https://yourcdn.com/logo.png", // optional
+          image: "https://avatars.githubusercontent.com/u/230859053?v=4", // optional
           currency: "INR",
           key: process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID, // ✅ Use env
           amount: order.amount, // in paisa
           order_id: order.id, // from backend
           name: "OnlyClick",
-          prefill: {
-            email: "test@example.com",
-            contact: "9999999999",
-            name: "Test User",
-          },
+          prefill: {},
           theme: { color: "#3399cc" },
         };
 
@@ -576,7 +587,7 @@ export default function Cart() {
             if (confirmPaymentError) {
               throw new error(confirmPaymentError)
             }
-
+            console.log("confirm payments ",data)
             if (confirmPaymentData.success) {
               // Close all modals before showing success alert
               setShowPaymentModal(false);
@@ -584,7 +595,9 @@ export default function Cart() {
               setShowCancellationPolicy(false);
               setShowServiceFeeTooltip(false);
               setShowDeleteModal(false);
-              createbookings(selectedPaymentMethod);
+
+              createbookings(data.razorpay_order_id);
+
               setIsPaymentLoading(false);
               // Show success alert
               // Alert.alert('Payment Successful', 'Your booking has been confirmed successfully!', [

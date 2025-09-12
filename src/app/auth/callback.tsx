@@ -13,7 +13,8 @@ export default function AuthCallback() {
 
     // Navigate to home after a brief moment
     setTimeout(() => {
-      router.replace("/(app)/protected/(tabs)/Home");
+      // this line is taking to home
+      router.replace("/auth/profile-setup");
     }, 1000);
   }, []);
 
