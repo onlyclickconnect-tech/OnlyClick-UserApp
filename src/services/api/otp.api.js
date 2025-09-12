@@ -8,7 +8,6 @@ export const sendOtp = async (phone) => {
     if (error) throw error;
     return true;
   } catch (error) {
-    console.error("Send OTP Error:", error.response?.data || error.message);
     throw error;
   }
 };
@@ -24,7 +23,6 @@ export const verifyOtp = async (phone, otp) => {
 
     return data.session;
   } catch (error) {
-    console.error("Verify OTP Error:", error.response?.data || error.message);
     throw error;
   }
 };

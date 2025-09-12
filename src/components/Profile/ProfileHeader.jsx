@@ -52,7 +52,6 @@ const ProfileHeader = ({
   const uploadImageToBackend = async (imageUri) => {
     setIsUpdatingPhoto(true);
     try {
-      console.log("Starting upload for:", imageUri);
 
       // Add timeout to prevent infinite loading
       const uploadPromise = uploadAvatar(imageUri);
@@ -62,7 +61,6 @@ const ProfileHeader = ({
 
       const result = await Promise.race([uploadPromise, timeoutPromise]);
 
-      console.log("Upload result:", result);
 
       if (result?.error) {
         setErrorMessage("Failed to update profile picture. Please try again.");
@@ -80,9 +78,12 @@ const ProfileHeader = ({
       refreshUserDetails?.();
       onProfileUpdate?.();
     } catch (error) {
-      console.log("Upload error:", error);
-      setErrorMessage(`Upload failed: ${error.message || "Unknown error"}`);
-      setShowErrorModal(true);
+
+      Alert.alert(
+        "Error",
+        `Upload failed: ${error.message || "Unknown error"}`
+      );
+
       setTempImageUri(null);
     } finally {
       setIsUpdatingPhoto(false);
@@ -133,7 +134,6 @@ const ProfileHeader = ({
         confirmImageSelection(imageUri);
       }
     } catch (error) {
-      console.log("Camera error:", error);
       Alert.alert(
         "Camera Error",
         "There was an issue accessing your camera. Please check camera permissions and try again.",
@@ -170,7 +170,6 @@ const ProfileHeader = ({
         confirmImageSelection(imageUri);
       }
     } catch (error) {
-      console.log("Gallery error:", error);
       // More specific error handling for PhotoPicker issues
       if (error.message && error.message.includes("PhotoPicker")) {
         Alert.alert(
@@ -302,6 +301,43 @@ const ProfileHeader = ({
       </View>
     </Modal>
   );
+
+
+  // Success Modal Component
+  const SuccessModal = () => {
+    // Auto-close the modal after 2 seconds and refresh user details
+    useEffect(() => {
+      if (showSuccessModal) {
+        const timer = setTimeout(() => {
+          setShowSuccessModal(false);
+          // Refresh user details to get the updated profile image
+          refreshUserDetails?.();
+        }, 2000); // 2 seconds
+
+        return () => clearTimeout(timer);
+      }
+    }, [showSuccessModal]);
+
+    return (
+      <Modal
+        visible={showSuccessModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowSuccessModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.successModalContainer}>
+            <SuccessIndicator
+              title="Success!"
+              subtitle="Profile picture updated successfully"
+              message="Your new profile picture has been saved and will be visible across the app."
+              iconColor="#0097B3"
+            />
+          </View>
+        </View>
+      </Modal>
+    );
+  };
 
   const handleProfileImagePress = () => {
     if (isUpdatingPhoto) {
@@ -437,8 +473,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 20,
-    alignSelf: 'center',
-    width: '85%',
+    alignSelf: 'flex-start',
+    width: '100%',
     maxWidth: 400,
   },
   profileIconContainer: {
@@ -494,12 +530,13 @@ const styles = StyleSheet.create({
   },
   userid: {
     color: "#666",
-    fontSize: 14,
+    fontSize: 12,
     marginBottom: 4,
   },
   email: {
     color: "#666",
     fontSize: 14,
+    color: '#0b437cff',
   },
   toggleContainer: {
     flexDirection: "row",

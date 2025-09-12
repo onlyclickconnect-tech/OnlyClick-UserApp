@@ -19,9 +19,15 @@ export default function LoginScreen() {
   const [error, setError] = useState("");
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
-  // Success modal stays open until user manually closes it
+  // Auto-close success modal after 2 seconds
   useEffect(() => {
-    // No auto-close timer - modal stays open indefinitely
+    if (showSuccessModal) {
+      const timer = setTimeout(() => {
+        setShowSuccessModal(false);
+      }, 2000); // 2 seconds
+
+      return () => clearTimeout(timer);
+    }
   }, [showSuccessModal]);
 
   const handleLogin = async () => {
@@ -35,28 +41,15 @@ export default function LoginScreen() {
     setLoading(true);
 
     try {
-      console.log("LOGIN DEBUG");
-      console.log(
-        "API Base URL:",
-        Constants.expoConfig?.extra?.expoPublicApiUrl
-      );
-      console.log("Email:", email);
+
 
       const response = await api.post("/api/v1/auth", {
         email,
       });
 
-      console.log("Login response:", response.data);
       setShowSuccessModal(true);
     } catch (err) {
-      console.log(
-        "API Base URL:",
-        Constants.expoConfig?.extra?.expoPublicApiUrl
-      );
-      console.log("LOGIN ERROR");
-      console.log("Error:", err);
-      console.log("Error response:", err.response?.data);
-      console.log("Error status:", err.response?.status);
+
 
       if (err.response) {
         setError(err.response.data.error || "Something went wrong");

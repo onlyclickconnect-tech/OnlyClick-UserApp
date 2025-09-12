@@ -30,17 +30,14 @@ const AdvancedOptions = () => {
           style: "destructive",
           onPress: async () => {
             try {
-              console.log("Starting delete process...");
             
               const data = await deleteUser();
-              console.log("User deleted successfully");
 
               // Just clear local state - auth guards will handle redirect
               router.replace('/intro')
               setUser(null);
               setIsLoggedIn(false);
             } catch (error) {
-              console.error("Delete account error:", error);
               Alert.alert(
                 "Error",
                 "Failed to delete account. Please try again."

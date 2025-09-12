@@ -27,10 +27,7 @@ export const createCustomPost = async (postData) => {
 
     return data;
   } catch (error) {
-    console.error(
-      "Error creating post:",
-      error.response?.data || error.message
-    );
+
     return { error };
   }
 };

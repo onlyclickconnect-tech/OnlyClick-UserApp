@@ -4,7 +4,6 @@ import Feather from "@expo/vector-icons/Feather";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { LinearGradient } from "expo-linear-gradient";
-import * as Location from 'expo-location';
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -16,6 +15,7 @@ import {
 } from "react-native";
 import { useAppStates } from "../../context/AppStates";
 import fetchCart from '../../data/getdata/getCart';
+import { useUpdateProfile } from "../../hooks/seeUpdateProfile";
 import useCurrentUserDetails from "../../hooks/useCurrentUserDetails";
 import useDimension from "../../hooks/useDimensions";
 import headerStyle from "../../styles/Home/headerStyle";
@@ -27,11 +27,11 @@ function Header() {
   const [hasNotification, setHasNotification] = useState(true);
   const { screenHeight, screenWidth } = useDimension();
   const [search, setSearch] = useState("");
-  const [isLocationLoading, setIsLocationLoading] = useState(false);
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [manualLocation, setManualLocation] = useState("");
   const [cartCount, setCartCount] = useState(0);
   const [cartNavigationLoading, setCartNavigationLoading] = useState(false);
+  const [isSavingLocation, setIsSavingLocation] = useState(false);
   const { userAddress } = useCurrentUserDetails();
   const { selectedLocation, updateSelectedLocation } = useAppStates();
   const router = useRouter();
@@ -46,7 +46,6 @@ function Header() {
       );
       setCartCount(totalItems);
     } catch (error) {
-      console.error('Error fetching cart count:', error);
       setCartCount(0);
     }
   };
@@ -59,7 +58,6 @@ function Header() {
     try {
       await router.push('/(modal)/cart');
     } catch (error) {
-      console.error('Error navigating to cart:', error);
     } finally {
       // Reset loading state after a short delay to prevent rapid clicks
       setTimeout(() => {
@@ -102,40 +100,27 @@ function Header() {
     setManualLocation(selectedLocation || "");
   }, [userAddress, selectedLocation]);
   
-  // Location functions - similar to Post tab
-  const getCurrentLocation = async () => {
-    setIsLocationLoading(true);
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert("Permission required", "Location permission is needed to get your current location");
-        setIsLocationLoading(false);
-        return;
-      }
-
-      const currentLocation = await Location.getCurrentPositionAsync({});
-      const addressResult = await Location.reverseGeocodeAsync({
-        latitude: currentLocation.coords.latitude,
-        longitude: currentLocation.coords.longitude,
-      });
-
-      if (addressResult.length > 0) {
-        const addr = addressResult[0];
-        const formattedAddress = `${addr.name || ''} ${addr.street || ''}, ${addr.city || ''}, ${addr.region || ''}`.trim();
-        updateSelectedLocation(formattedAddress);
-        setManualLocation(formattedAddress);
-        setShowLocationModal(false);
-      }
-    } catch (error) {
-      Alert.alert("Error", "Failed to get current location");
-    }
-    setIsLocationLoading(false);
-  };
+  // Location functions  
+  const { updateProfile } = useUpdateProfile();
   
-  const saveManualLocation = () => {
+  const saveManualLocation = async () => {
     if (manualLocation && manualLocation.trim()) {
-      updateSelectedLocation(manualLocation.trim());
-      setShowLocationModal(false);
+      setIsSavingLocation(true);
+      
+      try {
+        updateSelectedLocation(manualLocation.trim());
+        
+        // Save address to backend using updateProfile
+        const result = await updateProfile({ address: manualLocation.trim() });
+        if (result?.data?.updated) {
+        }
+        
+        setShowLocationModal(false);
+      } catch (error) {
+        Alert.alert("Error", "Failed to save address. Please try again.");
+      } finally {
+        setIsSavingLocation(false);
+      }
     }
   };
   
@@ -165,45 +150,19 @@ function Header() {
             </View>
 
             <View style={modalStyles.modalContent}>
-              {/* Current Location Option */}
-              <TouchableOpacity 
-                style={[modalStyles.locationOption, isLocationLoading && modalStyles.locationOptionDisabled]}
-                onPress={getCurrentLocation}
-                disabled={isLocationLoading}
-              >
-                <View style={modalStyles.locationOptionLeft}>
-                  <View style={modalStyles.locationIconContainer}>
-                    <Ionicons 
-                      name={isLocationLoading ? "refresh" : "location"} 
-                      size={20} 
-                      color="#007AFF" 
-                    />
-                  </View>
-                  <View>
-                    <Text style={modalStyles.locationOptionTitle}>
-                      {isLocationLoading ? "Getting Location..." : "Use Current Location"}
-                    </Text>
-                    <Text style={modalStyles.locationOptionSubtitle}>
-                      Automatically detect your location
-                    </Text>
-                  </View>
-                </View>
-                <Ionicons name="chevron-forward" size={20} color="#999" />
-              </TouchableOpacity>
-
               {/* Manual Location Input */}
               <View style={modalStyles.manualSection}>
-                <Text style={modalStyles.sectionTitle}>Enter Location Manually</Text>
+                <Text style={modalStyles.sectionTitle}>Enter Your Address</Text>
                 <View style={modalStyles.inputContainer}>
                   <Ionicons name="location-outline" size={20} color="#666" style={modalStyles.inputIcon} />
                   <TextInput
                     style={modalStyles.textInput}
-                    placeholder="Type your address here..."
+                    placeholder="Type your complete address here..."
                     placeholderTextColor="#999"
                     value={manualLocation}
                     onChangeText={setManualLocation}
                     multiline={true}
-                    numberOfLines={2}
+                    numberOfLines={3}
                   />
                 </View>
               </View>
@@ -220,12 +179,14 @@ function Header() {
                 <TouchableOpacity 
                   style={[
                     modalStyles.saveButton,
-                    (!manualLocation || !manualLocation.trim()) && modalStyles.saveButtonDisabled
+                    ((!manualLocation || !manualLocation.trim()) || isSavingLocation) && modalStyles.saveButtonDisabled
                   ]}
                   onPress={saveManualLocation}
-                  disabled={!manualLocation || !manualLocation.trim()}
+                  disabled={(!manualLocation || !manualLocation.trim()) || isSavingLocation}
                 >
-                  <Text style={modalStyles.saveButtonText}>Save Location</Text>
+                  <Text style={modalStyles.saveButtonText}>
+                    {isSavingLocation ? "Saving..." : "Save Location"}
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -241,11 +202,11 @@ function Header() {
               <Entypo
                 name="location-pin"
                 size={18}
-                color={isLocationLoading ? "#FFD58A" : "#FFEA85"}
+                color="#FFEA85"
                 style={{ marginRight: 8 }}
               />
               <Text style={styles.locationText} numberOfLines={1} ellipsizeMode="tail">
-                {isLocationLoading ? "Getting location..." : selectedLocation || "Tap to set location"}
+                {selectedLocation || "Tap to set location"}
               </Text>
               <AntDesign name="down" size={12} color="#FFEA85" style={{ marginLeft: 8 }} />
             </PressableScale>
@@ -333,44 +294,6 @@ const modalStyles = {
   },
   modalContent: {
     padding: 20,
-  },
-  locationOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#F8F9FA',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: '#E5E5E5',
-  },
-  locationOptionDisabled: {
-    opacity: 0.6,
-  },
-  locationOptionLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  locationIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#E3F2FD',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  locationOptionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1A1A1A',
-    marginBottom: 2,
-  },
-  locationOptionSubtitle: {
-    fontSize: 13,
-    color: '#666',
   },
   manualSection: {
     marginBottom: 30,

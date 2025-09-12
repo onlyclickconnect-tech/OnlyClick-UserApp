@@ -26,7 +26,6 @@ const SuccessWelcome = ({ onComplete }) => {
         return false;
       }
     } catch (error) {
-      console.error('Error requesting location permission:', error);
       return false;
     }
   };
@@ -38,7 +37,6 @@ const SuccessWelcome = ({ onComplete }) => {
       
       if (isExpoGo) {
         // In Expo Go, skip notification permission
-        console.log('Skipping notification permission in Expo Go');
         setNotificationGranted(false);
         return true;
       }
@@ -52,7 +50,6 @@ const SuccessWelcome = ({ onComplete }) => {
       }
       return true; // Non-blocking, so always return true
     } catch (error) {
-      console.log('Notification permission not available:', error.message);
       setNotificationGranted(false);
       return true; // Non-blocking, so continue even if error
     }
@@ -73,7 +70,6 @@ const SuccessWelcome = ({ onComplete }) => {
         onComplete();
       }
     } catch (error) {
-      console.error('Error during permission setup:', error);
       Alert.alert(
         'Setup Error',
         'There was an issue setting up permissions. Please try again.',

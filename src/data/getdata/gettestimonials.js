@@ -8,12 +8,10 @@ export default async function gettestimonials() {
         .eq("allowed", true);
 
     if (error) {
-        console.error("Supabase error:", error);
         return { arr: [], error };
     }
 
     if (!data) {
-        console.warn("No data returned from testimonials");
         return { arr: [], error: null };
     }
 

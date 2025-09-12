@@ -35,14 +35,14 @@ export default function RootLayout() {
   useEffect(() => {
     
     const handleDeepLink = async ({ url }: { url: string }) => {
-      console.log("Deep link received:", url);
+      // console.log("Deep link received:", url);
 
       if (
         url.includes("/auth/callback") ||
         url.includes("access_token") ||
         url.includes("refresh_token")
       ) {
-        console.log("Processing magic link:", url);
+        // console.log("Processing magic link:", url);
 
         try {
           const supabase = (await import("../data/supabaseClient")).default;
@@ -55,7 +55,7 @@ export default function RootLayout() {
             const accessToken = accessTokenMatch[1];
             const refreshToken = refreshTokenMatch[1];
 
-            console.log("Extracted tokens, calling backend callback...");
+            // console.log("Extracted tokens, calling backend callback...");
 
             // Call your backend callback endpoint FIRST
             try {
@@ -65,17 +65,10 @@ export default function RootLayout() {
                 refresh_token: refreshToken,
               });
 
-              console.log(
-                "Backend callback successful:",
-                callbackResponse.data.data.isNewUser
-              );
+           
               isNewUser = callbackResponse.data.data.isNewUser;
             } catch (callbackError: any) {
-              console.error("Backend callback failed:", callbackError);
-              console.error(
-                "Callback error details:",
-                callbackError.response?.data
-              );
+        
             }
 
             // Then set Supabase session
@@ -85,25 +78,25 @@ export default function RootLayout() {
             });
 
             if (error) {
-              console.error("Auth error:", error);
+              // console.error("Auth error:", error);
               return;
             }
 
             if (data.session) {
-              console.log("is user new?", isNewUser)
+              // console.log("is user new?", isNewUser)
               if(isNewUser){
-                console.log("Sessu=ion set successfully. New User Detected")
+                // console.log("Sessu=ion set successfully. New User Detected")
                 router.replace("/auth/profile-setup")
               }else{
-                console.log("is not user new?", isNewUser)
-                console.log("Session set successfully");
+                // console.log("is not user new?", isNewUser)
+                // console.log("Session set successfully");
                 router.replace("/(app)/protected/(tabs)/Home");
               }
             }
           
           }
         } catch (err) {
-          console.error("Deep link processing error:", err);
+          // console.error("Deep link processing error:", err);
         }
       }
     };

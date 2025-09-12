@@ -9,7 +9,6 @@ export default function AuthCallback() {
   useEffect(() => {
     // This page will handle the auth callback
     // The deep link processing in _layout.tsx will handle the actual authentication
-    console.log("Auth callback page loaded");
 
     // Navigate to home after a brief moment
     setTimeout(() => {

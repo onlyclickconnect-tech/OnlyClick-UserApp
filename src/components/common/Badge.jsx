@@ -13,7 +13,7 @@ function Badge({
   textColor = "white",
   pressable = false,
   onPress = () => {
-    console.log("Pressed");
+    // console.log("Pressed");
   },
   badgeTop = -7.5,
   badgeRight = -7.5,

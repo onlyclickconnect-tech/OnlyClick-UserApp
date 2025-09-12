@@ -197,7 +197,6 @@ export default function BookingDetails() {
           throw new Error("Incomplete booking data provided. Please go back and try again.");
         }
       } catch (err) {
-        console.error("Error loading booking details:", err);
         setError(err.message || "Failed to load booking details");
       } finally {
         setLoading(false);
@@ -476,7 +475,6 @@ export default function BookingDetails() {
                       throw new Error("No booking data available");
                     }
                   } catch (err) {
-                    console.error("Error loading booking details:", err);
                     setError("Failed to load booking details. Please go back and try again.");
                   } finally {
                     setLoading(false);

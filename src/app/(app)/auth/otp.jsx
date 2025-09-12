@@ -40,11 +40,9 @@ export default function OTP() {
       setIsLoading(true);
       try {
         const data = await verifyOtp(phone, otp);
-        console.log(data);
         router.replace('/auth/loading');
       } catch (err) {
         // Optionally show error to user
-        console.error('OTP verification failed:', err);
       }finally {
         setIsLoading(false);
       }
@@ -70,7 +68,6 @@ export default function OTP() {
         setCountdown(39);
       } catch (err) {
         // Optionally show error to user
-        console.error('Failed to resend OTP:', err);
       }
     }
   };

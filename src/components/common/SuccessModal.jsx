@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
-import { Modal, StyleSheet,TouchableOpacity, View } from 'react-native';
-import Text from "../ui/Text";
+import { Modal, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useModal } from '../../context/ModalProvider';
+import Text from "../ui/Text";
 
 const SuccessModal = () => {
   const { isSuccessModalOpen, setIsSuccessModalOpen } = useModal();
@@ -10,12 +10,12 @@ const SuccessModal = () => {
     setIsSuccessModalOpen(false);
   };
 
-  // Auto-close after 3 seconds
+  // Auto-close after 2 seconds
   useEffect(() => {
     if (isSuccessModalOpen) {
       const timer = setTimeout(() => {
         setIsSuccessModalOpen(false);
-      }, 3000);
+      }, 2000); // 2 seconds
       return () => clearTimeout(timer);
     }
   }, [isSuccessModalOpen, setIsSuccessModalOpen]);

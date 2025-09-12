@@ -39,7 +39,7 @@ const ServiceListModal = ({ visible, onClose, userCategory }) => {
         Alert.alert('Error', 'Failed to load services');
       }
     } catch (error) {
-      console.error('Error fetching services:', error);
+      // console.error('Error fetching services:', error);
       Alert.alert('Error', 'Failed to load services');
     } finally {
       setLoading(false);

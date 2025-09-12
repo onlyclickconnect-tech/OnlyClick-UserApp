@@ -11,7 +11,6 @@ export const useUpdateProfile = () => {
     try {
       const result = await updateProfileService(updates);
       setLoading(false);
-      console.log(result);
       return result;
     } catch (err) {
       setError(err);

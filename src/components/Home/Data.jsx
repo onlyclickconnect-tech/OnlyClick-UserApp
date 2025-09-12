@@ -35,7 +35,6 @@ export default function Data() {
         const fetchedCategories = await allCategories();
         setCategories(fetchedCategories);
       } catch (error) {
-        console.error('Error loading categories:', error);
       } finally {
         setCategoriesLoading(false);
       }
@@ -52,7 +51,6 @@ export default function Data() {
     const fetchPopularService = async () => {
       const { arr, error } = await getpopularServices();
       if (error) {
-        console.error("Error fetching testimonials:", error);
         return;
       }
 
@@ -68,7 +66,6 @@ export default function Data() {
       const getbookingsdata = async () => {
         const { arr, error } = await getbookings(); // ✅ use arr, not data
         if (error) {
-          console.error(error);
           return;
         }
         setbookings(arr); // ✅ directly set array
@@ -81,7 +78,6 @@ export default function Data() {
     const fetchTestimonials = async () => {
       const { arr, error } = await gettestimonials();
       if (error) {
-        console.error("Error fetching testimonials:", error);
         return;
       }
 
