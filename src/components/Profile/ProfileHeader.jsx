@@ -8,8 +8,12 @@ import {
 } from "../../app/api/userServices";
 import useCurrentUserDetails from "../../hooks/useCurrentUserDetails";
 import useDimension from "../../hooks/useDimensions";
+import { useModal } from "../../context/ModalProvider";
+import ErrorModal from "../common/ErrorModal";
+import RemoveSuccessModal from "../common/RemoveSuccessModal";
 import SuccessIndicator from "../common/SuccessIndicator";
 import Text from "../ui/Text";
+import SuccessModal from '../common/SuccessModal';
 
 const ProfileHeader = ({
   isGeneral = true,
@@ -18,6 +22,7 @@ const ProfileHeader = ({
 }) => {
   const { name, email, profileImage, userId, refreshUserDetails, setUser } =
     useCurrentUserDetails();
+  const { setIsSuccessModalOpen } = useModal();
   useEffect(() => {
     refreshUserDetails?.();
   }, []);
@@ -34,7 +39,14 @@ const ProfileHeader = ({
   const [isUpdatingPhoto, setIsUpdatingPhoto] = useState(false);
   const [tempImageUri, setTempImageUri] = useState(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showRemoveSuccessModal, setShowRemoveSuccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  // Debug useEffect for modal state
+  useEffect(() => {
+    console.log("showRemoveSuccessModal changed:", showRemoveSuccessModal);
+  }, [showRemoveSuccessModal]);
 
   // Upload image to backend
   const uploadImageToBackend = async (imageUri) => {
@@ -53,10 +65,8 @@ const ProfileHeader = ({
       console.log("Upload result:", result);
 
       if (result?.error) {
-        Alert.alert(
-          "Error",
-          "Failed to update profile picture. Please try again."
-        );
+        setErrorMessage("Failed to update profile picture. Please try again.");
+        setShowErrorModal(true);
         setTempImageUri(null);
         return;
       }
@@ -64,17 +74,15 @@ const ProfileHeader = ({
 
       // setSelectedImage(result?.avatar_url || imageUri);
       setTempImageUri(null);
-      setShowSuccessModal(true);
+      setIsSuccessModalOpen(true);
       
       // Immediately refresh user details to update the profile image
       refreshUserDetails?.();
       onProfileUpdate?.();
     } catch (error) {
       console.log("Upload error:", error);
-      Alert.alert(
-        "Error",
-        `Upload failed: ${error.message || "Unknown error"}`
-      );
+      setErrorMessage(`Upload failed: ${error.message || "Unknown error"}`);
+      setShowErrorModal(true);
       setTempImageUri(null);
     } finally {
       setIsUpdatingPhoto(false);
@@ -197,20 +205,20 @@ const ProfileHeader = ({
               const result = await deleteAvatar();
 
               if (result?.error) {
-                Alert.alert(
-                  "Error",
-                  "Failed to remove profile picture. Please try again."
-                );
+                setErrorMessage("Failed to remove profile picture. Please try again.");
+                setShowErrorModal(true);
                 return;
               }
 
               setSelectedImage(null);
-              Alert.alert("Success", "Profile picture removed successfully!");
+              console.log("Setting showRemoveSuccessModal to true");
+              setShowRemoveSuccessModal(true);
+              // Refresh user details to update the profile image state
+              refreshUserDetails?.();
+              onProfileUpdate?.();
             } catch (error) {
-              Alert.alert(
-                "Error",
-                "Failed to remove profile picture. Please try again."
-              );
+              setErrorMessage("Failed to remove profile picture. Please try again.");
+              setShowErrorModal(true);
             } finally {
               setIsUpdatingPhoto(false);
             }
@@ -295,42 +303,6 @@ const ProfileHeader = ({
     </Modal>
   );
 
-  // Success Modal Component
-  const SuccessModal = () => {
-    // Auto-close the modal after 1 second and refresh user details
-    useEffect(() => {
-      if (showSuccessModal) {
-        const timer = setTimeout(() => {
-          setShowSuccessModal(false);
-          // Refresh user details to get the updated profile image
-          refreshUserDetails?.();
-        }, 1000);
-
-        return () => clearTimeout(timer);
-      }
-    }, [showSuccessModal]);
-
-    return (
-      <Modal
-        visible={showSuccessModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowSuccessModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.successModalContainer}>
-            <SuccessIndicator
-              title="Success!"
-              subtitle="Profile picture updated successfully"
-              message="Your new profile picture has been saved and will be visible across the app."
-              iconColor="#0097B3"
-            />
-          </View>
-        </View>
-      </Modal>
-    );
-  };
-
   const handleProfileImagePress = () => {
     if (isUpdatingPhoto) {
       return;
@@ -362,6 +334,19 @@ const ProfileHeader = ({
     <View style={styles.container}>
       <ConfirmImageModal />
       <SuccessModal />
+      <RemoveSuccessModal
+        visible={showRemoveSuccessModal}
+        onClose={() => {
+          console.log("RemoveSuccessModal onClose called");
+          setShowRemoveSuccessModal(false);
+        }}
+        autoCloseDelay={3000}
+      />
+      <ErrorModal
+        visible={showErrorModal}
+        onClose={() => setShowErrorModal(false)}
+        message={errorMessage}
+      />
 
       <View style={styles.profileSection}>
         <TouchableOpacity
@@ -655,6 +640,54 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 5,
     elevation: 8,
+  },
+  // Error Modal Styles
+  errorModalContainer: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 30,
+    margin: 20,
+    maxWidth: 400,
+    width: '90%',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 8,
+  },
+  errorModalHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  errorModalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#FF6B6B',
+    marginTop: 10,
+  },
+  errorModalMessage: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 25,
+    lineHeight: 22,
+  },
+  errorModalButton: {
+    backgroundColor: '#FF6B6B',
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    borderRadius: 8,
+    alignItems: 'center',
+    minWidth: 100,
+  },
+  errorModalButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 

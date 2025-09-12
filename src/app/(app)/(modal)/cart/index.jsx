@@ -467,6 +467,7 @@ export default function Cart() {
   };
 
   const createbookings = async (razorpay_oid) => {
+
     setIsPaymentLoading(true);
     const bookingdata = {
       items: rawcart,
@@ -490,9 +491,11 @@ export default function Cart() {
         label: selectedTimeSlot.label,
         time: selectedTimeSlot.time,
       },
+
       paymentmethod: selectedPaymentMethod,
       razorpay_oid: razorpay_oid,
     };
+
     const { data, error } = confirmbookings(bookingdata);
 
     console.log("this is my data", data);
@@ -513,19 +516,22 @@ export default function Cart() {
         ]
       );
     } else {
-      Alert.alert(
-        'Your booking has been confirmed!', // title
-        '', // message can be empty if not needed
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              setShowPaymentModal(false);
-              router.push('/protected/(tabs)/Bookings');
+      // Only show success alert for online payment
+      if (paymentMethod === 'Online Payment') {
+        Alert.alert(
+          'Payment Successful! Your booking has been confirmed!', // title
+          '', // message can be empty if not needed
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                setShowPaymentModal(false);
+                router.push('/protected/(tabs)/Bookings');
+              }
             }
-          }
-        ]
-      );
+          ]
+        );
+      }
     }
     setIsPaymentLoading(false);
   }
@@ -590,12 +596,14 @@ export default function Cart() {
               setShowCancellationPolicy(false);
               setShowServiceFeeTooltip(false);
               setShowDeleteModal(false);
+
               createbookings(data.razorpay_order_id);
+
               setIsPaymentLoading(false);
               // Show success alert
-              Alert.alert('Payment Successful', 'Your booking has been confirmed successfully!', [
-                { text: 'OK', onPress: () => router.push('/protected/(tabs)/Bookings') }
-              ]);
+              // Alert.alert('Payment Successful', 'Your booking has been confirmed successfully!', [
+              //   { text: 'OK', onPress: () => router.push('/protected/(tabs)/Bookings') }
+              // ]);
             }
             else {
               // Close all modals before showing error alert
@@ -638,9 +646,9 @@ export default function Cart() {
       setShowCancellationPolicy(false);
       setShowServiceFeeTooltip(false);
       setShowDeleteModal(false);
-      createbookings();
+      await createbookings(selectedPaymentMethod);
       setIsPaymentLoading(false);
-      Alert.alert('Booking Confirmed', 'Your booking has been confirmed successfully! You can pay cash on delivery.', [
+      Alert.alert('Booking Confirmed', 'Your booking has been confirmed successfully! You can pay after service completion', [
         { text: 'OK', onPress: () => router.push('/protected/(tabs)/Bookings') }
       ]);
     }
