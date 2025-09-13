@@ -1,4 +1,4 @@
-import api from "../api/api";
+import api from "./api";
 
 export const addToCart = async (new_item) => {
   

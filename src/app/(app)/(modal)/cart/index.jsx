@@ -494,7 +494,7 @@ export default function Cart() {
       razorpay_oid: razorpay_oid,
     };
 
-    const { data, error } = confirmbookings(bookingdata);
+    const { data, error } = await confirmbookings(bookingdata);
 
 
 
@@ -514,7 +514,7 @@ export default function Cart() {
       );
     } else {
       // Only show success alert for online payment
-      if (paymentMethod === 'Online Payment') {
+      if (selectedPaymentMethod === 'Online Payment') {
         Alert.alert(
           'Payment Successful! Your booking has been confirmed!', // title
           '', // message can be empty if not needed
@@ -570,7 +570,9 @@ export default function Cart() {
           amount: order.amount, // in paisa
           order_id: order.id, // from backend
           name: "OnlyClick",
-          prefill: {},
+          prefill: {
+            contact: mobileNumber
+          },
           theme: { color: "#3399cc" },
         };
 
@@ -578,7 +580,7 @@ export default function Cart() {
           .then(async (data) => {
             // Payment Success
             // alert(`Success: ${data.razorpay_payment_id}`);
-            // TODO: verify payment on backend
+
 
             const { data: confirmPaymentData, error: confirmPaymentError } = await confirmRazorpayPayment(data);
             if (confirmPaymentError) {
@@ -592,7 +594,7 @@ export default function Cart() {
               setShowServiceFeeTooltip(false);
               setShowDeleteModal(false);
 
-              createbookings(data.razorpay_order_id);
+              await createbookings(data.razorpay_order_id);
 
               setIsPaymentLoading(false);
               // Show success alert
