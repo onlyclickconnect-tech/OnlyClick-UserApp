@@ -24,10 +24,7 @@ export default function ProfileSetup() {
 
   useEffect(() => {
     const checkNewUser = async () => {
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
+      
 
       if (authError) {
         return;
