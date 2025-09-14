@@ -62,16 +62,12 @@ export default {
     extra: {
       router: {},
       eas: {
-        projectId: "c55f6dd2-aa2e-4a30-ae8b-ed13caa118fe",
+        projectId: "49154165-ce38-4c75-a522-54d98a82bb22",
       },
-      expoPublicSupabaseUrl:
-        process.env.EXPO_PUBLIC_SUPABASE_URL,
-      expoPublicSupabaseAnonKey:
-        process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
-      expoPublicRazorPayKeyId:
-        process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID,
-      expoPublicApiUrl:
-        process.env.EXPO_PUBLIC_API_URL,
+      expoPublicSupabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
+      expoPublicSupabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+      expoPublicRazorPayKeyId: process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID,
+      expoPublicApiUrl: process.env.EXPO_PUBLIC_API_URL,
     },
   },
 };
