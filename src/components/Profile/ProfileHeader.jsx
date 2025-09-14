@@ -508,7 +508,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   email: {
-    color: "#666",
     fontSize: 14,
     color: '#0b437cff',
   },
