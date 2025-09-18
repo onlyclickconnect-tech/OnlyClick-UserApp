@@ -3,7 +3,6 @@ import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Animated,
   Dimensions,
   Modal,
@@ -79,10 +78,28 @@ export default function Cart() {
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
   const [updatingItemId, setUpdatingItemId] = useState(null);
 
+  // Minimal Custom Alert State
+  const [customAlert, setCustomAlert] = useState({
+    visible: false,
+    type: 'default', // 'success', 'error', 'default'
+    title: '',
+    message: '',
+    buttons: []
+  });
+
   const [mobileNumber, setMobileNumber] = useState("");
   const [location, setLocation] = useState({});
 
   const [paymentmethod, setPaymentmethod] = useState();
+
+  // Minimal Alert Helper Functions
+  const showCustomAlert = (title, message, buttons = [], type = 'default') => {
+    setCustomAlert({ visible: true, type, title, message, buttons });
+  };
+
+  const hideCustomAlert = () => {
+    setCustomAlert({ visible: false, type: 'default', title: '', message: '', buttons: [] });
+  };
 
 
   // Gesture handling for modals
@@ -284,7 +301,7 @@ export default function Cart() {
     setSetservice_charge(serviceCharge);
     setCartData(arr);
     setRawcart(rawCartData);
-    setLocation({ additionalInfo: "", city: "", district: "", houseNumber: address, pincode: "" });
+    // setLocation({ additionalInfo: "", city: "", district: "", houseNumber: address, pincode: "" });
     // Only set mobile number from server if no mobile number is set in AppStates
     if (!selectedMobileNumber && phno) {
       setMobileNumber(phno);
@@ -496,7 +513,7 @@ export default function Cart() {
 
 
     if (error) {
-      Alert.alert(
+      showCustomAlert(
         'Sorry! Unable to book',
         'There was an error processing your booking. Please try again later.',
         [
@@ -507,12 +524,13 @@ export default function Cart() {
               router.push('/protected/(tabs)/Bookings');
             }
           }
-        ]
+        ],
+        'error'
       );
     } else {
-      Alert.alert(
-        'Your booking has been confirmed!', // title
-        '', // message can be empty if not needed
+      showCustomAlert(
+        'Your booking has been confirmed!',
+        '',
         [
           {
             text: 'OK',
@@ -521,7 +539,8 @@ export default function Cart() {
               router.push('/protected/(tabs)/Bookings');
             }
           }
-        ]
+        ],
+        'success'
       );
     }
     setIsPaymentLoading(false);
@@ -564,7 +583,9 @@ export default function Cart() {
           amount: order.amount, // in paisa
           order_id: order.id, // from backend
           name: "OnlyClick",
-          prefill: {},
+          prefill: {
+            contact: mobileNumber,
+          },
           theme: { color: "#3399cc" },
         };
 
@@ -588,9 +609,9 @@ export default function Cart() {
               createbookings(data.razorpay_order_id);
               setIsPaymentLoading(false);
               // Show success alert
-              Alert.alert('Payment Successful', 'Your booking has been confirmed successfully!', [
+              showCustomAlert('Payment Successful', 'Your booking has been confirmed successfully!', [
                 { text: 'OK', onPress: () => router.push('/protected/(tabs)/Bookings') }
-              ]);
+              ], 'success');
             }
             else {
               // Close all modals before showing error alert
@@ -600,9 +621,9 @@ export default function Cart() {
               setShowServiceFeeTooltip(false);
               setShowDeleteModal(false);
               setIsPaymentLoading(false);
-              Alert.alert('Payment Failed', 'Sorry! Something went wrong. If the amount was debited from your account, please contact us for assistance.', [
-                { text: 'OK', onPress: () => router.push('/protected/(tabs)/Bookings') }
-              ]);
+              showCustomAlert('Payment Failed', 'Sorry! Something went wrong. If the amount was debited from your account, please contact us for assistance.', [
+                { text: 'OK' }
+              ], 'error');
             }
           })
           .catch((error) => {
@@ -614,9 +635,9 @@ export default function Cart() {
             setShowServiceFeeTooltip(false);
             setShowDeleteModal(false);
             setIsPaymentLoading(false);
-            Alert.alert('Payment Failed', 'Sorry! Something went wrong. If the amount was debited from your account, please contact us for assistance.', [
-              { text: 'OK', onPress: () => router.push('/protected/(tabs)/Bookings') }
-            ]);
+            showCustomAlert('Payment Failed', 'Sorry! Something went wrong. If the amount was debited from your account, please contact us for assistance.', [
+              { text: 'OK' }
+            ], 'error');
           });
 
 
@@ -633,14 +654,14 @@ export default function Cart() {
       setShowDeleteModal(false);
       createbookings();
       setIsPaymentLoading(false);
-      Alert.alert('Booking Confirmed', 'Your booking has been confirmed successfully! You can pay cash on delivery.', [
+      showCustomAlert('Booking Confirmed', 'Your booking has been confirmed successfully! You can pay cash on service.', [
         { text: 'OK', onPress: () => router.push('/protected/(tabs)/Bookings') }
-      ]);
+      ], 'success');
     }
   };
 
   const handleClearCart = () => {
-    Alert.alert(
+    showCustomAlert(
       'Clear Cart',
       'Are you sure you want to remove all items from cart?',
       [
@@ -1357,6 +1378,83 @@ export default function Cart() {
     </Modal>
   );
 
+  // Minimal Custom Alert Component
+  const CustomAlert = () => {
+    const getAlertStyle = () => {
+      switch (customAlert.type) {
+        case 'success':
+          return {
+            borderColor: '#4CAF50',
+            iconName: 'checkmark-circle',
+            iconColor: '#4CAF50'
+          };
+        case 'error':
+          return {
+            borderColor: '#F44336',
+            iconName: 'close-circle',
+            iconColor: '#F44336'
+          };
+        default:
+          return {
+            borderColor: '#E0E0E0',
+            iconName: null,
+            iconColor: null
+          };
+      }
+    };
+
+    const alertStyle = getAlertStyle();
+
+    return (
+      <Modal visible={customAlert.visible} transparent animationType="fade">
+        <View style={styles.customAlertOverlay}>
+          <View style={[
+            styles.customAlertContainer,
+            alertStyle.borderColor && { borderTopColor: alertStyle.borderColor }
+          ]}>
+            {alertStyle.iconName && (
+              <View style={styles.customAlertIconContainer}>
+                <Ionicons 
+                  name={alertStyle.iconName} 
+                  size={28} 
+                  color={alertStyle.iconColor} 
+                />
+              </View>
+            )}
+            <Text style={styles.customAlertTitle}>{customAlert.title}</Text>
+            {customAlert.message && (
+              <Text style={styles.customAlertMessage}>{customAlert.message}</Text>
+            )}
+            <View style={styles.customAlertButtons}>
+              {customAlert.buttons.map((button, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={[
+                    styles.customAlertButton,
+                    button.style === 'destructive' && styles.customAlertButtonDestructive,
+                    button.style === 'cancel' && styles.customAlertButtonCancel
+                  ]}
+                  onPress={() => {
+                    hideCustomAlert();
+                    button.onPress && button.onPress();
+                  }}
+                >
+                  <Text style={[
+                    styles.customAlertButtonText,
+                    button.style === 'destructive' && styles.customAlertButtonTextDestructive,
+                    button.style === 'cancel' && styles.customAlertButtonTextCancel
+                  ]}>
+                    {button.text}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar hidden={true} />
@@ -1520,6 +1618,7 @@ export default function Cart() {
       <DateTimeModal />
       <PaymentModal />
       <DeleteConfirmationModal />
+      <CustomAlert />
     </View>
   );
 }
@@ -3364,5 +3463,70 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     textAlign: 'center',
+  },
+  
+  // Minimal Custom Alert Styles
+  customAlertOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 30,
+  },
+  customAlertContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    borderTopWidth: 4,
+    borderTopColor: '#E0E0E0',
+    padding: 24,
+    width: '100%',
+    maxWidth: 300,
+  },
+  customAlertIconContainer: {
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  customAlertTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  customAlertMessage: {
+    fontSize: 15,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 22,
+  },
+  customAlertButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  customAlertButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: '#3898B3',
+    alignItems: 'center',
+  },
+  customAlertButtonCancel: {
+    backgroundColor: '#f5f5f5',
+  },
+  customAlertButtonDestructive: {
+    backgroundColor: '#ff4444',
+  },
+  customAlertButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#fff',
+  },
+  customAlertButtonTextCancel: {
+    color: '#666',
+  },
+  customAlertButtonTextDestructive: {
+    color: '#fff',
   },
 });
