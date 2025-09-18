@@ -70,6 +70,11 @@ export const AppStatesProvider = ({ children }) => {
     setIsProfileCompleted(true);
   };
 
+  const markAppOpened = async () => {
+    await AsyncStorage.setItem("appFirstOpenState", "false");
+    setIsAppOpenedFirstTime(false);
+  };
+
   const updateSelectedLocation = async (location) => {
     setSelectedLocation(location);
     await AsyncStorage.setItem("selectedLocation", location);
@@ -93,6 +98,7 @@ export const AppStatesProvider = ({ children }) => {
         isProfileCompleted,
         setIsProfileCompleted,
         markProfileCompleted,
+        markAppOpened,
         selectedLocation,
         setSelectedLocation,
         updateSelectedLocation,
