@@ -3,8 +3,10 @@ import useCurrentUserDetails from "../../hooks/useCurrentUserDetails";
 import useDimension from "../../hooks/useDimensions";
 import Carousel from "../common/Carousel";
 import Text from "../ui/Text";
+import { useAuth } from "../../context/AuthProvider";
 
 export default function Info() {
+  const {user} = useAuth();
   const { screenHeight, screenWidth } = useDimension();
   
   // Sample carousel data - you can replace with your actual data
@@ -57,7 +59,7 @@ export default function Info() {
     
   return (
     <View style={styles.container}>
-      <Text style={{ fontSize: 20, fontWeight: '500' }}>Hello, User</Text>
+      <Text style={{ fontSize: 20, fontWeight: '500' }}>Hello, {user.name}</Text>
       
       <View style={styles.carouselContainer}>
         <Carousel 

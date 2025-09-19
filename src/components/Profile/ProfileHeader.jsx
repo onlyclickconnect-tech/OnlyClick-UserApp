@@ -363,8 +363,10 @@ const ProfileHeader = ({
 
         <View style={styles.userInfo}>
           <Text style={styles.username}>{userName}</Text>
-          <Text style={styles.userid}>ID: {userId || "N/A"}</Text>
-          <Text style={styles.email}>{email || "No email provided"}</Text>
+          {/* <Text style={styles.userid}>ID: {userId || "N/A"}</Text> */}
+          <Text style={styles.email} numberOfLines={1} ellipsizeMode="tail">
+            {email || "No email provided"}
+          </Text>
         </View>
       </View>
 
@@ -417,6 +419,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     width: '100%',
     maxWidth: 400,
+    paddingRight: 10,
   },
   profileIconContainer: {
     width: 131,
@@ -462,6 +465,8 @@ const styles = StyleSheet.create({
   userInfo: {
     flex: 1,
     justifyContent: 'center',
+    paddingRight: 10,
+    minWidth: 0, // This is crucial for text truncation
   },
   username: {
     fontSize: 20,
@@ -475,9 +480,8 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   email: {
-    color: "#666",
-    fontSize: 14,
     color: '#0b437cff',
+    fontSize: 14,
   },
   toggleContainer: {
     flexDirection: "row",
