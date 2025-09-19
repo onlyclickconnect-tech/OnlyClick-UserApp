@@ -37,9 +37,9 @@ export default function ProfileSetup() {
       }
 
 
-      // 2️⃣ Query the profile in oneclick.users
+      // 2️⃣ Query the profile in onlyclick.users
       const { data, error } = await supabase
-      .schema('oneclick')
+      .schema('onlyclick')
         .from("users")
         .select("full_name")
         .eq("user_id", user.id)

@@ -50,7 +50,7 @@ export const categoryImages = {
 // Merge metadata with categories fetched from DB
 export const allCategories = async () => {
   const { data, error } = await supabase
-    .schema("oneclick")
+    .schema("onlyclick")
     .from("services")
     .select("category");
 
@@ -69,7 +69,7 @@ export const allCategories = async () => {
 
 export const allServices = async () => {
   const { data, error } = await supabase
-    .schema("oneclick")
+    .schema("onlyclick")
     .from("services")
     .select("*");
 
@@ -94,7 +94,7 @@ export const getServicesByCategory = async (categoryId) => {
 // get service by ID
 export const getServiceById = async (serviceId) => {
   const { data, error } = await supabase
-    .schema("oneclick")
+    .schema("onlyclick")
     .from("services")
     .select("*")
     .eq("service_id", serviceId)
@@ -109,7 +109,7 @@ export const getServiceById = async (serviceId) => {
 // search services
 export const searchServices = async (query) => {
   const { data, error } = await supabase
-    .schema("oneclick")
+    .schema("onlyclick")
     .from("services")
     .select("*")
     .or(
@@ -124,7 +124,7 @@ export const searchServices = async (query) => {
 
 export const getpopularServices = async () => {
   const { data, error } = await supabase
-    .schema("oneclick")
+    .schema("onlyclick")
     .from("services")
     .select("*")
     .order("count", { ascending: false }) // sort by count in descending order

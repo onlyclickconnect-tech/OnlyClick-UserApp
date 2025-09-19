@@ -3,11 +3,13 @@ import supabase from "../supabaseClient.js";
 export const getFullName = async (userId) => {
   try {
     const { data, error } = await supabase
-      .schema("oneclick")
+      .schema("onlyclick")
       .from("users")
       .select("full_name")
       .eq("user_id", userId)
       .single();
+
+      // console.log(data);
 
     if (error) {
       return "";
@@ -21,7 +23,7 @@ export const getFullName = async (userId) => {
 export const getProfileImage = async (userId) => {
   try {
     const { data, error } = await supabase
-      .schema("oneclick")
+      .schema("onlyclick")
       .from("users")
       .select("avatar_url")
       .eq("user_id", userId)
@@ -39,7 +41,7 @@ export const getProfileImage = async (userId) => {
 export const getEmail = async (userId) => {
   try {
     const { data, error } = await supabase
-      .schema("oneclick")
+      .schema("onlyclick")
       .from("users")
       .select("email")
       .eq("user_id", userId)
@@ -57,7 +59,7 @@ export const getEmail = async (userId) => {
 export const getPhone = async (userId) => {
   try {
     const { data, error } = await supabase
-      .schema("oneclick")
+      .schema("onlyclick")
       .from("users")
       .select("ph_no")
       .eq("user_id", userId)
@@ -75,7 +77,7 @@ export const getPhone = async (userId) => {
 export const getAddress = async (userId) => {
   try {
     const { data, error } = await supabase
-      .schema("oneclick")
+      .schema("onlyclick")
       .from("users")
       .select("address")
       .eq("user_id", userId)

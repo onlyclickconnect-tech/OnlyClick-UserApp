@@ -2,7 +2,7 @@ import supabase from "../supabaseClient";
 
 export default async function gettestimonials() {
     const { data, error } = await supabase
-        .schema("oneclick")
+        .schema("onlyclick")
         .from("testimonials")
         .select("*") // <-- required
         .eq("allowed", true);

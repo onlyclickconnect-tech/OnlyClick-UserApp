@@ -36,7 +36,7 @@ export default function AuthProvider({ children }) {
       if (session?.user && !error) {
         console.log('Valid Supabase session found');
         await processUserSession(session);
-        
+
         // Only mark app as opened for existing sessions, not deep link auth
         // This will be handled by the routing logic instead
       } else {
@@ -91,9 +91,9 @@ export default function AuthProvider({ children }) {
       setIsLoggedIn(true);
 
       console.log('User session processed successfully - isLoggedIn state updated to true');
-      console.log('User data:', { 
-        hasName: !!userData.name, 
-        hasPhone: !!userData.phone, 
+      console.log('User data:', {
+        hasName: !!userData.name,
+        hasPhone: !!userData.phone,
         userId: userData._id
       });
     } catch (error) {
@@ -119,7 +119,7 @@ export default function AuthProvider({ children }) {
         // Extract tokens from URL
         const accessTokenMatch = url.match(/access_token=([^&]+)/);
         const refreshTokenMatch = url.match(/refresh_token=([^&]+)/);
-        
+
         if (accessTokenMatch && refreshTokenMatch) {
           const accessToken = accessTokenMatch[1];
           const refreshToken = refreshTokenMatch[1];
@@ -193,7 +193,7 @@ export default function AuthProvider({ children }) {
   // Function to refresh user details
   const refreshUserDetails = async () => {
     const { data: { session } } = await supabase.auth.getSession();
-    
+
     if (session?.user) {
       await processUserSession(session);
     }
