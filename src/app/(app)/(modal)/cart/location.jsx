@@ -2,15 +2,16 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
-    Alert,
-    Dimensions,
-    ScrollView,
-    StyleSheet,
-    TextInput,
-    TouchableOpacity,
-    View
+  Alert,
+  Dimensions,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
-import Text from "../../../../components/ui/Text.jsx"
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Text from "../../../../components/ui/Text.jsx";
 import { useAppStates } from '../../../../context/AppStates';
 
 const { width: screenWidth } = Dimensions.get("window");
@@ -103,8 +104,9 @@ export default function LocationScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
+      <View style={styles.container}>
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
 
         {/* Detailed Address Form */}
         <View style={styles.detailedForm}>
@@ -228,7 +230,8 @@ export default function LocationScreen() {
           ]}>Confirm Location</Text>
         </TouchableOpacity>
       </View>
-    </View>
+      </View>
+    </SafeAreaView>
   );
 }
 

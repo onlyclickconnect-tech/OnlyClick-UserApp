@@ -14,6 +14,7 @@ import {
   View
 } from 'react-native';
 import RazorpayCheckout from 'react-native-razorpay';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import Toast from 'react-native-toast-message';
 
@@ -1456,18 +1457,19 @@ export default function Cart() {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar hidden={true} />
+    <SafeAreaView style={styles.container} edges={['bottom']}>
+      <View style={styles.container}>
+        <StatusBar hidden={true} />
 
-      <AppHeader
-        title="My Cart"
-        showBack
-        onBack={() => router.back()}
-      />
+        <AppHeader
+          title="My Cart"
+          showBack
+          onBack={() => router.back()}
+        />
 
-      <ScrollView
-        style={styles.scrollContainer}
-        contentContainerStyle={styles.scrollContent}
+        <ScrollView
+          style={styles.scrollContainer}
+          contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         bounces={true}
       >
@@ -1619,7 +1621,8 @@ export default function Cart() {
       <PaymentModal />
       <DeleteConfirmationModal />
       <CustomAlert />
-    </View>
+      </View>
+    </SafeAreaView>
   );
 }
 

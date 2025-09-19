@@ -4,6 +4,7 @@ import { Stack } from "expo-router";
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { View } from "react-native";
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import Text from "../components/ui/Text";
 import { AppStatesProvider } from "../context/AppStates";
@@ -51,15 +52,16 @@ export default function RootLayout() {
   // const CustomTextInput = (props) => <TextInput style={[{ fontFamily: 'Poppins_400Regular' }, props.style]} {...props} />;
 
   return (
-    <AppStatesProvider>
-      <AuthProvider>
-        <ModalProvider>
-          <View style={{ flex: 1 }}>
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="index" options={{ headerShown: false }} />
-              <Stack.Screen name="intro" options={{ headerShown: false }} />
-              <Stack.Screen name="(app)" options={{ headerShown: false }} />
-            </Stack>
+    <SafeAreaProvider>
+      <AppStatesProvider>
+        <AuthProvider>
+          <ModalProvider>
+            <View style={{ flex: 1 }}>
+              <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="index" options={{ headerShown: false }} />
+                <Stack.Screen name="intro" options={{ headerShown: false }} />
+                <Stack.Screen name="(app)" options={{ headerShown: false }} />
+              </Stack>
             <Toast
               position="bottom"
               bottomOffset={20}
@@ -174,5 +176,6 @@ export default function RootLayout() {
         </ModalProvider>
       </AuthProvider>
     </AppStatesProvider>
+    </SafeAreaProvider>
   );
 }
