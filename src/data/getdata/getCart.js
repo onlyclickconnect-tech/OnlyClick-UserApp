@@ -2,11 +2,12 @@ import supabase from "../supabaseClient";
 
 export default async function fetchCart() {
     const { data, error } = await supabase
-        .schema("oneclick")
+        .schema("onlyclick")
         .from("users")
         .select("address,ph_no,cart")
     const phno = data[0].ph_no;
     const address = data[0].address;
+
 
     function calculateCharges(data) {
         let totalServiceCharge = 0;

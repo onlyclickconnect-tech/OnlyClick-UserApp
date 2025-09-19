@@ -2,7 +2,7 @@ import supabase from "../supabaseClient";
 
 export default async function getbookings() {
   const { data, error } = await supabase
-    .schema("oneclick")
+    .schema("onlyclick")
     .from("bookings")
     .select("*");
 
