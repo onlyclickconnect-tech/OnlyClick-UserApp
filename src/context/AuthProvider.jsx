@@ -29,28 +29,28 @@ export default function AuthProvider({ children }) {
   const initializeAuth = async () => {
     try {
       setIsLoading(true);
-      console.log('Initializing authentication...');
+     
 
       // Check for existing Supabase session
       const { data: { session }, error } = await supabase.auth.getSession();
-      console.log('Supabase session check:', session ? 'Session found' : 'No session');
+     
 
       if (session?.user && !error) {
-        console.log('Valid Supabase session found');
+       
         await processUserSession(session);
 
         // Only mark app as opened for existing sessions, not deep link auth
         // This will be handled by the routing logic instead
       } else {
-        console.log('No authenticated session found');
+       
         setIsLoggedIn(false);
       }
     } catch (error) {
-      console.error('Auth initialization error:', error);
+     
       await clearAuthState();
     } finally {
       setIsLoading(false);
-      console.log('Auth initialization complete');
+    
     }
   };
 
@@ -92,14 +92,9 @@ export default function AuthProvider({ children }) {
       setAuthToken(session.access_token || "");
       setIsLoggedIn(true);
 
-      console.log('User session processed successfully - isLoggedIn state updated to true');
-      console.log('User data:', {
-        hasName: !!userData.name,
-        hasPhone: !!userData.phone,
-        userId: userData._id
-      });
+   
     } catch (error) {
-      console.error('Error processing user session:', error);
+     
       throw error;
     }
   };
@@ -109,14 +104,14 @@ export default function AuthProvider({ children }) {
     try {
       if (!url) return;
 
-      console.log('Handling deep link:', url);
+    
 
       // Check if this is an auth deep link
       if (url.startsWith("onlyclick://") && (url.includes('access_token') || url.includes('refresh_token'))) {
         // Set loading to true and mark deep link processing to prevent premature routing
         setIsLoading(true);
         setIsProcessingDeepLink(true);
-        console.log('Processing onlyclick deep link:', url);
+      
 
         // Extract tokens from URL
         const accessTokenMatch = url.match(/access_token=([^&]+)/);
@@ -126,7 +121,7 @@ export default function AuthProvider({ children }) {
           const accessToken = accessTokenMatch[1];
           const refreshToken = refreshTokenMatch[1];
 
-          console.log("Extracted tokens, calling backend callback...");
+         
 
           // Call backend callback first to get isNewUser
           try {
@@ -138,9 +133,9 @@ export default function AuthProvider({ children }) {
 
             const backendIsNewUser = callbackResponse.data.data.isNewUser;
             setIsNewUser(backendIsNewUser);
-            console.log("Backend callback successful, isNewUser:", backendIsNewUser);
+       
           } catch (callbackError) {
-            console.error("Backend callback error:", callbackError);
+           
             setIsNewUser(false); // Default to existing user if backend fails
           }
 
@@ -151,31 +146,31 @@ export default function AuthProvider({ children }) {
           });
 
           if (error) {
-            console.error('Auth error:', error);
+           
             setError(error.message);
             setIsLoading(false);
             return;
           }
 
           if (data.session) {
-            console.log('Session set successfully via deep link');
+           
             await processUserSession(data.session);
-            console.log('Deep link authentication complete, user data processed');
+           
           } else {
-            console.log('No session data received from setSession');
+          
           }
         } else {
-          console.log("No tokens found in URL");
+          
         }
 
-        console.log('Deep link processing complete, setting loading to false');
+        
         setIsLoading(false);
         setIsProcessingDeepLink(false);
       } else {
-        console.log('URL does not contain authentication tokens');
+       
       }
     } catch (error) {
-      console.error('Deep link handling error:', error);
+     
       setError(error.message);
       setIsLoading(false);
       setIsProcessingDeepLink(false);
@@ -218,21 +213,21 @@ export default function AuthProvider({ children }) {
     // Set up deep link handler for when app is already open
     const subscription = Linking.addEventListener('url', (event) => {
       const url = event.url;
-      console.log('Deep link received while app is open:', url);
+    
 
       // Force immediate processing of the deep link
       if (url) {
         // Use setTimeout to ensure this runs after the current execution context
-        setTimeout(() => {
+        // setTimeout(() => {
           handleDeepLink(url);
-        }, 0);
+        // }, 0);
       }
     });
 
     // Check for initial URL (app opened via deep link)
     Linking.getInitialURL().then(url => {
       if (url) {
-        console.log('App opened via deep link:', url);
+       
         handleDeepLink(url);
       }
     });

@@ -21,7 +21,7 @@ import Toast from 'react-native-toast-message';
 import Constants from 'expo-constants';
 import Text from "../../../../components/ui/Text.jsx";
 import { useAppStates } from '../../../../context/AppStates';
-
+import { useAuth } from '../../../../context/AuthProvider.jsx';
 
 
 import AppHeader from '../../../../components/common/AppHeader';
@@ -33,7 +33,7 @@ import { confirmRazorpayPayment, createRazorpayOrder } from '../../../api/razoro
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 export default function Cart() {
   const router = useRouter();
-
+  const {userData} = useAuth()
 
   const { selectedLocation, updateSelectedLocation, selectedMobileNumber, updateSelectedMobileNumber, selectedLocationObject, updateSelectedLocationObject } = useAppStates();
 
@@ -304,9 +304,11 @@ export default function Cart() {
     setRawcart(rawCartData);
     // setLocation({ additionalInfo: "", city: "", district: "", houseNumber: address, pincode: "" });
     // Only set mobile number from server if no mobile number is set in AppStates
-    if (!selectedMobileNumber && phno) {
-      setMobileNumber(phno);
+    if (!selectedMobileNumber) {
+     
+      setMobileNumber(userData.phone);
     }
+    
   };
 
   useEffect(() => {
