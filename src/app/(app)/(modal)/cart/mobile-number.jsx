@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import ConfirmModal from '../../../../components/common/ConfirmModal';
 import Text from '../../../../components/ui/Text.jsx';
 import { useAppStates } from '../../../../context/AppStates';
@@ -53,8 +54,9 @@ export default function MobileNumberScreen() {
   };
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ConfirmModal visible={modal.visible} title={modal.title} message={modal.message} onRequestClose={() => setModal({ ...modal, visible: false })} />
+    <SafeAreaView style={styles.container} edges={['bottom']}>
+      <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ConfirmModal visible={modal.visible} title={modal.title} message={modal.message} onRequestClose={() => setModal({ ...modal, visible: false })} />
 
       <View style={styles.content}>
         <View style={styles.infoCard}>
@@ -97,7 +99,8 @@ export default function MobileNumberScreen() {
           <Text style={styles.saveButtonText}>Save Number</Text>
         </TouchableOpacity>
       </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
@@ -186,7 +189,7 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: 'row',
     padding: 20,
-    marginBottom: Platform.OS === 'ios' ? 40 : 24,
+    marginBottom: Platform.OS === 'ios' ? 40 : 4,
     borderTopWidth: 1,
     borderTopColor: '#f0f0f0',
     gap: 15,

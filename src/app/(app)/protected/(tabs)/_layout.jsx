@@ -2,9 +2,24 @@ import AntDesign from "@expo/vector-icons/AntDesign";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Tabs, useRouter } from "expo-router";
-import { Platform, View, TouchableOpacity } from "react-native";
+import { Platform, TouchableOpacity, View } from "react-native";
+import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+
 export default function RootLayout() {
   const router = useRouter();
+
+  return (
+    <SafeAreaProvider>
+      <SafeAreaView style={{ flex: 1 }} edges={[]}>
+        <TabNavigator router={router} />
+      </SafeAreaView>
+    </SafeAreaProvider>
+  );
+}
+
+function TabNavigator({ router }) {
+  const insets = useSafeAreaInsets();
+  
   return (
     <Tabs
       initialRouteName="Home"
@@ -25,8 +40,9 @@ export default function RootLayout() {
           <TouchableOpacity {...props} activeOpacity={0.4} />
         ),
         tabBarStyle: {
-          height: 90,
+          height: 90 + insets.bottom,
           paddingTop: 15,
+          paddingBottom: insets.bottom + 5,
           borderTopLeftRadius: 30,
           borderTopRightRadius: 30,
           borderTopWidth: 0,
@@ -37,6 +53,9 @@ export default function RootLayout() {
           shadowRadius: 10,
           backgroundColor: Platform.OS === 'ios' ? "rgba(255, 255, 255, 0.98)" : "rgba(255, 255, 255, 0.99)",
           position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
           borderTopColor: "transparent",
         },
       }}

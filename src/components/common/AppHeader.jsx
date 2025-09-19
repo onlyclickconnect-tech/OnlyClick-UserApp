@@ -91,7 +91,7 @@ function lighten(hex, amount = 0.7) {
 const styles = StyleSheet.create({
   header: {
     paddingTop: 0,
-    paddingBottom: 12,
+    paddingBottom: 8,
     borderBottomLeftRadius: 14,
     borderBottomRightRadius: 14,
     elevation: 6,
@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   headerTop: {
-    paddingTop: 20,
+    paddingTop: 14,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
