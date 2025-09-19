@@ -489,9 +489,9 @@ export default function Cart() {
       location:
         location.houseNumber +
         " " +
-        location.city +
-        " " +
         location.district +
+        " " +
+        location.city +
         " " +
         location.pincode +
         " " +

@@ -1,8 +1,8 @@
 import { StyleSheet, View } from "react-native";
-import Text from "../ui/Text"
 import useCurrentUserDetails from "../../hooks/useCurrentUserDetails";
 import useDimension from "../../hooks/useDimensions";
 import Carousel from "../common/Carousel";
+import Text from "../ui/Text";
 
 export default function Info() {
   const { screenHeight, screenWidth } = useDimension();
@@ -12,17 +12,17 @@ export default function Info() {
     {
       id: 1,
       subtitle: "First carousel item description",
-      image: require('../../../assets/images/carousal1.jpg'), // Replace with your actual image
+      image: require('../../../assets/images/carousal1.png'), // Replace with your actual image
     },
     {
       id: 2, 
       subtitle: "Second carousel item description",
-      image: require('../../../assets/images/carousal2.jpg'), // Replace with your actual image
+      image: require('../../../assets/images/carousal2.png'), // Replace with your actual image
     },
     {
       id: 3,
       subtitle: "Third carousel item description", 
-      image: require('../../../assets/images/carousal3.jpg'), // Replace with your actual image
+      image: require('../../../assets/images/carousal3.png'), // Replace with your actual image
     },
   ];
   const styles = StyleSheet.create({
@@ -35,13 +35,21 @@ export default function Info() {
     carouselContainer: {
       marginTop: 15,
       overflow: 'hidden',
-      height: screenHeight * 0.33,
+      height: screenHeight * 0.22,
       width: '100%',
       alignSelf: 'center',
-      borderTopLeftRadius: 0,
-      borderTopRightRadius: 0,
-      borderBottomLeftRadius: 16,
-      borderBottomRightRadius: 16,
+      borderRadius: 20,
+      borderWidth: 4,
+      borderColor: '#ffffffff',
+      elevation: 8,
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 4,
+      },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      backgroundColor: '#fff',
     },
   });
   const { name, service, userId, profileImage, reviews, ratings } =

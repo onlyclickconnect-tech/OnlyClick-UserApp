@@ -57,7 +57,12 @@ export default function Carousel({ data, autoPlay = true, interval = 3000, showI
           style={[
             styles.indicator,
             {
-              backgroundColor: currentIndex === index ? '#0097b3' : '#ccc',
+              backgroundColor: currentIndex === index ? '#0097b3' : 'rgba(5, 1, 1, 0.6)',
+              width: currentIndex === index ? 24 : 8,
+              height: 8,
+              borderRadius: 4,
+              marginHorizontal: 4,
+              top: 40
             },
           ]}
         />
@@ -92,14 +97,15 @@ export default function Carousel({ data, autoPlay = true, interval = 3000, showI
 const styles = StyleSheet.create({
   container: {
     width: screenWidth,
-    paddingHorizontal: 15, // Use padding for full visibility
+    paddingHorizontal: 0,
   },
   scrollView: {
-  width: screenWidth,
+    width: screenWidth,
   },
   slide: {
     position: 'relative',
     borderRadius: 20,
+    paddingHorizontal: 4,
   },
   imageWrapper: {
     flex: 1,
@@ -108,31 +114,55 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     width: '100%',
     height: '100%',
-    borderRadius: 20, // More rounded corners
-    elevation: 5, // Add shadow for better visibility
+    borderRadius: 20,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
   },
   carouselImage: {
-  width: '100%',
-  height: '100%',
+    width: '100%',
+    height: '100%',
+    borderRadius: 20,
   },
   overlay: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.35)',
-    padding: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    padding: 16,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
   },
   carouselTitle: {
     color: 'white',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '700',
     marginBottom: 4,
   },
   carouselSubtitle: {
     color: 'white',
-    fontSize: 13,
+    fontSize: 14,
+    fontWeight: '400',
+  },
+  indicatorContainerAbsolute: {
+    position: 'absolute',
+    bottom: 20,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  indicator: {
+    backgroundColor: '#ccc',
+    marginHorizontal: 2,
+    borderRadius: 4,
+    transition: 'all 0.3s ease',
   },
 });
