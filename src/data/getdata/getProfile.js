@@ -9,7 +9,7 @@ export const getFullName = async (userId) => {
       .eq("user_id", userId)
       .single();
 
-      // console.log(data);
+  
 
     if (error) {
       return "";
