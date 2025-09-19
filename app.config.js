@@ -62,7 +62,7 @@ export default {
     extra: {
       router: {},
       eas: {
-        projectId: "ae7a880b-bb8e-4d86-a99c-f0bde28eeede",
+        projectId: "49154165-ce38-4c75-a522-54d98a82bb22",
       },
       expoPublicSupabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
       expoPublicSupabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
