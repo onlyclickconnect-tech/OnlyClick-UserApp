@@ -1,7 +1,8 @@
 import Constants from 'expo-constants';
 import * as Location from 'expo-location';
 import { useState } from 'react';
-import { Alert, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import ConfirmModal from "../common/ConfirmModal";
 import Text from "../ui/Text";
 const SuccessWelcome = ({ onComplete }) => {
   const [locationGranted, setLocationGranted] = useState(false);
@@ -10,6 +11,7 @@ const SuccessWelcome = ({ onComplete }) => {
   
   // Check if we're in Expo Go
   const isExpoGo = Constants.appOwnership === 'expo';
+  const [modal, setModal] = useState({ visible: false, title: null, message: null });
 
   const requestLocationPermission = async () => {
     try {
@@ -18,11 +20,7 @@ const SuccessWelcome = ({ onComplete }) => {
         setLocationGranted(true);
         return true;
       } else {
-        Alert.alert(
-          'Location Required',
-          'Location access is required to show you nearby services and providers.',
-          [{ text: 'OK' }]
-        );
+        setModal({ visible: true, title: 'Location Required', message: 'Location access is required to show you nearby services and providers.' });
         return false;
       }
     } catch (error) {
@@ -51,6 +49,7 @@ const SuccessWelcome = ({ onComplete }) => {
       return true; // Non-blocking, so always return true
     } catch (error) {
       setNotificationGranted(false);
+      setModal({ visible: true, title: 'Notification', message: 'Failed to request notification permission.' });
       return true; // Non-blocking, so continue even if error
     }
   };
@@ -70,11 +69,7 @@ const SuccessWelcome = ({ onComplete }) => {
         onComplete();
       }
     } catch (error) {
-      Alert.alert(
-        'Setup Error',
-        'There was an issue setting up permissions. Please try again.',
-        [{ text: 'OK' }]
-      );
+      setModal({ visible: true, title: 'Setup Error', message: 'There was an issue setting up permissions. Please try again.' });
     }
     
     setIsRequestingPermissions(false);
@@ -82,6 +77,7 @@ const SuccessWelcome = ({ onComplete }) => {
 
   return (
     <View style={styles.container}>
+      <ConfirmModal visible={modal.visible} title={modal.title} message={modal.message} onRequestClose={() => setModal({ visible: false })} />
       <Text style={styles.welcomeText}>Great to have you!</Text>
       <Text style={styles.subtitle}>Let's set up a few permissions to enhance your experience</Text>
       

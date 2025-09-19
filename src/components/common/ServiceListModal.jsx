@@ -1,17 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { useEffect, useState } from 'react';
 import {
-  View,
+  ActivityIndicator,
+  Dimensions,
   Modal,
-  TouchableOpacity,
   ScrollView,
   StyleSheet,
-  ActivityIndicator,
-  Alert,
-  Dimensions
+  TouchableOpacity,
+  View
 } from 'react-native';
-import Text from "../ui/Text";
-import { Ionicons } from '@expo/vector-icons';
 import serviceService from '../../services/serviceService';
+import ConfirmModal from '../common/ConfirmModal';
+import Text from "../ui/Text";
 
 const { width, height } = Dimensions.get('window');
 
@@ -19,6 +19,8 @@ const ServiceListModal = ({ visible, onClose, userCategory }) => {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [errorModal, setErrorModal] = useState({ visible: false, title: null, message: null });
+  const [selectionModal, setSelectionModal] = useState({ visible: false, title: null, message: null, buttons: null });
 
   useEffect(() => {
     if (visible && userCategory) {
@@ -36,11 +38,11 @@ const ServiceListModal = ({ visible, onClose, userCategory }) => {
         setServices(response.data.services);
         setSelectedCategory(response.data.category);
       } else {
-        Alert.alert('Error', 'Failed to load services');
+        setErrorModal({ visible: true, title: 'Error', message: 'Failed to load services' });
       }
     } catch (error) {
       // console.error('Error fetching services:', error);
-      Alert.alert('Error', 'Failed to load services');
+      setErrorModal({ visible: true, title: 'Error', message: 'Failed to load services' });
     } finally {
       setLoading(false);
     }
@@ -88,17 +90,15 @@ const ServiceListModal = ({ visible, onClose, userCategory }) => {
         <TouchableOpacity 
           style={styles.selectButton}
           onPress={() => {
-            Alert.alert(
-              'Service Selected', 
-              `You offer "${service.name}" service with base rate ${formatPrice(service.basePrice)}. You can request price adjustments based on job complexity.`,
-              [
-                { text: 'OK', style: 'default' },
-                { text: 'Request Price Change', style: 'default', onPress: () => {
-                  // TODO: Navigate to price change request screen
-                  Alert.alert('Coming Soon', 'Price change request feature will be available soon!');
-                }}
+            setSelectionModal({
+              visible: true,
+              title: 'Service Selected',
+              message: `You offer "${service.name}" service with base rate ${formatPrice(service.basePrice)}. You can request price adjustments based on job complexity.`,
+              buttons: [
+                { text: 'OK' },
+                { text: 'Request Price Change', onPress: () => setErrorModal({ visible: true, title: 'Coming Soon', message: 'Price change request feature will be available soon!' }) }
               ]
-            );
+            });
           }}
         >
           <Text style={styles.selectButtonText}>Manage</Text>
@@ -113,6 +113,8 @@ const ServiceListModal = ({ visible, onClose, userCategory }) => {
       animationType="slide"
       onRequestClose={onClose}
     >
+      <ConfirmModal visible={errorModal.visible} title={errorModal.title} message={errorModal.message} onRequestClose={() => setErrorModal({ visible: false })} />
+      <ConfirmModal visible={selectionModal.visible} title={selectionModal.title} message={selectionModal.message} buttons={selectionModal.buttons} onRequestClose={() => setSelectionModal({ visible: false })} />
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>

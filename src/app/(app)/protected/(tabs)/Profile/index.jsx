@@ -1,13 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router as Router } from 'expo-router';
 import { useEffect, useState } from "react";
-import { Alert, Dimensions, Platform, ScrollView, StatusBar, StyleSheet, TouchableOpacity, View } from "react-native";
-import Text from "../../../../../components/ui/Text"
+import { Dimensions, Platform, ScrollView, StatusBar, StyleSheet, TouchableOpacity, View } from "react-native";
 import AdvancedOptions from "../../../../../components/Profile/AdvancedOptions";
 import BottomLinks from "../../../../../components/Profile/BottomLinks";
 import ProfileForm from "../../../../../components/Profile/ProfileForm";
 import ProfileHeader from "../../../../../components/Profile/ProfileHeader";
 import AppHeader from '../../../../../components/common/AppHeader';
+import ConfirmModal from '../../../../../components/common/ConfirmModal';
+import Text from "../../../../../components/ui/Text";
 import { useAppStates } from "../../../../../context/AppStates";
 import supabase from "../../../../../data/supabaseClient";
 
@@ -39,40 +40,36 @@ const ProfilePage = () => {
     try {
       // Here you would typically save to backend
       await markProfileCompleted();
-      Alert.alert(
-        "Profile Saved!",
-        "Your profile has been updated successfully.",
-        [
-          {
-            text: "Continue",
-          }
-        ]
-      );
+      setSavedModal({ visible: true, title: 'Profile Saved!', message: 'Your profile has been updated successfully.', buttons: [{ text: 'Continue' }] });
     } catch (error) {
-      Alert.alert("Error", "Failed to save profile. Please try again.");
+      setSavedModal({ visible: true, title: 'Error', message: 'Failed to save profile. Please try again.' });
     }
   };
 
   const router = Router;
 
+  const [savedModal, setSavedModal] = useState({ visible: false, title: null, message: null, buttons: null });
+  const [logoutModal, setLogoutModal] = useState({ visible: false, title: null, message: null, buttons: null });
+
   const handleLogout = () => {
-    Alert.alert(
-      'Logout',
-      'Are you sure you want to logout?',
-      [
+    setLogoutModal({
+      visible: true,
+      title: 'Logout',
+      message: 'Are you sure you want to logout?',
+      buttons: [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Logout', style: 'destructive', onPress: async () => {
-          // clear auth state and navigate to sign-in
-          await supabase.auth.signOut()
+          await supabase.auth.signOut();
           router.replace('/auth/sign-in');
-          return
         } }
       ]
-    );
+    });
   };
 
   return (
     <View style={styles.container}>
+      <ConfirmModal visible={savedModal.visible} title={savedModal.title} message={savedModal.message} buttons={savedModal.buttons} onRequestClose={() => setSavedModal({ visible: false })} />
+      <ConfirmModal visible={logoutModal.visible} title={logoutModal.title} message={logoutModal.message} buttons={logoutModal.buttons} onRequestClose={() => setLogoutModal({ visible: false })} />
       <AppHeader
         title="My Profile"
         showBack={true}

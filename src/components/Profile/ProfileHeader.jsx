@@ -1,13 +1,14 @@
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Animated, Easing, Image, Modal, StyleSheet, TouchableOpacity, View } from "react-native";
+import { ActivityIndicator, Animated, Easing, Image, Modal, StyleSheet, TouchableOpacity, View } from "react-native";
 import {
   deleteAvatar,
   uploadAvatar,
 } from "../../app/api/userServices";
 import useCurrentUserDetails from "../../hooks/useCurrentUserDetails";
 import useDimension from "../../hooks/useDimensions";
+import ConfirmModal from "../common/ConfirmModal";
 import SuccessIndicator from "../common/SuccessIndicator";
 import Text from "../ui/Text";
 
@@ -35,6 +36,7 @@ const ProfileHeader = ({
   const [tempImageUri, setTempImageUri] = useState(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [confirmModal, setConfirmModal] = useState({ visible: false, title: null, message: null, buttons: null });
 
   // Upload image to backend
   const uploadImageToBackend = async (imageUri) => {
@@ -51,10 +53,7 @@ const ProfileHeader = ({
 
 
       if (result?.error) {
-        Alert.alert(
-          "Error",
-          "Failed to update profile picture. Please try again."
-        );
+        setConfirmModal({ visible: true, title: "Error", message: "Failed to update profile picture. Please try again.", buttons: [{ text: 'OK' }] });
         setTempImageUri(null);
         return;
       }
@@ -68,10 +67,7 @@ const ProfileHeader = ({
       refreshUserDetails?.();
       onProfileUpdate?.();
     } catch (error) {
-      Alert.alert(
-        "Error",
-        `Upload failed: ${error.message || "Unknown error"}`
-      );
+      setConfirmModal({ visible: true, title: "Error", message: `Upload failed: ${error.message || "Unknown error"}` });
       setTempImageUri(null);
     } finally {
       setIsUpdatingPhoto(false);
@@ -103,10 +99,7 @@ const ProfileHeader = ({
       const permissionResult =
         await ImagePicker.requestCameraPermissionsAsync();
       if (!permissionResult.granted) {
-        Alert.alert(
-          "Permission required",
-          "Camera permission is needed to take photos"
-        );
+        setConfirmModal({ visible: true, title: 'Permission required', message: 'Camera permission is needed to take photos' });
         return;
       }
 
@@ -122,11 +115,7 @@ const ProfileHeader = ({
         confirmImageSelection(imageUri);
       }
     } catch (error) {
-      Alert.alert(
-        "Camera Error",
-        "There was an issue accessing your camera. Please check camera permissions and try again.",
-        [{ text: "OK", style: "default" }]
-      );
+      setConfirmModal({ visible: true, title: 'Camera Error', message: 'There was an issue accessing your camera. Please check camera permissions and try again.' });
     }
   };
 
@@ -138,10 +127,7 @@ const ProfileHeader = ({
       const permissionResult =
         await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permissionResult.granted) {
-        Alert.alert(
-          "Permission required",
-          "Gallery permission is needed to select photos"
-        );
+        setConfirmModal({ visible: true, title: 'Permission required', message: 'Gallery permission is needed to select photos' });
         return;
       }
 
@@ -160,13 +146,9 @@ const ProfileHeader = ({
     } catch (error) {
       // More specific error handling for PhotoPicker issues
       if (error.message && error.message.includes("PhotoPicker")) {
-        Alert.alert(
-          "Gallery Error",
-          "There was an issue accessing your photo library. Please try again or use the camera option.",
-          [{ text: "OK", style: "default" }]
-        );
+        setConfirmModal({ visible: true, title: 'Gallery Error', message: 'There was an issue accessing your photo library. Please try again or use the camera option.' });
       } else {
-        Alert.alert("Error", `Failed to pick image: ${error.message}`);
+        setConfirmModal({ visible: true, title: 'Error', message: `Failed to pick image: ${error.message}` });
       }
     }
   };
@@ -175,44 +157,36 @@ const ProfileHeader = ({
   const removePhoto = () => {
     if (isUpdatingPhoto) return;
 
-    Alert.alert(
-      "Remove Profile Picture",
-      "Are you sure you want to remove your profile picture?",
-      [
+    setConfirmModal({
+      visible: true,
+      title: 'Remove Profile Picture',
+      message: 'Are you sure you want to remove your profile picture?',
+      buttons: [
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Remove",
-          style: "destructive",
+          text: 'Remove',
+          style: 'destructive',
           onPress: async () => {
             setIsUpdatingPhoto(true);
             try {
               const result = await deleteAvatar();
 
               if (result?.error) {
-                Alert.alert(
-                  "Error",
-                  "Failed to remove profile picture. Please try again."
-                );
+                setConfirmModal({ visible: true, title: 'Error', message: 'Failed to remove profile picture. Please try again.' });
                 return;
               }
 
               setSelectedImage(null);
-              Alert.alert("Success", "Profile picture removed successfully!");
+              setConfirmModal({ visible: true, title: 'Success', message: 'Profile picture removed successfully!' });
             } catch (error) {
-              Alert.alert(
-                "Error",
-                "Failed to remove profile picture. Please try again."
-              );
+              setConfirmModal({ visible: true, title: 'Error', message: 'Failed to remove profile picture. Please try again.' });
             } finally {
               setIsUpdatingPhoto(false);
             }
           },
         },
-      ]
-    );
+      ],
+    });
   };
 
   const toggleWidth = Math.min(screenWidth * 0.9, 340);
@@ -331,30 +305,23 @@ const ProfileHeader = ({
       return;
     }
 
-    Alert.alert("Profile Picture", "Choose an option", [
-      {
-        text: "Take Photo",
-        onPress: takePhoto,
-      },
-      {
-        text: "Choose from Gallery",
-        onPress: pickFromGallery,
-      },
-      ...(profileImage
-        ? [
-            {
-              text: "Remove Photo",
-              style: "destructive",
-              onPress: removePhoto,
-            },
-          ]
-        : []),
-      { text: "Cancel", style: "cancel" },
-    ]);
+    setConfirmModal({
+      visible: true,
+      title: 'Profile Picture',
+      message: 'Choose an option',
+      buttons: [
+        { text: 'Take Photo', onPress: takePhoto },
+        { text: 'Choose from Gallery', onPress: pickFromGallery },
+        ...(profileImage ? [{ text: 'Remove Photo', style: 'destructive', onPress: removePhoto }] : []),
+        { text: 'Cancel', style: 'cancel' },
+      ],
+    });
   };
+
 
   return (
     <View style={styles.container}>
+      <ConfirmModal visible={confirmModal.visible} title={confirmModal.title} message={confirmModal.message} buttons={confirmModal.buttons} onRequestClose={() => setConfirmModal({ visible: false })} />
       <ConfirmImageModal />
       <SuccessModal />
 

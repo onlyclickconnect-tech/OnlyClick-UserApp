@@ -2,39 +2,45 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-    Alert,
-    StyleSheet,
-    TextInput,
-    TouchableOpacity,
-    View
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import Text from "../../../../components/ui/Text.jsx"
+import ConfirmModal from '../../../../components/common/ConfirmModal';
+import Text from '../../../../components/ui/Text.jsx';
 import { useAppStates } from '../../../../context/AppStates';
 
 export default function MobileNumberScreen() {
   const router = useRouter();
   const { selectedMobileNumber, updateSelectedMobileNumber } = useAppStates();
-  
+
   // Mobile number state management - use context value or default
   const [tempMobileNumber, setTempMobileNumber] = useState(
-    selectedMobileNumber && selectedMobileNumber.length === 10 ? selectedMobileNumber : ""
+    selectedMobileNumber && selectedMobileNumber.length === 10 ? selectedMobileNumber : ''
   );
+  const [modal, setModal] = useState({ visible: false, title: '', message: '' });
 
   const handleMobileSave = async () => {
     // Validate mobile number
-    const cleanNumber = tempMobileNumber.replace(/[^\d]/g, '');
+    const cleanNumber = (tempMobileNumber || '').replace(/[^\d]/g, '');
     if (cleanNumber.length !== 10) {
-      Alert.alert('Invalid Number', 'Please enter a valid 10-digit mobile number');
+      setModal({ visible: true, title: 'Invalid Number', message: 'Please enter a valid 10-digit mobile number' });
       return;
     }
 
-    // Save to context
-    await updateSelectedMobileNumber(cleanNumber);
-    router.back();
+    try {
+      await updateSelectedMobileNumber(cleanNumber);
+      router.back();
+    } catch (error) {
+      setModal({ visible: true, title: 'Error', message: 'Failed to save number. Please try again.' });
+    }
   };
 
   const formatMobileForDisplay = (number) => {
-    // Format 10-digit number as +91 XXXXX XXXXX for display
+    if (!number) return 'No number set';
     if (number.length === 10) {
       return `+91 ${number.slice(0, 5)} ${number.slice(5)}`;
     }
@@ -42,14 +48,13 @@ export default function MobileNumberScreen() {
   };
 
   const handleNumberChange = (text) => {
-    // Remove all non-digit characters and limit to 10 digits
     const cleaned = text.replace(/[^\d]/g, '').slice(0, 10);
     setTempMobileNumber(cleaned);
   };
 
   return (
-    <View style={styles.container}>
-      
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ConfirmModal visible={modal.visible} title={modal.title} message={modal.message} onRequestClose={() => setModal({ ...modal, visible: false })} />
 
       <View style={styles.content}>
         <View style={styles.infoCard}>
@@ -72,39 +77,27 @@ export default function MobileNumberScreen() {
               placeholder="1234567890"
               keyboardType="phone-pad"
               maxLength={10}
-              autoFocus
+              returnKeyType="done"
             />
           </View>
-          <Text style={styles.helperText}>
-            Enter 10-digit mobile number (without country code)
-          </Text>
-          
-          
+          <Text style={styles.helperText}>Enter 10-digit mobile number (without country code)</Text>
         </View>
 
         <View style={styles.currentNumberCard}>
           <Text style={styles.currentNumberLabel}>Current Number:</Text>
-          <Text style={styles.currentNumberValue}>
-            {selectedMobileNumber ? formatMobileForDisplay(selectedMobileNumber) : "No number set"}
-          </Text>
+          <Text style={styles.currentNumberValue}>{formatMobileForDisplay(selectedMobileNumber)}</Text>
         </View>
       </View>
 
       <View style={styles.footer}>
-        <TouchableOpacity
-          style={[styles.actionButton, styles.cancelButton]}
-          onPress={() => router.back()}
-        >
+        <TouchableOpacity style={[styles.actionButton, styles.cancelButton]} onPress={() => router.back()}>
           <Text style={styles.cancelButtonText}>Cancel</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.actionButton, styles.saveButton]}
-          onPress={handleMobileSave}
-        >
+        <TouchableOpacity style={[styles.actionButton, styles.saveButton]} onPress={handleMobileSave}>
           <Text style={styles.saveButtonText}>Save Number</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -112,21 +105,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 50,
-    paddingBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
   },
   content: {
     flex: 1,
@@ -188,23 +166,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginLeft: 5,
   },
-  previewContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 10,
-    padding: 10,
-    backgroundColor: '#f8f9fa',
-    borderRadius: 6,
-  },
-  previewLabel: {
-    fontSize: 14,
-    color: '#666',
-  },
-  previewNumber: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#3898B3',
-  },
   currentNumberCard: {
     backgroundColor: '#f8f9fa',
     borderRadius: 12,
@@ -225,7 +186,7 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: 'row',
     padding: 20,
-    marginBottom: 300,
+    marginBottom: Platform.OS === 'ios' ? 40 : 24,
     borderTopWidth: 1,
     borderTopColor: '#f0f0f0',
     gap: 15,

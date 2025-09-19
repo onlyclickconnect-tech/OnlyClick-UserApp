@@ -4,6 +4,7 @@ import { ActivityIndicator, Dimensions, StyleSheet, TextInput, TouchableOpacity,
 import { useAuth } from "../../context/AuthProvider";
 import { useUpdateProfile } from '../../hooks/seeUpdateProfile';
 import useCurrentUserDetails from "../../hooks/useCurrentUserDetails";
+import ConfirmModal from "../common/ConfirmModal";
 import Text from "../ui/Text";
 
 const screenWidth = Dimensions.get("window").width;
@@ -112,11 +113,13 @@ const StandaloneProfileForm = ({ onValidationChange, onProfileUpdate, onProceed 
       // Navigate to main app after successful save
       onProceed?.();
     } else {
-      alert("Failed to update profile");
+      setModal({ visible: true, title: "Error", message: "Failed to update profile" });
     }
     setLoadingspin(false);
     setIsSaving(false);
   };
+
+    const [modal, setModal] = useState({ visible: false, title: null, message: null });
 
   const renderInputField = (
     name,
@@ -181,6 +184,7 @@ const StandaloneProfileForm = ({ onValidationChange, onProfileUpdate, onProceed 
 
   return (
     <View style={styles.container}>
+      <ConfirmModal visible={modal.visible} title={modal.title} message={modal.message} onRequestClose={() => setModal({ visible: false })} />
       <View style={styles.formContainer}>
         {/* Personal Information */}
         <Text style={styles.sectionTitle}>Personal Information</Text>

@@ -126,11 +126,13 @@ const ProfileForm = ({ onValidationChange, onSave, onProfileUpdate }) => {
       onProfileUpdate?.();
       setIsEditing(false); // Exit edit mode after successful save
     } else {
-      alert("Failed to update profile");
+      setModal({ visible: true, title: "Error", message: "Failed to update profile" });
     }
     setLoadingspin(false);
     setIsSaving(false);
   };
+
+  const [modal, setModal] = useState({ visible: false, title: null, message: null });
 
   const renderInputField = (
     name,

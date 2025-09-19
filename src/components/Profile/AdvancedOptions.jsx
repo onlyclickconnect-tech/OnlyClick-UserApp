@@ -1,15 +1,17 @@
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from "react";
-import { Alert, Dimensions, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Dimensions, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { deleteUser } from '../../app/api/delete.js';
 import Text from "../../components/ui/Text";
 import { useAuth } from '../../context/AuthProvider';
+import ConfirmModal from "../common/ConfirmModal";
 
 const screenWidth = Dimensions.get("window").width;
 
 const AdvancedOptions = () => {
   const { setUser, setIsLoggedIn } = useAuth();
+  const [confirm, setConfirm] = useState({ visible: false, title: null, message: null, buttons: null });
   const [bankDetails, setBankDetails] = useState({
     accountNumber: '',
     ifscCode: '',
@@ -20,33 +22,29 @@ const AdvancedOptions = () => {
   const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
 
   const handleDeleteAccount = async () => {
-    Alert.alert(
-      "Delete account",
-      "This will permanently delete your account. Are you sure?",
-      [
-        { text: "Cancel", style: "cancel" },
+    setConfirm({
+      visible: true,
+      title: 'Delete account',
+      message: 'This will permanently delete your account. Are you sure?',
+      buttons: [
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: "Delete",
-          style: "destructive",
+          text: 'Delete',
+          style: 'destructive',
           onPress: async () => {
             try {
-            
               const data = await deleteUser();
-
               // Just clear local state - auth guards will handle redirect
-              router.replace('/intro')
+              router.replace('/intro');
               setUser(null);
               setIsLoggedIn(false);
             } catch (error) {
-              Alert.alert(
-                "Error",
-                "Failed to delete account. Please try again."
-              );
+              setConfirm({ visible: true, title: 'Error', message: 'Failed to delete account. Please try again.' });
             }
           },
         },
-      ]
-    );
+      ],
+    });
   };
 
 
@@ -105,6 +103,7 @@ const AdvancedOptions = () => {
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <ConfirmModal visible={confirm.visible} title={confirm.title} message={confirm.message} buttons={confirm.buttons} onRequestClose={() => setConfirm({ visible: false })} />
       {/* Bank Details Section */}
       {/* <View style={styles.section}>
         <Text style={styles.sectionTitle}>Financial Information</Text>

@@ -2,7 +2,6 @@ import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import {
-  Alert,
   Animated,
   Dimensions,
   Modal,
@@ -13,13 +12,15 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import Text from "../ui/Text"
+import ConfirmModal from '../common/ConfirmModal';
+import Text from "../ui/Text";
 
 export default function Cart() {
   const router = useRouter();
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [showCancellationPolicy, setShowCancellationPolicy] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState('Home - 123 Main Street, City');
+  const [confirmModal, setConfirmModal] = useState({ visible: false, title: null, message: null, buttons: null });
   
   // Gesture handling for modal
   const modalY = useRef(new Animated.Value(0)).current;
@@ -158,31 +159,33 @@ export default function Cart() {
   };
 
   const handleQuantityChange = (categoryIndex, itemIndex, change) => {
-    Alert.alert('Update Quantity', `Updated quantity for item`);
+    setConfirmModal({ visible: true, title: 'Update Quantity', message: `Updated quantity for item` });
   };
 
   const handleRemoveItem = (categoryIndex, itemIndex) => {
-    Alert.alert(
-      'Remove Item',
-      'Are you sure you want to remove this item from cart?',
-      [
+    setConfirmModal({
+      visible: true,
+      title: 'Remove Item',
+      message: 'Are you sure you want to remove this item from cart?',
+      buttons: [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Remove', style: 'destructive', onPress: () => {
         }}
       ]
-    );
+    });
   };
 
   const handleClearCart = () => {
-    Alert.alert(
-      'Clear Cart',
-      'Are you sure you want to remove all items from cart?',
-      [
+    setConfirmModal({
+      visible: true,
+      title: 'Clear Cart',
+      message: 'Are you sure you want to remove all items from cart?',
+      buttons: [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Clear All', style: 'destructive', onPress: () => {
         }}
       ]
-    );
+    });
   };
 
   const renderCartItem = (item, categoryIndex, itemIndex) => (
@@ -436,6 +439,7 @@ export default function Cart() {
 
   return (
     <View style={styles.container}>
+      <ConfirmModal visible={confirmModal.visible} title={confirmModal.title} message={confirmModal.message} buttons={confirmModal.buttons} onRequestClose={() => setConfirmModal({ visible: false })} />
       <StatusBar hidden={true} />
       
       {/* Header */}

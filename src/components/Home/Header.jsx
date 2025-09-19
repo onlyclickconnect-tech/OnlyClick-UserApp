@@ -7,7 +7,6 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
-  Alert,
   Modal,
   TextInput,
   TouchableOpacity,
@@ -20,6 +19,7 @@ import useCurrentUserDetails from "../../hooks/useCurrentUserDetails";
 import useDimension from "../../hooks/useDimensions";
 import headerStyle from "../../styles/Home/headerStyle";
 import Badge from "../common/Badge";
+import ConfirmModal from "../common/ConfirmModal";
 import PressableScale from '../common/PressableScale';
 import Text from "../ui/Text";
 
@@ -36,6 +36,7 @@ function Header() {
   const { selectedLocation, updateSelectedLocation } = useAppStates();
   const router = useRouter();
   const styles = headerStyle();
+  const [modal, setModal] = useState({ visible: false, title: null, message: null });
   
   // Function to fetch and update cart count
   const updateCartCount = async () => {
@@ -117,7 +118,7 @@ function Header() {
         
         setShowLocationModal(false);
       } catch (error) {
-        Alert.alert("Error", "Failed to save address. Please try again.");
+        setModal({ visible: true, title: 'Error', message: 'Failed to save address. Please try again.' });
       } finally {
         setIsSavingLocation(false);
       }
@@ -130,6 +131,7 @@ function Header() {
   
   return (
     <>
+      <ConfirmModal visible={modal.visible} title={modal.title} message={modal.message} onRequestClose={() => setModal({ visible: false })} />
       {/* Location Modal */}
       <Modal
         animationType="slide"
@@ -197,7 +199,6 @@ function Header() {
       <LinearGradient colors={["#4cb6c9", "#3898b3"]} style={styles.header}>
         <View style={styles.rowTop}>
           <View style={styles.locationWrap}>
-            <Text style={styles.locationLabel}>Location</Text>
             <PressableScale accessibilityRole="button" onPress={changeAddress} style={styles.locationButton}>
               <Entypo
                 name="location-pin"
