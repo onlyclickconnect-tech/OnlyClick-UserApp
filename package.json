@@ -31,6 +31,7 @@
     "expo-linking": "~7.1.5",
     "expo-location": "^18.1.6",
     "expo-navigation-bar": "~4.2.5",
+    "expo-network": "~7.1.5",
     "expo-notifications": "^0.31.4",
     "expo-router": "~5.0.7",
     "expo-splash-screen": "~0.30.9",

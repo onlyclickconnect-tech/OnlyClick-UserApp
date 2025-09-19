@@ -1,6 +1,7 @@
 
 import * as Linking from "expo-linking";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import OfflinePage from "../components/common/OfflinePage";
 import {
   getAddress,
   getEmail,
@@ -22,6 +23,7 @@ export default function AuthProvider({ children }) {
   const [isNewUser, setIsNewUser] = useState(null);
   const [error, setError] = useState("");
   const [isProcessingDeepLink, setIsProcessingDeepLink] = useState(false);
+  const [isConnected, setIsConnected] = useState(true);
 
   // Initialize authentication state
   const initializeAuth = async () => {
@@ -235,8 +237,33 @@ export default function AuthProvider({ children }) {
       }
     });
 
+    // Network monitoring with fetch-based detection
+    const checkNetworkConnection = async () => {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000); // 3-second timeout
+        
+        await fetch('https://www.google.com', {
+          method: 'HEAD',
+          signal: controller.signal,
+        });
+        
+        clearTimeout(timeoutId);
+        setIsConnected(true);
+      } catch (error) {
+        setIsConnected(false);
+      }
+    };
+
+    // Initial network check
+    checkNetworkConnection();
+
+    // Periodic network check (every 10 seconds)
+    const networkInterval = setInterval(checkNetworkConnection, 10000);
+
     return () => {
       subscription?.remove();
+      clearInterval(networkInterval);
     };
   }, []);
 
@@ -256,11 +283,16 @@ export default function AuthProvider({ children }) {
       setError: setErrorState,
       updateUser,
       isProcessingDeepLink,
+      isConnected,
     }),
-    [user, isLoggedIn, authToken, isLoading, isNewUser, error, isProcessingDeepLink]
+    [user, isLoggedIn, authToken, isLoading, isNewUser, error, isProcessingDeepLink, isConnected]
   );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {isConnected ? children : <OfflinePage />}
+    </AuthContext.Provider>
+  );
 }
 
 export const useAuth = () => useContext(AuthContext);
