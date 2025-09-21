@@ -42,3 +42,85 @@ export const appOpenedFirstTime = async () => {
 export const setAppOpenedFirstTime = async () => {
   await AsyncStorage.setItem("appOpenedFirstTime", true);
 };
+
+// Authentication storage utilities
+export const getIsLoggedIn = async () => {
+  const isLoggedIn = await AsyncStorage.getItem("isLoggedIn");
+  return isLoggedIn === "true";
+};
+
+export const setIsLoggedIn = async (isLoggedIn) => {
+  await AsyncStorage.setItem("isLoggedIn", isLoggedIn.toString());
+};
+
+export const getIsNewUser = async () => {
+  const isNewUser = await AsyncStorage.getItem("isNewUser");
+  return isNewUser === "true" ? true : isNewUser === "false" ? false : null;
+};
+
+export const setIsNewUser = async (isNewUser) => {
+  await AsyncStorage.setItem("isNewUser", isNewUser.toString());
+};
+
+export const getAuthToken = async () => {
+  const authToken = await AsyncStorage.getItem("authToken");
+  return authToken || "";
+};
+
+export const setAuthToken = async (authToken) => {
+  await AsyncStorage.setItem("authToken", authToken);
+};
+
+export const getStoredUserDetails = async () => {
+  const userDetails = await AsyncStorage.getItem("storedUserDetails");
+  return userDetails ? JSON.parse(userDetails) : null;
+};
+
+export const setStoredUserDetails = async (userDetails) => {
+  await AsyncStorage.setItem("storedUserDetails", JSON.stringify(userDetails));
+};
+
+export const clearAuthStorage = async () => {
+  await AsyncStorage.removeItem("isLoggedIn");
+  await AsyncStorage.removeItem("isNewUser");
+  await AsyncStorage.removeItem("authToken");
+  await AsyncStorage.removeItem("storedUserDetails");
+};
+
+// Clear all app state and user data (used during account deletion)
+export const clearAllAppStorage = async () => {
+  try {
+    const keys = [
+      // Authentication data
+      "isLoggedIn",
+      "isNewUser", 
+      "authToken",
+      "storedUserDetails",
+      "userDetails",
+      
+      // App states
+      "profileCompleted", 
+      "selectedLocation",
+      "selectedLocationObject",
+      "selectedMobileNumber",
+      
+      // Cart and other user-specific data
+      "cartItems",
+      
+      // Any cached data that might contain user info
+      "popularServices",
+      "userBookings", 
+      "testimonials",
+      "allServices",
+      "example_bookings"
+      
+      // Note: We intentionally keep "theme" as users might want to retain their theme preference
+    ];
+
+    await AsyncStorage.multiRemove(keys);
+    console.log("✅ All app storage cleared successfully");
+  } catch (error) {
+    console.error("❌ Error clearing app storage:", error);
+    throw error;
+  }
+};

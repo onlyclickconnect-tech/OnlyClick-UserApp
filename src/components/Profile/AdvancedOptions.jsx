@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Dimensions, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { deleteUser } from '../../app/api/delete.js';
 import Text from "../../components/ui/Text";
+import { useAppStates } from '../../context/AppStates';
 import { useAuth } from '../../context/AuthProvider';
 import ConfirmModal from "../common/ConfirmModal";
 
@@ -11,6 +12,12 @@ const screenWidth = Dimensions.get("window").width;
 
 const AdvancedOptions = () => {
   const { setUser, setIsLoggedIn } = useAuth();
+  const {  
+    setIsProfileCompleted, 
+    setSelectedLocation, 
+    setSelectedLocationObject, 
+    setSelectedMobileNumber 
+  } = useAppStates();
   const [confirm, setConfirm] = useState({ visible: false, title: null, message: null, buttons: null });
   const [bankDetails, setBankDetails] = useState({
     accountNumber: '',
@@ -25,7 +32,7 @@ const AdvancedOptions = () => {
     setConfirm({
       visible: true,
       title: 'Delete account',
-      message: 'This will permanently delete your account. Are you sure?',
+      message: 'This will permanently delete your account and all associated data. This action cannot be undone. Are you sure?',
       buttons: [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -33,13 +40,27 @@ const AdvancedOptions = () => {
           style: 'destructive',
           onPress: async () => {
             try {
+              // Delete user account and clear all app state
               const data = await deleteUser();
-              // Just clear local state - auth guards will handle redirect
-              router.replace('/intro');
+              
+              // Reset all app states to default values
               setUser(null);
               setIsLoggedIn(false);
+             
+              setIsProfileCompleted(false);
+              setSelectedLocation("Tap to set location");
+              setSelectedLocationObject({});
+              setSelectedMobileNumber("");
+              
+              // Navigate to intro/onboarding
+              router.replace('/auth/sign-in');
+              
             } catch (error) {
-              setConfirm({ visible: true, title: 'Error', message: 'Failed to delete account. Please try again.' });
+              setConfirm({ 
+                visible: true, 
+                title: 'Error', 
+                message: 'Failed to delete account. Please check your internet connection and try again.' 
+              });
             }
           },
         },

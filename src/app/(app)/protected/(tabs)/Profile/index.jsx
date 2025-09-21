@@ -10,7 +10,9 @@ import AppHeader from '../../../../../components/common/AppHeader';
 import ConfirmModal from '../../../../../components/common/ConfirmModal';
 import Text from "../../../../../components/ui/Text";
 import { useAppStates } from "../../../../../context/AppStates";
+import { useAuth } from "../../../../../context/AuthProvider";
 import supabase from "../../../../../data/supabaseClient";
+import { clearAllAppStorage } from "../../../../../utils/storage";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -21,7 +23,8 @@ const HEADER_HEIGHT = statusBarHeight + HEADER_BASE;
 
 const ProfilePage = () => {
   const [isGeneral, setIsGeneral] = useState(true);
-  const { isProfileCompleted, markProfileCompleted } = useAppStates();
+  const { isProfileCompleted, markProfileCompleted, resetAppStatesForLogout } = useAppStates();
+  const { setUser, setIsLoggedIn, setAuthToken, setIsNewUser } = useAuth();
   const [showWelcomeMessage, setShowWelcomeMessage] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   
@@ -59,8 +62,29 @@ const ProfilePage = () => {
       buttons: [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Logout', style: 'destructive', onPress: async () => {
-          await supabase.auth.signOut();
-          router.replace('/auth/sign-in');
+          try {
+            // Clear all app storage except appOpenedFirstTime
+            await clearAllAppStorage();
+            
+            // Reset all app states to defaults
+            resetAppStatesForLogout();
+            
+            // Reset auth context states
+            setUser(null);
+            setIsLoggedIn(false);
+            setAuthToken("");
+            setIsNewUser(null);
+            
+            // Sign out from Supabase
+            await supabase.auth.signOut();
+            
+            // Navigate to sign-in
+            router.replace('/auth/sign-in');
+          } catch (error) {
+            console.error('Logout error:', error);
+            // Still navigate to sign-in even if cleanup fails
+            router.replace('/auth/sign-in');
+          }
         } }
       ]
     });

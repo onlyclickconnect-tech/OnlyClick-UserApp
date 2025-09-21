@@ -4,6 +4,7 @@ import { ActivityIndicator, Dimensions, StyleSheet, TextInput, TouchableOpacity,
 import { useAuth } from "../../context/AuthProvider";
 import { useUpdateProfile } from '../../hooks/seeUpdateProfile';
 import useCurrentUserDetails from "../../hooks/useCurrentUserDetails";
+import { setIsNewUser as setStoredIsNewUser } from "../../utils/storage";
 import ConfirmModal from "../common/ConfirmModal";
 import Text from "../ui/Text";
 
@@ -17,7 +18,7 @@ const StandaloneProfileForm = ({ onValidationChange, onProfileUpdate, onProceed 
     userId,
   } = useCurrentUserDetails();
 
-  const { setUser, refreshUserDetails } = useAuth();
+  const { setUser, refreshUserDetails, setIsNewUser } = useAuth();
 
   const [formData, setFormData] = useState({
     fullName: name || "",
@@ -105,6 +106,10 @@ const StandaloneProfileForm = ({ onValidationChange, onProfileUpdate, onProceed 
 
     const result = await updateProfile(updates);
     if (result?.data?.updated) {
+      // Profile successfully updated - user is no longer new
+      setIsNewUser(false);
+      await setStoredIsNewUser(false);
+      
       // Refresh user data from database
       await refreshUserDetails();
 
