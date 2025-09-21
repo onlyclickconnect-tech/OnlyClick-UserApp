@@ -30,42 +30,42 @@ export default function Index() {
   useEffect(() => {
     // Wait for app states to be loaded, but don't wait for auth loading if we already have auth state
     if (isAppOpenedFirstTime !== null) {
-     
 
       // CRITICAL: Don't route anything if deep link authentication is in progress
       if (isProcessingDeepLink) {
-      
         return;
       }
 
       // Don't redirect if user is already on profile-setup page
       if (pathname === '/(app)/auth/profile-setup') {
-      
         return;
       }
 
       // PRIORITY 1: Handle authenticated users first (regardless of first-time status or loading state)
       if (isLoggedIn && isNewUser === true) {
         // User is logged in but is new user - needs profile setup
-      
         // Mark app as opened since user is successfully authenticated
         if (isAppOpenedFirstTime) markAppOpened();
         router.replace("/(app)/auth/profile-setup");
         return;
       } else if (isLoggedIn && !user && !isLoading) {
         // User is logged in but user data not yet loaded and not loading - wait
-      
         return;
-      } else if (isLoggedIn && user && (!user.name || !user.phone)) {
-        // User logged in but profile incomplete - go to profile setup
-       
+      } else if (isLoggedIn && user && isNewUser === false) {
+        // User is logged in and is not a new user - go to main app (trust isNewUser flag)
+        // Mark app as opened since user is successfully authenticated
+        if (isAppOpenedFirstTime) markAppOpened();
+        router.replace("/(app)/protected/(tabs)/Home");
+        return;
+      } else if (isLoggedIn && user && (!user.name || !user.phone) && isNewUser === null) {
+        // User logged in but profile incomplete AND we don't know if they're new - go to profile setup
+        // This only happens if isNewUser hasn't been set yet (edge case)
         // Mark app as opened since user is successfully authenticated
         if (isAppOpenedFirstTime) markAppOpened();
         router.replace("/(app)/auth/profile-setup");
         return;
       } else if (isLoggedIn && user) {
-        // User is logged in and has completed profile - go to main app
-      
+        // User is logged in and has user data - go to main app (fallback)
         // Mark app as opened since user is successfully authenticated
         if (isAppOpenedFirstTime) markAppOpened();
         router.replace("/(app)/protected/(tabs)/Home");
@@ -76,18 +76,12 @@ export default function Index() {
       if (!isLoading) {
         if (isAppOpenedFirstTime) {
           // First time opening app - show onboarding
-       
           router.replace("/intro");
         } else if (!isLoggedIn) {
           // User not logged in - go to sign in
-      
           router.replace("/(app)/auth/sign-in");
         }
-      } else {
-     
       }
-    } else {
-  
     }
   }, [isAppOpenedFirstTime, isLoggedIn, isLoading, user, isNewUser, isProcessingDeepLink, router, pathname, markAppOpened]);
 

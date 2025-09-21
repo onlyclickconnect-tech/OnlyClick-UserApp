@@ -1,7 +1,6 @@
 
 import * as Linking from "expo-linking";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import OfflinePage from "../components/common/OfflinePage";
 import {
   getAddress,
   getEmail,
@@ -10,6 +9,16 @@ import {
   getProfileImage,
 } from "../data/getdata/getProfile";
 import supabase from "../data/supabaseClient";
+import {
+  clearAuthStorage,
+  getAuthToken,
+  getIsLoggedIn,
+  getIsNewUser,
+  getStoredUserDetails,
+  setAuthToken as setStoredAuthToken,
+  setIsNewUser as setStoredIsNewUser,
+  setStoredUserDetails
+} from "../utils/storage";
 import { useAppStates } from "./AppStates";
 
 const AuthContext = createContext();
@@ -30,41 +39,109 @@ export default function AuthProvider({ children }) {
     try {
       setIsLoading(true);
      
+      // First, load saved authentication state from storage
+      const savedIsLoggedIn = await getIsLoggedIn();
+      const savedUserDetails = await getStoredUserDetails();
+      const savedAuthToken = await getAuthToken();
+      const savedIsNewUser = await getIsNewUser();
 
-      // Check for existing Supabase session
+      // If we have saved authentication state, set it immediately for offline support
+      // Also handle case where we have user details but isLoggedIn flag is wrong
+      if ((savedIsLoggedIn && savedUserDetails) || (!savedIsLoggedIn && savedUserDetails && savedUserDetails._id)) {
+        setUser(savedUserDetails);
+        setAuthToken(savedAuthToken);
+        setIsLoggedIn(true);
+        
+        // Fix the storage if isLoggedIn was incorrectly saved as false
+        if (!savedIsLoggedIn && savedUserDetails && savedUserDetails._id) {
+          await setIsLoggedIn(true);
+        }
+        
+        // Smart isNewUser determination for offline support
+        let finalIsNewUser = savedIsNewUser;
+        
+        // Only change isNewUser from true to false if we have confirmed complete profile data
+        // This ensures new users who haven't completed profile setup remain as new users
+        const hasStoredProfile = savedUserDetails.name && savedUserDetails.phone && 
+                               savedUserDetails.name.trim() !== "" && savedUserDetails.phone.trim() !== "";
+        
+        if (hasStoredProfile) {
+          // User definitely has complete profile - they're not new
+          finalIsNewUser = false;
+          await setStoredIsNewUser(false);
+        }
+
+        
+        setIsNewUser(finalIsNewUser);
+        
+        // Immediately set loading to false so user can access the app
+        setIsLoading(false);
+        
+        return;
+      }
+
+      // No saved state - check for fresh Supabase session
       const { data: { session }, error } = await supabase.auth.getSession();
      
-
       if (session?.user && !error) {
-       
         await processUserSession(session);
-
-        // Only mark app as opened for existing sessions, not deep link auth
-        // This will be handled by the routing logic instead
       } else {
-       
         setIsLoggedIn(false);
+        setIsNewUser(null);
       }
     } catch (error) {
-     
-      await clearAuthState();
+      console.error("Auth initialization error:", error);
+      
+      // If we have saved data, use it even if initialization failed
+      const savedIsLoggedIn = await getIsLoggedIn();
+      const savedUserDetails = await getStoredUserDetails();
+      const savedAuthToken = await getAuthToken();
+      const savedIsNewUser = await getIsNewUser();
+      
+      if (savedIsLoggedIn && savedUserDetails) {
+        setUser(savedUserDetails);
+        setAuthToken(savedAuthToken);
+        setIsLoggedIn(true);
+        setIsNewUser(savedIsNewUser);
+      } else {
+        await clearAuthState();
+      }
     } finally {
       setIsLoading(false);
-    
     }
   };
 
   // Process user session and populate user data
-  const processUserSession = async (session) => {
+  const processUserSession = async (session, skipIfCachedDataExists = false) => {
     try {
       const currentUser = session.user;
       const userId = currentUser.id;
+
+      // If we're doing a background refresh and already have good cached data, 
+      // don't overwrite it with potentially empty network responses
+      if (skipIfCachedDataExists && user && user.name && user.phone) {
+        console.log("🔄 Skipping background refresh - good cached data exists");
+        return;
+      }
 
       const fullName = await getFullName(userId);
       const avatar = await getProfileImage(userId);
       const email = await getEmail(userId);
       const phone = await getPhone(userId);
       const address = await getAddress(userId);
+
+      // If all fetched fields are empty, do NOT overwrite cached data
+      const isFetchedDataEmpty = !fullName && !avatar && !email && !phone && !address;
+      if (isFetchedDataEmpty && user && user._id) {
+        console.log("🚫 Network failed, keeping cached user data");
+        return;
+      }
+
+      // Don't update if we got empty name/phone and we already have better cached data
+      if (user && user.name && user.phone && (!fullName || !phone)) {
+        console.log("🚫 Rejecting empty network data - keeping cached data");
+        return;
+      }
 
       const userData = {
         name: fullName || "",
@@ -91,6 +168,21 @@ export default function AuthProvider({ children }) {
       setUser(userData);
       setAuthToken(session.access_token || "");
       setIsLoggedIn(true);
+
+      // Save to storage
+      await setStoredUserDetails(userData);
+      await setStoredAuthToken(session.access_token || "");
+      await setIsLoggedIn(true);
+
+      // If isNewUser is not already determined, determine it based on profile completeness
+      const currentIsNewUser = isNewUser;
+      if (currentIsNewUser === null) {
+        const hasCompleteProfile = !!(fullName && phone);
+        const determinedIsNewUser = !hasCompleteProfile;
+        
+        setIsNewUser(determinedIsNewUser);
+        await setStoredIsNewUser(determinedIsNewUser);
+      }
 
    
     } catch (error) {
@@ -133,10 +225,13 @@ export default function AuthProvider({ children }) {
 
             const backendIsNewUser = callbackResponse.data.data.isNewUser;
             setIsNewUser(backendIsNewUser);
+            // Save isNewUser to storage
+            await setStoredIsNewUser(backendIsNewUser);
        
           } catch (callbackError) {
            
             setIsNewUser(false); // Default to existing user if backend fails
+            await setStoredIsNewUser(false);
           }
 
           // Set Supabase session
@@ -184,21 +279,57 @@ export default function AuthProvider({ children }) {
     setAuthToken("");
     setIsNewUser(null);
     setError("");
+    
+    // Clear all auth data from storage
+    await clearAuthStorage();
   };
 
 
   // Function to refresh user details
   const refreshUserDetails = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
 
-    if (session?.user) {
-      await processUserSession(session);
+      if (session?.user) {
+        await processUserSession(session);
+      }
+    } catch (error) {
+      console.warn("Failed to refresh user details:", error);
+      // Don't throw error to avoid breaking the app
     }
   };
 
   // Update user data
   const updateUser = (userData) => {
     setUser(userData);
+  };
+
+  // Debug function to check storage
+  const debugStorage = async () => {
+    try {
+      const savedIsLoggedIn = await getIsLoggedIn();
+      const savedUserDetails = await getStoredUserDetails();
+      const savedAuthToken = await getAuthToken();
+      const savedIsNewUser = await getIsNewUser();
+      
+      console.log("📱 STORAGE DEBUG:", {
+        savedIsLoggedIn,
+        savedIsNewUser,
+        hasUserDetails: !!savedUserDetails,
+        userDetails: savedUserDetails,
+        hasAuthToken: !!savedAuthToken
+      });
+      
+      return {
+        savedIsLoggedIn,
+        savedIsNewUser,
+        savedUserDetails,
+        savedAuthToken
+      };
+    } catch (error) {
+      console.error("Storage debug error:", error);
+      return null;
+    }
   };
 
   // Set error
@@ -232,33 +363,10 @@ export default function AuthProvider({ children }) {
       }
     });
 
-    // Network monitoring with fetch-based detection
-    const checkNetworkConnection = async () => {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3000); // 3-second timeout
-        
-        await fetch('https://www.google.com', {
-          method: 'HEAD',
-          signal: controller.signal,
-        });
-        
-        clearTimeout(timeoutId);
-        setIsConnected(true);
-      } catch (error) {
-        setIsConnected(false);
-      }
-    };
 
-    // Initial network check
-    checkNetworkConnection();
-
-    // Periodic network check (every 10 seconds)
-    const networkInterval = setInterval(checkNetworkConnection, 10000);
 
     return () => {
       subscription?.remove();
-      clearInterval(networkInterval);
     };
   }, []);
 
@@ -279,13 +387,14 @@ export default function AuthProvider({ children }) {
       updateUser,
       isProcessingDeepLink,
       isConnected,
+      debugStorage,
     }),
     [user, isLoggedIn, authToken, isLoading, isNewUser, error, isProcessingDeepLink, isConnected]
   );
 
   return (
     <AuthContext.Provider value={value}>
-      {isConnected ? children : <OfflinePage />}
+      {children}
     </AuthContext.Provider>
   );
 }

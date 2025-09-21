@@ -90,6 +90,15 @@ export const AppStatesProvider = ({ children }) => {
     await AsyncStorage.setItem("selectedMobileNumber", mobileNumber);
   };
 
+  // Reset all app states to defaults for logout (keeps appOpenedFirstTime)
+  const resetAppStatesForLogout = () => {
+    setIsProfileCompleted(null);
+    setSelectedLocation("Tap to set location");
+    setSelectedLocationObject({});
+    setSelectedMobileNumber("");
+    // Note: We don't reset isAppOpenedFirstTime as requested
+  };
+
   return (
     <AppStatesContext.Provider
       value={{ 
@@ -107,7 +116,8 @@ export const AppStatesProvider = ({ children }) => {
         updateSelectedLocationObject,
         selectedMobileNumber,
         setSelectedMobileNumber,
-        updateSelectedMobileNumber
+        updateSelectedMobileNumber,
+        resetAppStatesForLogout
       }}
     >
       {children}
