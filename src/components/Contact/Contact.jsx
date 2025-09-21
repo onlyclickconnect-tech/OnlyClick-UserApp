@@ -15,7 +15,7 @@ const Contact = () => {
   return (
     <View style={{
       position: 'absolute', 
-      bottom: 100, 
+      bottom: 65, 
       right: 15, 
       alignItems: 'center', 
       justifyContent: 'center',

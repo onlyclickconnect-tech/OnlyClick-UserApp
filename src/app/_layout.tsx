@@ -1,4 +1,4 @@
-import { Poppins_400Regular, Poppins_600SemiBold, Poppins_700Bold, useFonts } from '@expo-google-fonts/poppins';
+import { Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, Poppins_700Bold, useFonts } from '@expo-google-fonts/poppins';
 import { Ionicons } from '@expo/vector-icons';
 import { Stack } from "expo-router";
 import * as SplashScreen from 'expo-splash-screen';
@@ -13,7 +13,7 @@ import ModalProvider from "../context/ModalProvider";
 
 
 export default function RootLayout() {
-  const [fontsLoaded] = useFonts({ Poppins_400Regular, Poppins_600SemiBold, Poppins_700Bold });
+  const [fontsLoaded] = useFonts({ Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, Poppins_700Bold });
   
 
   useEffect(() => {

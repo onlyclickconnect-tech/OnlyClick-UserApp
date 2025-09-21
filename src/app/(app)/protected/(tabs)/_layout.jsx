@@ -19,44 +19,48 @@ export default function RootLayout() {
 
 function TabNavigator({ router }) {
   const insets = useSafeAreaInsets();
-  
+
   return (
     <Tabs
       initialRouteName="Home"
       screenOptions={{
-        tabBarActiveTintColor: "#3898b3",
+        tabBarActiveTintColor: "#000",
+        tabBarInactiveTintColor: "#8E8E93",
         tabBarLabelStyle: {
-          top: 12,
-          color: "#a0a0a0",
+          fontSize: 11,
+          fontWeight: "500",
+          marginTop: 2,
+          letterSpacing: 0,
         },
         tabBarItemStyle: {
-          paddingVertical: 0,
+          paddingVertical: 1,
           margin: 0,
         },
         tabBarIconStyle: {
           marginTop: 0,
         },
         tabBarButton: (props) => (
-          <TouchableOpacity {...props} activeOpacity={0.4} />
+          <TouchableOpacity {...props} activeOpacity={0.8} />
         ),
         tabBarStyle: {
-          height: 90 + insets.bottom,
-          paddingTop: 15,
-          paddingBottom: insets.bottom + 5,
-          borderTopLeftRadius: 30,
-          borderTopRightRadius: 30,
-          borderTopWidth: 0,
-          elevation: 10,
+          height: 60 + insets.bottom,
+          paddingTop: 8,
+          paddingBottom: insets.bottom + 4,
+          borderTopLeftRadius: 16,
+          borderTopRightRadius: 16,
+          borderTopWidth: 1,
+          borderTopColor: "rgba(0, 0, 0, 0.05)",
+          elevation: 0,
           shadowColor: "#000",
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 1,
-          shadowRadius: 10,
-          backgroundColor: Platform.OS === 'ios' ? "rgba(255, 255, 255, 0.98)" : "rgba(255, 255, 255, 0.99)",
+          shadowOffset: { width: 0, height: -1 },
+          shadowOpacity: 0.04,
+          shadowRadius: 2,
+          backgroundColor: Platform.OS === 'ios' ? "rgba(255, 255, 255, 1)" : "rgba(255, 255, 255, 1)",
           position: "absolute",
           bottom: 0,
           left: 0,
           right: 0,
-          borderTopColor: "transparent",
+          backdropFilter: Platform.OS === 'ios' ? "blur(20px)" : undefined,
         },
       }}
     >
@@ -65,27 +69,23 @@ function TabNavigator({ router }) {
         options={{
           headerShown: false,
           animation: "shift",
-          tabBarLabelStyle: { top: 12 },
-          tabBarIcon: ({ focused }) => {
-            return (
-              <View
-                style={{
-                  height: 50,
-                  width: 50,
-                  justifyContent: "center",
-                  alignItems: "center",
-                  borderRadius: 20,
-                  backgroundColor: focused ? "#e6f5f8" : "transparent",
-                }}
-              >
-                <AntDesign
-                  name="home"
-                  size={focused ? 28 : 24}
-                  color={focused ? "#3898b3" : "#a0a0a0"}
-                />
-              </View>
-            );
-          },
+          tabBarLabel: "Home",
+          tabBarIcon: ({ focused }) => (
+            <View
+              style={{
+                height: 32,
+                width: 32,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <AntDesign
+                name="home"
+                size={24}
+                color={focused ? "#000" : "#8E8E93"}
+              />
+            </View>
+          ),
         }}
       />
 
@@ -93,28 +93,24 @@ function TabNavigator({ router }) {
         name="Services"
         options={{
           headerShown: false,
-          tabBarLabelStyle: { top: 12 },
+          tabBarLabel: "Services",
           animation: "shift",
-          tabBarIcon: ({ focused }) => {
-            return (
-              <View
-                style={{
-                  height: 50,
-                  width: 50,
-                  justifyContent: "center",
-                  alignItems: "center",
-                  borderRadius: 20,
-                  backgroundColor: focused ? "#e6f5f8" : "transparent",
-                }}
-              >
-                <Ionicons
-                  name="grid-outline"
-                  size={focused ? 28 : 24}
-                  color={focused ? "#3898b3" : "#a0a0a0"}
-                />
-              </View>
-            );
-          },
+          tabBarIcon: ({ focused }) => (
+            <View
+              style={{
+                height: 32,
+                width: 32,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <Ionicons
+                name="grid-outline"
+                size={24}
+                color={focused ? "#000" : "#8E8E93"}
+              />
+            </View>
+          ),
         }}
       />
       <Tabs.Screen
@@ -122,36 +118,35 @@ function TabNavigator({ router }) {
         options={{
           headerShown: false,
           animation: "shift",
-          tabBarLabelStyle: { top: 12 },
-          tabBarIcon: ({ focused }) => {
-            return (
-              <View
-                style={{
-                  height: 70,
-                  width: 70,
-                  justifyContent: "center",
-                  alignItems: "center",
-                  borderRadius: 35,
-                  backgroundColor: focused ? "#3898b3" : "#3898b3",
-                  elevation: 8,
-                  shadowColor: "#3898b3",
-                  shadowOffset: { width: 0, height: 4 },
-                  shadowOpacity: 0.3,
-                  shadowRadius: 8,
-                  marginBottom: 35,
-                  borderWidth: 3,
-                  borderColor: "#fff",
-                  marginTop: -10,
-                }}
-              >
-                <AntDesign
-                  name="plus"
-                  size={35}
-                  color="#ffffff"
-                />
-              </View>
-            );
-          },
+          tabBarLabel: "Post",
+          tabBarIcon: ({ focused }) => (
+            <View
+              style={{
+                height: 54,
+                width: 54,
+                justifyContent: "flex-start",
+                alignItems: "center",
+                paddingTop: 8,
+                borderRadius: 42,
+                backgroundColor: "#3898b3",
+                elevation: 4,
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.15,
+                shadowRadius: 4,
+                marginBottom: 12,
+                borderWidth: 2,
+                borderColor: "#fff",
+                marginTop: -10,
+              }}
+            >
+              <AntDesign
+                name="plus"
+                size={36}
+                color="#ffffff"
+              />
+            </View>
+          ),
         }}
       />
       <Tabs.Screen
@@ -159,27 +154,23 @@ function TabNavigator({ router }) {
         options={{
           headerShown: false,
           animation: "shift",
-          tabBarLabelStyle: { top: 12 },
-          tabBarIcon: ({ focused }) => {
-            return (
-              <View
-                style={{
-                  height: 50,
-                  width: 50,
-                  justifyContent: "center",
-                  alignItems: "center",
-                  borderRadius: 20,
-                  backgroundColor: focused ? "#e6f5f8" : "transparent",
-                }}
-              >
-                <FontAwesome
-                  name="calendar-check-o"
-                  size={focused ? 28 : 24}
-                  color={focused ? "#3898b3" : "#a0a0a0"}
-                />
-              </View>
-            );
-          },
+          tabBarLabel: "Bookings",
+          tabBarIcon: ({ focused }) => (
+            <View
+              style={{
+                height: 32,
+                width: 32,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <FontAwesome
+                name="calendar-check-o"
+                size={24}
+                color={focused ? "#000" : "#8E8E93"}
+              />
+            </View>
+          ),
         }}
       />
       <Tabs.Screen
@@ -187,27 +178,23 @@ function TabNavigator({ router }) {
         options={{
           headerShown: false,
           animation: "shift",
-          tabBarLabelStyle: { top: 12 },
-          tabBarIcon: ({ focused }) => {
-            return (
-              <View
-                style={{
-                  height: 50,
-                  width: 50,
-                  justifyContent: "center",
-                  alignItems: "center",
-                  borderRadius: 20,
-                  backgroundColor: focused ? "#e6f5f8" : "transparent",
-                }}
-              >
-                <Ionicons
-                  name="person-sharp"
-                  size={focused ? 28 : 24}
-                  color={focused ? "#3898b3" : "#a0a0a0"}
-                />
-              </View>
-            );
-          },
+          tabBarLabel: "Profile",
+          tabBarIcon: ({ focused }) => (
+            <View
+              style={{
+                height: 32,
+                width: 32,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <Ionicons
+                name="person-sharp"
+                size={24}
+                color={focused ? "#000" : "#8E8E93"}
+              />
+            </View>
+          ),
         }}
       />
 
