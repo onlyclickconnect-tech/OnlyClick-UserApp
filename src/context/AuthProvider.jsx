@@ -144,10 +144,10 @@ export default function AuthProvider({ children }) {
       }
 
       const userData = {
-        name: fullName || "",
-        address: address,
-        phone: phone,
-        email: email || "",
+        name: (fullName && fullName !== "null") ? fullName : "",
+        address: (address && address !== "null") ? address : "",
+        phone: (phone && phone !== "null") ? phone : "",
+        email: (email && email !== "null") ? email : "",
         _id: userId,
         taskMasterId: "",
         service: "",

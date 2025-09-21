@@ -161,7 +161,7 @@ const OnboardingContainer = ({ onComplete }) => {
     ]).start(() => {
       // Add a small delay before navigation to ensure smooth transition
       setTimeout(() => {
-        router.push("/(app)/auth/terms-privacy"); // Navigate to TermsPrivacy screen
+        router.push("/(app)/auth/sign-in"); // Navigate directly to sign-in page
       }, 100);
     });
   };
@@ -336,6 +336,7 @@ const OnboardingContainer = ({ onComplete }) => {
       <OnboardingFooter
         ref={footerRef}
         onNext={handleNext}
+        onPrevious={handlePrevious}
         onComplete={handleComplete}
         currentSlide={currentSlide}
         totalSlides={slides.length}

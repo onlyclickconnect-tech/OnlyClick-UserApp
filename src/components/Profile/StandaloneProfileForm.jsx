@@ -36,31 +36,30 @@ const StandaloneProfileForm = ({ onValidationChange, onProfileUpdate, onProceed 
 
     if (!formData.fullName?.trim())
       newErrors.fullName = "Full name is required";
-    if (!formData.phone?.trim()) {
-      newErrors.phone = "Phone number is required";
-    } else if (formData.phone.length !== 10) {
-      newErrors.phone = "Phone number must be 10 digits";
-    }
+    // Phone validation is now handled on blur, not here
     if (!formData.address?.trim()) newErrors.address = "Address is required";
 
     setErrors(newErrors);
-    const isValid = Object.keys(newErrors).length === 0;
+    const isValid = Object.keys(newErrors).length === 0 && formData.phone.length === 10;
     onValidationChange && onValidationChange(isValid);
     return isValid;
   };
 
-  // Only validate after user has interacted with the form
+  // Only validate after user has interacted with the form (excluding phone which validates on blur)
   useEffect(() => {
     if (hasInteracted) {
-      validateForm();
+      const newErrors = {};
+      if (!formData.fullName?.trim())
+        newErrors.fullName = "Full name is required";
+      if (!formData.address?.trim()) newErrors.address = "Address is required";
+      setErrors(prev => ({ ...prev, ...newErrors }));
     }
-  }, [formData, hasInteracted]);
+  }, [formData.fullName, formData.address, hasInteracted]);
 
   // Check if form is initially valid (for first-time users)
   useEffect(() => {
     const isInitiallyValid =
       formData.fullName.trim() &&
-      formData.phone.trim() &&
       formData.phone.length === 10 &&
       formData.address.trim();
     onValidationChange && onValidationChange(isInitiallyValid);
@@ -71,9 +70,16 @@ const StandaloneProfileForm = ({ onValidationChange, onProfileUpdate, onProceed 
     const numericText = text.replace(/[^0-9]/g, '');
     if (numericText.length <= 10) {
       setFormData(prev => ({ ...prev, phone: numericText }));
-      if (errors.phone) {
-        setErrors(prev => ({ ...prev, phone: "" }));
-      }
+    }
+  };
+
+  const handlePhoneBlur = () => {
+    // Validate phone number only when user finishes typing
+    const phone = formData.phone;
+    if (phone && phone.length !== 10) {
+      setErrors(prev => ({ ...prev, phone: "Phone number must be 10 digits" }));
+    } else if (errors.phone) {
+      setErrors(prev => ({ ...prev, phone: "" }));
     }
   };
 
@@ -92,10 +98,24 @@ const StandaloneProfileForm = ({ onValidationChange, onProfileUpdate, onProceed 
 
   const handleProceed = async () => {
     setLoadingspin(true);
-    if (!validateForm()) {
+    
+    // Validate all fields including phone
+    const newErrors = {};
+    if (!formData.fullName?.trim())
+      newErrors.fullName = "Full name is required";
+    if (!formData.phone?.trim()) {
+      newErrors.phone = "Phone number is required";
+    } else if (formData.phone.length !== 10) {
+      newErrors.phone = "Phone number must be 10 digits";
+    }
+    if (!formData.address?.trim()) newErrors.address = "Address is required";
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       setLoadingspin(false);
       return;
     }
+    
     setIsSaving(true);
 
     const updates = {
@@ -145,6 +165,7 @@ const StandaloneProfileForm = ({ onValidationChange, onProfileUpdate, onProceed 
           value={formData[name]}
           onChangeText={name === "phone" ? handlePhoneChange : (text) => handleInputChange(name, text)}
           onFocus={() => setHasInteracted(true)} // Mark interaction on focus
+          onBlur={name === "phone" ? handlePhoneBlur : undefined}
           keyboardType={keyboardType}
           placeholder={placeholder}
           placeholderTextColor="#808080"
@@ -175,15 +196,7 @@ const StandaloneProfileForm = ({ onValidationChange, onProfileUpdate, onProceed 
       }}>
         Saving Profile...
       </Text>
-      <Text style={{
-        marginTop: 16,
-        fontSize: 14,
-        color: "#6B7280",
-        textAlign: "center",
-        paddingHorizontal: 20,
-      }}>
-        If this takes too long, please close and reopen the app
-      </Text>
+      
     </View>
   );
 

@@ -285,12 +285,14 @@ function ServicesPage() {
                   )}
                 </View>
 
+                  {item.ratings && (
                 <View style={styles.ratingInline}>
                   <Ionicons name="star" size={12} color="#FFD700" />
                   <Text style={styles.ratingTextSmall}>
-                    {item.ratings || 0.0}
+                    {item.ratings || ""}
                   </Text>
-                </View>
+                </View>)
+                  }
               </View>
 
               <View style={styles.controlsRight}>
@@ -555,6 +557,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333',
     marginHorizontal: 10,
+    fontFamily: 'Poppins_400Regular',
   },
   categoriesSection: {
     marginTop: 25,

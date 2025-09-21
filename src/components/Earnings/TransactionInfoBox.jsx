@@ -1,6 +1,6 @@
-import { StyleSheet, Text, View, Image } from "react-native";
-import React from "react";
+import { Image, StyleSheet, View } from "react-native";
 import useDimension from "../../hooks/useDimensions";
+import Text from "../ui/Text";
 export default function TransactionInfoBox({ data }) {
   const { screenWidth } = useDimension();
   return (

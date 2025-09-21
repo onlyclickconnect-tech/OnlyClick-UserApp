@@ -14,7 +14,8 @@ export const getFullName = async (userId) => {
     if (error) {
       return "";
     }
-    return data?.full_name || "";
+    const name = data?.full_name;
+    return (name && name !== "null") ? name : "";
   } catch (err) {
     return "";
   }
@@ -32,7 +33,8 @@ export const getProfileImage = async (userId) => {
     if (error) {
       return "";
     }
-    return data?.avatar_url || "";
+    const avatar = data?.avatar_url;
+    return (avatar && avatar !== "null") ? avatar : "";
   } catch (err) {
     return "";
   }
@@ -50,7 +52,8 @@ export const getEmail = async (userId) => {
     if (error) {
       return "";
     }
-    return data?.email || "";
+    const email = data?.email;
+    return (email && email !== "null") ? email : "";
   } catch (err) {
     return "";
   }
@@ -68,7 +71,8 @@ export const getPhone = async (userId) => {
     if (error) {
       return "";
     }
-    return String(data?.ph_no) || "";
+    const phone = data?.ph_no;
+    return (phone && phone !== "null") ? String(phone) : "";
   } catch (err) {
     return "";
   }
@@ -86,7 +90,8 @@ export const getAddress = async (userId) => {
     if (error) {
       return "";
     }
-    return data?.address || "";
+    const address = data?.address;
+    return (address && address !== "null") ? address : "";
   } catch (err) {
     return "";
   }
