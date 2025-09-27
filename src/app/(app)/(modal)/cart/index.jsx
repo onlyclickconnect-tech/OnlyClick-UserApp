@@ -647,6 +647,8 @@ export default function Cart() {
     });
   };
 
+
+
   const createbookings = async (razorpay_oid) => {
     // Prepare clean cart data for backend
     const cleanCartItems = prepareCartDataForBackend(rawcart, selectedPaymentMethod);
@@ -738,6 +740,7 @@ export default function Cart() {
 
 
 
+  // company share is to be taken online even in case of pay on service
   const handlePayment = async () => {
     // Final validation check for location and mobile number
     if (!selectedLocationObject || Object.keys(selectedLocationObject).length === 0) {
