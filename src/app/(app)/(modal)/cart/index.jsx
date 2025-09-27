@@ -71,8 +71,14 @@ export default function Cart() {
   const [selectedDateItem, setSelectedDateItem] = useState(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState(null);
   const [service_charge, setSetservice_charge] = useState()
-  const [totalTax, setTotalTax] = useState()
   const [total, setTotal] = useState()
+  const [subTotal, setSubTotal] = useState(0)
+  const [onlinePaymentDiscount, setOnlinePaymentDiscount] = useState(0)
+  const [onlineDiscountPercent, setOnlineDiscountPercent] = useState(2)
+  const [totalAmountWithOnlineDiscount, setTotalAmountWithOnlineDiscount] = useState(0)
+  // Add paise state variables for precise calculations
+  const [totalAmountPaise, setTotalAmountPaise] = useState(0)
+  const [totalAmountWithOnlineDiscountPaise, setTotalAmountWithOnlineDiscountPaise] = useState(0)
   const [deletingItemId, setDeletingItemId] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
@@ -296,9 +302,15 @@ export default function Cart() {
 
   // Function to fetch cart data from server
   const fetchCartData = async () => {
-    const { serviceCharge, tax, arr, phno, address, totalAmount, rawCartData } = await fetchCart();
+    const { serviceCharge, subTotal, onlinePaymentDiscount, onlineDiscountPercent, totalAmount, totalAmountWithOnlineDiscount, totalAmountPaise, totalAmountWithOnlineDiscountPaise, arr, rawCartData } = await fetchCart();
     setTotal(totalAmount);
-    setTotalTax(tax);
+    setSubTotal(subTotal);
+    setOnlinePaymentDiscount(onlinePaymentDiscount);
+    setOnlineDiscountPercent(onlineDiscountPercent);
+    setTotalAmountWithOnlineDiscount(totalAmountWithOnlineDiscount);
+    // Set paise values for precise calculations
+    setTotalAmountPaise(totalAmountPaise);
+    setTotalAmountWithOnlineDiscountPaise(totalAmountWithOnlineDiscountPaise);
     setSetservice_charge(serviceCharge);
     setCartData(arr);
     setRawcart(rawCartData);
@@ -349,6 +361,109 @@ export default function Cart() {
 
   const calculateGrandTotal = () => {
     return cartData.reduce((total, category) => total + calculateCategoryTotal(category.items), 0);
+  };
+
+  /**
+   * Calculate company share total using paise-based arithmetic for precision
+   * Company Share = (15% of base price) + (service_fee_percent of base price)
+   * Returns amount in rupees (rounded from paise)
+   */
+  const calculateCompanyShareTotal = () => {
+    if (!rawcart) return 0;
+    
+    let totalCompanySharePaise = 0;
+    
+    rawcart.forEach(item => {
+      // Use pre-calculated paise values for precise arithmetic (now nested in _paise_values)
+      if (item._paise_values && item._paise_values.company_share_paise) {
+        totalCompanySharePaise += item._paise_values.company_share_paise;
+      }
+    });
+    
+    // Convert back to rupees and round only once
+    return Math.round(totalCompanySharePaise / 100);
+  };
+
+  /**
+   * Calculate TM share total using paise-based arithmetic for precision
+   * TM Share = 85% of base price
+   * Returns amount in rupees (rounded from paise)
+   */
+  const calculateTMShareTotal = () => {
+    if (!rawcart) return 0;
+    
+    let totalTMSharePaise = 0;
+    
+    rawcart.forEach(item => {
+      // Use pre-calculated paise values for precise arithmetic (now nested in _paise_values)
+      if (item._paise_values && item._paise_values.tm_share_paise) {
+        totalTMSharePaise += item._paise_values.tm_share_paise;
+      }
+    });
+    
+    // Convert back to rupees and round only once
+    return Math.round(totalTMSharePaise / 100);
+  };
+
+  /**
+   * Calculate company share total in paise for precise Razorpay payment amount
+   * Returns amount in paise for payment gateway
+   */
+  const calculateCompanyShareTotalPaise = () => {
+    if (!rawcart) return 0;
+    
+    let totalCompanySharePaise = 0;
+    
+    rawcart.forEach(item => {
+      if (item._paise_values && item._paise_values.company_share_paise) {
+        totalCompanySharePaise += item._paise_values.company_share_paise;
+      }
+    });
+    
+    return totalCompanySharePaise;
+  };
+
+  /**
+   * Calculate the displayed total amount based on payment method using paise precision
+   * Returns amount in rupees (rounded from paise)
+   */
+  const calculateDisplayedTotal = () => {
+    if (selectedPaymentMethod === 'Online Payment') {
+      // For online payment: show total with discount applied
+      return Math.round(totalAmountWithOnlineDiscountPaise / 100);
+    } else {
+      // For pay on service: show only company share (platform fees) that user pays online
+      return calculateCompanyShareTotal();
+    }
+  };
+
+  /**
+   * Calculate breakdown totals to ensure they match the displayed total
+   * This function ensures the payment breakdown components add up exactly
+   */
+  const calculateBreakdownTotals = () => {
+    const subtotal = calculateGrandTotal(); // Base service amounts
+    const serviceFee = Math.round(service_charge); // Platform + convenience fees
+    // Round the online discount before using it in calculations
+    const onlineDiscount = selectedPaymentMethod === 'Online Payment' ? Math.round(onlinePaymentDiscount) : 0;
+    
+    if (selectedPaymentMethod === 'Online Payment') {
+      // Online Payment: Subtotal + Service Fee - Rounded Discount = Total
+      const total = subtotal + serviceFee - onlineDiscount;
+      return { subtotal, serviceFee, onlineDiscount, total };
+    } else {
+      // Pay on Service: Show full amount breakdown (Company Share + TM Share = Total)
+      const companyShare = calculateCompanyShareTotal();
+      const tmShare = calculateTMShareTotal();
+      const total = companyShare + tmShare; // Full total amount
+      return { 
+        subtotal, 
+        serviceFee, 
+        companyShare, 
+        tmShare, 
+        total // Full amount (company + TM share)
+      };
+    }
   };
 
   // Check if cart is empty or total is 0
@@ -484,10 +599,60 @@ export default function Cart() {
     setShowPaymentModal(true);
   };
 
+  /**
+   * Prepare cart data for backend by filtering out unnecessary fields and applying discount logic
+   * Only sends essential fields: company_share, tm_share, online_discount_amount
+   */
+  const prepareCartDataForBackend = (cartItems, paymentMethod) => {
+    return cartItems.map(item => {
+      // Base fields that should always be included
+      const baseItem = {
+        id: item.id,
+        count: item.count,
+        price: item.price,
+        title: item.title,
+        ratings: item.ratings,
+        category: item.category,
+        discount: item.discount,
+        duration: item.duration,
+        image_url: item.image_url,
+        total_tax: item.total_tax,
+        created_at: item.created_at,
+        service_id: item.service_id,
+        description: item.description,
+        sub_category: item.sub_category,
+        count_in_cart: item.count_in_cart,
+        original_price: item.original_price,
+        service_fee_percent: item.service_fee_percent
+      };
+
+      // Financial fields with discount logic applied
+      if (paymentMethod === 'Online Payment') {
+        // For online payment: company share should have discount already deducted
+        return {
+          ...baseItem,
+          company_share: item.company_share_after_discount || item.company_share, // Use discounted amount
+          tm_share: item.tm_share,
+          online_discount_amount: item.online_discount_amount
+        };
+      } else {
+        // For pay on service: no discount applied, send original company share
+        return {
+          ...baseItem,
+          company_share: item.company_share, // Original company share (no discount)
+          tm_share: item.tm_share,
+          online_discount_amount: 0 // No discount for pay on service
+        };
+      }
+    });
+  };
+
   const createbookings = async (razorpay_oid) => {
-    setIsPaymentLoading(true);
+    // Prepare clean cart data for backend
+    const cleanCartItems = prepareCartDataForBackend(rawcart, selectedPaymentMethod);
+    
     const bookingdata = {
-      items: rawcart,
+      items: cleanCartItems, // Use filtered cart data
       ph_no: mobileNumber,
       location:
         location.houseNumber +
@@ -511,42 +676,63 @@ export default function Cart() {
       paymentmethod: selectedPaymentMethod,
       razorpay_oid: razorpay_oid,
     };
-    const { data, error } = confirmbookings(bookingdata);
+    
+    try {
+      const { data, error } = await confirmbookings(bookingdata);
 
+      if (error) {
+        showCustomAlert(
+          'Sorry! Unable to book',
+          'There was an error processing your booking. Please try again later.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                router.push('/protected/(tabs)/Bookings');
+              }
+            }
+          ],
+          'error'
+        );
+      } else {
+        // Show success message based on payment method
+        const successTitle = selectedPaymentMethod === 'Online Payment' 
+          ? 'Payment Successful' 
+          : 'Platform Fees Paid Successfully';
+        
+        const successMessage = selectedPaymentMethod === 'Online Payment'
+          ? 'Your booking has been confirmed successfully!'
+          : `Platform fees paid online. Please pay ₹${Math.round(calculateTMShareTotal())} to the service provider when they arrive.`;
 
-
-    if (error) {
+        showCustomAlert(
+          successTitle,
+          successMessage,
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                router.push('/protected/(tabs)/Bookings');
+              }
+            }
+          ],
+          'success'
+        );
+      }
+    } catch (bookingError) {
       showCustomAlert(
-        'Sorry! Unable to book',
-        'There was an error processing your booking. Please try again later.',
+        'Booking Error',
+        'There was an error creating your booking. Please contact support.',
         [
           {
             text: 'OK',
             onPress: () => {
-              setShowPaymentModal(false);
               router.push('/protected/(tabs)/Bookings');
             }
           }
         ],
         'error'
       );
-    } else {
-      showCustomAlert(
-        'Your booking has been confirmed!',
-        '',
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              setShowPaymentModal(false);
-              router.push('/protected/(tabs)/Bookings');
-            }
-          }
-        ],
-        'success'
-      );
     }
-    setIsPaymentLoading(false);
   }
 
 
@@ -573,18 +759,27 @@ export default function Cart() {
     }
 
     setIsPaymentLoading(true);
+
+    // Calculate amounts for both payment methods using precise paise calculations
+    const platformFeeAmountPaise = calculateCompanyShareTotalPaise(); // Company share in paise for Pay on Service
+    const platformFeeAmount = Math.round(platformFeeAmountPaise / 100); // For display
+    const serviceProviderAmount = Math.round(calculateGrandTotal()); // Only the service amounts
+    
     if (selectedPaymentMethod === "Online Payment") {
       try {
-        const { data, error } = await createRazorpayOrder(rawcart,total*100 ); // your API call
+        // Convert paise to rupees and round, then convert back to paise for Razorpay (which expects paise)
+        const roundedAmountInRupees = Math.round(totalAmountWithOnlineDiscountPaise / 100);
+        const finalAmountInPaise = roundedAmountInRupees * 100;
+        const { data, error } = await createRazorpayOrder(rawcart, finalAmountInPaise);
         const order = data;
 
         let options = {
-          description: "Test Payment",
-          image: "https://avatars.githubusercontent.com/u/230859053?v=4", // optional
+          description: "OnlyClick Service Booking",
+          image: "https://avatars.githubusercontent.com/u/230859053?v=4",
           currency: "INR",
           key: Constants.expoConfig?.extra?.expoPublicRazorPayKeyId, 
-          amount: order.amount, // in paisa
-          order_id: order.id, // from backend
+          amount: order.amount,
+          order_id: order.id,
           name: "OnlyClick",
           prefill: {
             contact: mobileNumber,
@@ -594,30 +789,21 @@ export default function Cart() {
 
         await RazorpayCheckout.open(options)
           .then(async (data) => {
-            // Payment Success
-            // alert(`Success: ${data.razorpay_payment_id}`);
-            // TODO: verify payment on backend
-
             const { data: confirmPaymentData, error: confirmPaymentError } = await confirmRazorpayPayment(data);
             if (confirmPaymentError) {
-              throw new error(confirmPaymentError)
+              throw new Error(confirmPaymentError)
             }
             if (confirmPaymentData.success) {
-              // Close all modals before showing success alert
               setShowPaymentModal(false);
               setShowDateTimeModal(false);
               setShowCancellationPolicy(false);
               setShowServiceFeeTooltip(false);
               setShowDeleteModal(false);
-              createbookings(data.razorpay_order_id);
               setIsPaymentLoading(false);
-              // Show success alert
-              showCustomAlert('Payment Successful', 'Your booking has been confirmed successfully!', [
-                { text: 'OK', onPress: () => router.push('/protected/(tabs)/Bookings') }
-              ], 'success');
-            }
-            else {
-              // Close all modals before showing error alert
+
+              // here we create the bookings
+              await createbookings(data.razorpay_order_id);
+            } else {
               setShowPaymentModal(false);
               setShowDateTimeModal(false);
               setShowCancellationPolicy(false);
@@ -630,8 +816,6 @@ export default function Cart() {
             }
           })
           .catch((error) => {
-            // Payment Failed
-            // Close all modals before showing error alert
             setShowPaymentModal(false);
             setShowDateTimeModal(false);
             setShowCancellationPolicy(false);
@@ -642,24 +826,72 @@ export default function Cart() {
               { text: 'OK' }
             ], 'error');
           });
-
-
       } catch (err) {
         setIsPaymentLoading(false);
       }
-    }
-    else {
-      // Cash on Delivery - close all modals and show success
-      setShowPaymentModal(false);
-      setShowDateTimeModal(false);
-      setShowCancellationPolicy(false);
-      setShowServiceFeeTooltip(false);
-      setShowDeleteModal(false);
-      createbookings();
-      setIsPaymentLoading(false);
-      showCustomAlert('Booking Confirmed', 'Your booking has been confirmed successfully! You can pay cash on service.', [
-        { text: 'OK', onPress: () => router.push('/protected/(tabs)/Bookings') }
-      ], 'success');
+    } else {
+      // Pay on Service - Pay platform fees online first
+      try {
+        // Convert paise to rupees and round, then convert back to paise for Razorpay (which expects paise)
+        const roundedAmountInRupees = Math.round(platformFeeAmountPaise / 100);
+        const finalAmountInPaise = roundedAmountInRupees * 100;
+        const { data, error } = await createRazorpayOrder(rawcart, finalAmountInPaise);
+        const order = data;
+
+        let options = {
+          description: "OnlyClick Platform Fees",
+          image: "https://avatars.githubusercontent.com/u/230859053?v=4",
+          currency: "INR",
+          key: Constants.expoConfig?.extra?.expoPublicRazorPayKeyId, 
+          amount: order.amount,
+          order_id: order.id,
+          name: "OnlyClick",
+          prefill: {
+            contact: mobileNumber,
+          },
+          theme: { color: "#3399cc" },
+        };
+
+        await RazorpayCheckout.open(options)
+          .then(async (data) => {
+            const { data: confirmPaymentData, error: confirmPaymentError } = await confirmRazorpayPayment(data);
+            if (confirmPaymentError) {
+              throw new Error(confirmPaymentError)
+            }
+            if (confirmPaymentData.success) {
+              setShowPaymentModal(false);
+              setShowDateTimeModal(false);
+              setShowCancellationPolicy(false);
+              setShowServiceFeeTooltip(false);
+              setShowDeleteModal(false);
+              setIsPaymentLoading(false);
+              await createbookings(data.razorpay_order_id);
+            } else {
+              setShowPaymentModal(false);
+              setShowDateTimeModal(false);
+              setShowCancellationPolicy(false);
+              setShowServiceFeeTooltip(false);
+              setShowDeleteModal(false);
+              setIsPaymentLoading(false);
+              showCustomAlert('Payment Failed', 'Sorry! Something went wrong. If the amount was debited from your account, please contact us for assistance.', [
+                { text: 'OK' }
+              ], 'error');
+            }
+          })
+          .catch((error) => {
+            setShowPaymentModal(false);
+            setShowDateTimeModal(false);
+            setShowCancellationPolicy(false);
+            setShowServiceFeeTooltip(false);
+            setShowDeleteModal(false);
+            setIsPaymentLoading(false);
+            showCustomAlert('Payment Failed', 'Sorry! Something went wrong. If the amount was debited from your account, please contact us for assistance.', [
+              { text: 'OK' }
+            ], 'error');
+          });
+      } catch (err) {
+        setIsPaymentLoading(false);
+      }
     }
   };
 
@@ -1125,11 +1357,11 @@ export default function Cart() {
                 <View style={styles.billRows}>
                   <View style={styles.billRow}>
                     <Text style={styles.billLabel}>Subtotal</Text>
-                    <Text style={styles.billAmount}>₹{calculateGrandTotal()}</Text>
+                    <Text style={styles.billAmount}>₹{calculateBreakdownTotals().subtotal}</Text>
                   </View>
                   <View style={[styles.billRow, { position: 'relative' }]}>
                     <View style={styles.billLabelWithIcon}>
-                      <Text style={styles.billLabel}>Service Fee</Text>
+                      <Text style={styles.billLabel}>Convenience Fee + Platform Fee</Text>
                       <TouchableOpacity
                         onPress={() => setShowServiceFeeTooltip(!showServiceFeeTooltip)}
                         style={styles.infoIconButton}
@@ -1137,14 +1369,14 @@ export default function Cart() {
                         <Ionicons name="information-circle-outline" size={16} color="#666" />
                       </TouchableOpacity>
                     </View>
-                    <Text style={styles.billAmount}>₹50</Text>
+                    <Text style={styles.billAmount}>₹{calculateBreakdownTotals().serviceFee}</Text>
 
                     {/* Service Fee Tooltip */}
                     {showServiceFeeTooltip && (
                       <View style={styles.serviceFeeTooltip}>
                         <View style={styles.tooltipBubble}>
                           <Text style={styles.tooltipText}>
-                            💡 Service fee covers platform maintenance, customer support, and quality assurance!
+                            💡 Convenience & platform fees cover app maintenance, customer support, and quality assurance!
                           </Text>
                           <View style={styles.tooltipArrow} />
                         </View>
@@ -1152,19 +1384,49 @@ export default function Cart() {
                     )}
                   </View>
 
-                  <View style={styles.billRow}>
-                    <Text style={styles.billLabel}>GST (18%)</Text>
-                    <Text style={styles.billAmount}>₹{Math.round(calculateGrandTotal() * 0.18)}</Text>
-                  </View>
+                  {/* Online Payment Discount */}
+                  {selectedPaymentMethod === 'Online Payment' && (
+                    <View style={styles.billRow}>
+                      <View style={styles.billLabelWithIcon}>
+                        <Text style={styles.billLabel}>Online Payment Discount ({onlineDiscountPercent}%)</Text>
+                        <View style={styles.discountBadge}>
+                          <Text style={styles.discountBadgeText}>SAVE</Text>
+                        </View>
+                      </View>
+                      <Text style={[styles.billAmount, styles.discountAmount]}>-₹{calculateBreakdownTotals().onlineDiscount}</Text>
+                    </View>
+                  )}
+
+                  {/* Pay on Service Breakdown */}
+                  {selectedPaymentMethod === 'Pay on Service' && (
+                    <View style={styles.payOnServiceBreakdown}>
+                      <View style={styles.breakdownHeader}>
+                        <Ionicons name="information-circle" size={16} color="#3898B3" />
+                        <Text style={styles.breakdownHeaderText}>Payment Breakdown</Text>
+                      </View>
+                      <View style={styles.billRow}>
+                        <Text style={styles.billLabel}>Pay Online Now (Company Share)</Text>
+                        <Text style={styles.billAmount}>₹{calculateBreakdownTotals().companyShare}</Text>
+                      </View>
+                      <View style={styles.billRow}>
+                        <Text style={styles.billLabel}>Pay to Service Provider</Text>
+                        <Text style={styles.billAmount}>₹{calculateBreakdownTotals().tmShare}</Text>
+                      </View>
+                    </View>
+                  )}
 
                   <View style={styles.billDivider} />
 
                   <View style={styles.billTotalRow}>
-                    <View>
+                    <View style={styles.billTotalTextContainer}>
                       <Text style={styles.billTotalLabel}>Total Amount</Text>
-                      <Text style={styles.billTotalSubtext}>All taxes included</Text>
+                      <Text style={styles.billTotalSubtext}>
+                        {selectedPaymentMethod === 'Online Payment' ? 'With online discount applied' : 'Platform fees paid online, service amount to provider'}
+                      </Text>
                     </View>
-                    <Text style={styles.billTotalAmount}>₹{Math.round(calculateGrandTotal() + service_charge + totalTax)}</Text>
+                    <Text style={styles.billTotalAmount}>
+                      ₹{calculateBreakdownTotals().total}
+                    </Text>
                   </View>
                 </View>
               </View>
@@ -1183,13 +1445,13 @@ export default function Cart() {
                     key: 'Online Payment',
                     icon: 'card',
                     label: 'Online Payment',
-                    subtitle: 'Pay online using a Secure Payment Gateway'
+                    subtitle: 'Pay full amount online with discount'
                   },
                   {
                     key: 'Pay on Service',
                     icon: 'cash',
                     label: 'Pay on Service',
-                    subtitle: 'Payment to provider'
+                    subtitle: 'Pay company share online + service amount to provider'
                   }
                 ].map((method) => (
                   <View key={method.key} style={styles.paymentMethodContainer}>
@@ -1301,8 +1563,14 @@ export default function Cart() {
           {/* Enhanced Pay Button */}
           <View style={styles.enhancedPaymentFooter}>
             <View style={styles.paymentAmountSummary}>
-              <Text style={styles.payAmountLabel}>Total Amount</Text>
-              <Text style={styles.payAmountValue}>₹{Math.round(total)}</Text>
+              <Text style={styles.payAmountLabel}>
+                {selectedPaymentMethod === 'Online Payment' ? 'Pay Now' : 'Pay Online Now'}
+              </Text>
+              <Text style={styles.payAmountValue}>
+                ₹{selectedPaymentMethod === 'Online Payment' 
+                  ? calculateBreakdownTotals().total 
+                  : calculateBreakdownTotals().companyShare}
+              </Text>
             </View>
             <TouchableOpacity
               style={[styles.enhancedPayButton, isPaymentLoading && styles.disabledPayButton]}
@@ -1320,7 +1588,7 @@ export default function Cart() {
                   />
                 )}
                 <Text style={styles.enhancedPayButtonText}>
-                  {isPaymentLoading ? 'Processing...' : (selectedPaymentMethod === 'Online Payment' ? 'Pay Securely' : 'Confirm Booking')}
+                  {isPaymentLoading ? 'Processing...' : (selectedPaymentMethod === 'Online Payment' ? 'Pay Securely' : 'Pay Platform Fees')}
                 </Text>
                 {!isPaymentLoading && (
                   <Ionicons name="arrow-forward" size={18} color="#fff" />
@@ -1535,6 +1803,25 @@ export default function Cart() {
           </Text>
         </TouchableOpacity>
 
+        {/* Compact Online Payment Discount Banner */}
+        {!isCartEmptyOrZero() && (
+          <View style={styles.discountBanner}>
+            <View style={styles.discountBannerHeader}>
+              <View style={styles.discountBannerIcon}>
+                <Ionicons name="card" size={16} color="#4CAF50" />
+              </View>
+              <Text style={styles.discountBannerText}>
+                Save ₹{onlinePaymentDiscount} ({onlineDiscountPercent}%) with online payment
+              </Text>
+            </View>
+            <View style={styles.discountBannerPriceRow}>
+              <Text style={styles.discountBannerOriginalPrice}>₹{Math.round(total)}</Text>
+              <Ionicons name="arrow-forward" size={14} color="#666" style={styles.discountArrow} />
+              <Text style={styles.discountBannerDiscountedPrice}>₹{Math.round(totalAmountWithOnlineDiscount)}</Text>
+            </View>
+          </View>
+        )}
+
         {/* Cart Categories */}
         {cartData.length === 0 ? (
           <View style={styles.emptyCartContainer}>
@@ -1562,12 +1849,8 @@ export default function Cart() {
 
             <View style={styles.summaryDivider} />
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Service Fee</Text>
+              <Text style={styles.summaryLabel}>Convenience Fee + Platform Fee</Text>
               <Text style={styles.summaryAmount}>{'₹' + Math.round(service_charge)}</Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Taxes</Text>
-              <Text style={styles.summaryAmount}>₹{Math.round(totalTax)}</Text>
             </View>
 
             <View style={styles.summaryDivider} />
@@ -1593,7 +1876,7 @@ export default function Cart() {
       <View style={styles.bottomSection}>
         <View style={styles.totalContainer}>
           <Text style={styles.bottomTotalLabel}>Total</Text>
-          <Text style={styles.bottomTotalAmount}>₹{Math.round(calculateGrandTotal() + service_charge + totalTax)}</Text>
+          <Text style={styles.bottomTotalAmount}>₹{Math.round(calculateGrandTotal() + service_charge)}</Text>
         </View>
         <TouchableOpacity
           style={[
@@ -2432,6 +2715,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E3F2FD',
   },
+  billTotalTextContainer: {
+    flex: 1,
+    paddingRight: 12,
+  },
   billTotalLabel: {
     fontSize: 16,
     fontWeight: 'bold',
@@ -2441,6 +2728,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
     marginTop: 2,
+    flexWrap: 'wrap',
   },
   billTotalAmount: {
     fontSize: 20,
@@ -3533,5 +3821,97 @@ const styles = StyleSheet.create({
   },
   customAlertButtonTextDestructive: {
     color: '#fff',
+  },
+  // Compact Discount Banner Styles
+  discountBanner: {
+    backgroundColor: '#E8F5E8',
+    borderRadius: 12,
+    marginHorizontal: 20,
+    marginTop: 12,
+    padding: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: '#4CAF50',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  discountBannerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  discountBannerIcon: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  discountBannerText: {
+    fontSize: 14,
+    color: '#2E7D32',
+    fontWeight: '500',
+    flex: 1,
+  },
+  discountBannerPriceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 4,
+  },
+  discountBannerOriginalPrice: {
+    fontSize: 16,
+    color: '#666',
+    textDecorationLine: 'line-through',
+    fontWeight: '500',
+  },
+  discountArrow: {
+    marginHorizontal: 8,
+  },
+  discountBannerDiscountedPrice: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1B5E20',
+  },
+  // Discount Badge Styles (keeping for payment modal)
+  discountBadge: {
+    backgroundColor: '#4CAF50',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginLeft: 8,
+  },
+  discountBadgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  discountAmount: {
+    color: '#4CAF50',
+    fontWeight: '600',
+  },
+  // Pay on Service Breakdown Styles
+  payOnServiceBreakdown: {
+    backgroundColor: '#FFF8E1',
+    borderRadius: 8,
+    padding: 12,
+    marginVertical: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#FFC107',
+  },
+  breakdownHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  breakdownHeaderText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#F57C00',
+    marginLeft: 4,
   },
 });
