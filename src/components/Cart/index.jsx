@@ -14,11 +14,11 @@ import {
   View
 } from 'react-native';
 import Toast from 'react-native-toast-message';
+import { addOneInCart, removeAllFromCart, removeOneFromCart } from '../../app/api/cart';
+import { useAuth } from '../../context/AuthProvider';
+import fetchCart from '../../data/getdata/getCart';
 import ConfirmModal from '../common/ConfirmModal';
 import Text from "../ui/Text";
-import fetchCart from '../../data/getdata/getCart';
-import { useAuth } from '../../context/AuthProvider';
-import { addOneInCart, removeAllFromCart, removeOneFromCart } from '../../app/api/cart';
 
 export default function Cart() {
   const router = useRouter();
