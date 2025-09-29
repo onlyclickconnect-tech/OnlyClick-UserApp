@@ -231,7 +231,16 @@ export default function Bookings() {
                           <Ionicons name="time-outline" size={16} color="#FFA500" />
                           <Text style={styles.infoText}>Provider will be assigned soon</Text>
                         </View>
+
                       )}
+                        {/* Only show provider payment for Pay on Service */}
+                        {(item.paymentMethod && 
+                          (item.paymentMethod.toLowerCase().includes('pay on service') )) && (
+                          <View style={styles.infoRow}>
+                            <Ionicons name="wallet-outline" size={16} color="#4CAF50" />
+                            <Text style={styles.providerPaymentText}>Pay on Service: ₹{item.tm_share || '0'}</Text>
+                          </View>
+                        )}
                     </View>
 
                     {/* Show OTP on the right side for accepted bookings */}
@@ -246,26 +255,34 @@ export default function Bookings() {
                   </View>
 
                   <View style={styles.cardFooter}>
-                    <Text style={styles.price}>₹{item.price}</Text>
+                    <View style={styles.priceContainer}>
+                      <Text style={styles.price}>₹{item.price}</Text>
+                      {item.count && item.count >= 1 && (
+                        <Text style={styles.countText}>Qty: {item.count}</Text>
+                      )}
+                    </View>
                     <TouchableOpacity
                       style={styles.viewDetailsButton}
                       onPress={() => {
                         // Pass complete booking data as navigation params (excluding id since it's in pathname)
                         const params = {
-                          serviceName: item.serviceName || item.service_name,
+                          serviceName: item.service_name,
                           date: item.date,
                           time: item.time,
                           location: item.location,
                           status: item.status,
                           provider: item.status !== 'Pending' ? item.provider : 'Provider not assigned yet',
-                          price: item.price,
+                          price: item.payment_amount || item.price,
+                          quantity: item.count || 1,
+                          unitPrice: item.service_price || (item.payment_amount ? item.payment_amount / Math.max(item.count || 1, 1) : item.price),
                           category: item.category,
                           contact: item.status !== 'Pending' ? (item.contact || item.Contact) : null,
                           description: item.description,
                           otp: item.otp,
+                          tm_share: item.tm_share || '0',
                           taskMaster: JSON.stringify(item.taskMaster),
-                          estimatedDuration: item.estimatedDuration,
-                          paymentMethod: item.paymentMethod,
+                          estimatedDuration: item.estimated_duration || item.estimatedDuration,
+                          paymentMethod: item.payment_method || item.paymentMethod,
                           bookingId: item.bookingId,
                           razorpay_oid: item.razorpay_oid,
                           serviceNotes: item.serviceNotes
@@ -538,6 +555,13 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     flex: 1,
   },
+  providerPaymentText: {
+    fontSize: 14,
+    color: '#4CAF50',
+    marginLeft: 8,
+    flex: 1,
+    fontWeight: '600',
+  },
   otpText: {
     color: '#4CAF50',
     fontWeight: '600',
@@ -579,10 +603,20 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#F0F0F0',
   },
+  priceContainer: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+  },
   price: {
     fontSize: 18,
     fontWeight: '600',
     color: '#3898B3',
+  },
+  countText: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 2,
+    fontWeight: '500',
   },
   viewDetailsButton: {
     flexDirection: 'row',

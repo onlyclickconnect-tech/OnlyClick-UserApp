@@ -2,6 +2,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { Stack, useRouter } from "expo-router";
 import { View } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
+import CartSuccessModal from "../../../components/common/CartSuccessModal";
 import CustomServiceModal from "../../../components/common/CustomServiceModal";
 import EnterAmountModal from "../../../components/common/EnterAmountModal";
 import PressableScale from "../../../components/common/PressableScale";
@@ -38,6 +39,7 @@ export default function RootLayout() {
         <CustomServiceModal />
         <EnterAmountModal />
         <SuccessModal />
+        <CartSuccessModal />
       </View>
     </SafeAreaView>
   );

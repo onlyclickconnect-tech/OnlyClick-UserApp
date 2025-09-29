@@ -4,18 +4,16 @@ import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import { useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Dimensions,
   Image,
   Modal,
   ScrollView,
   StyleSheet,
-  TextInput,
   TouchableOpacity,
   View
 } from "react-native";
-import Text from "../../../../../components/ui/Text"
+import Text from "../../../../../components/ui/Text";
 import { createCustomPost } from "../../../../api/post";
 
 import AppHeader from '../../../../../components/common/AppHeader';
@@ -281,248 +279,265 @@ export default function PostRequest() {
     </Modal>
   );
 
-  return (
+  // return (
+  //   <View style={styles.container}>
+  //     <AppHeader
+  //       title={'📝 Post Request'}
+  //       showBack
+  //       onBack={() => router.back()}
+  //       rightElement={
+  //         <TouchableOpacity style={styles.helpButton} onPress={() => setShowHelpModal(true)}>
+  //           <MaterialIcons name="help-outline" size={24} color="#fff" />
+  //         </TouchableOpacity>
+  //       }
+  //     />
+
+  //     <ScrollView
+  //       style={styles.scrollContainer}
+  //       contentContainerStyle={styles.contentContainer}
+  //       showsVerticalScrollIndicator={false}
+  //     >
+
+  //     {/* Image Upload Section */}
+  //     <View style={styles.camerasection}>
+  //       <View style={styles.sectionHeaderWithIcon}>
+  //         <View style={styles.sectionTitleContainer}>
+  //           <View style={styles.iconContainer}>
+  //             <Ionicons name="camera-outline" size={20} color="#007AFF" />
+  //           </View>
+  //           <View>
+  //             <Text style={styles.sectionTitle}>Upload Image</Text>
+  //           </View>
+  //         </View>
+  //         <View style={styles.optionalBadge}>
+  //           <Text style={styles.optionalText}>Optional</Text>
+  //         </View>
+  //       </View>
+        
+  //       {selectedImage ? (
+  //         <View style={styles.imageContainer}>
+  //           <Image source={{ uri: selectedImage }} style={styles.selectedImage} />
+  //           <TouchableOpacity 
+  //             style={styles.removeImageBtn}
+  //             onPress={() => setSelectedImage(null)}
+  //           >
+  //             <Ionicons name="close-circle" size={28} color="#FF6B6B" />
+  //           </TouchableOpacity>
+  //         </View>
+  //       ) : (
+  //         <View style={styles.imageUploadOptions}>
+  //           <TouchableOpacity 
+  //             style={styles.imageUploadButton}
+  //             onPress={takePhoto}
+  //           >
+  //             <View style={styles.imageUploadIconContainer}>
+  //               <Ionicons name="camera" size={28} color="#007AFF" />
+  //             </View>
+  //             <Text style={styles.imageUploadTitle}>Camera</Text>
+  //             <Text style={styles.imageUploadSubtitle}>Take a photo</Text>
+  //           </TouchableOpacity>
+
+  //           <TouchableOpacity 
+  //             style={styles.imageUploadButton}
+  //             onPress={pickFromGallery}
+  //           >
+  //             <View style={styles.imageUploadIconContainer}>
+  //               <Ionicons name="images" size={28} color="#007AFF" />
+  //             </View>
+  //             <Text style={styles.imageUploadTitle}>Gallery</Text>
+  //             <Text style={styles.imageUploadSubtitle}>Choose from gallery</Text>
+  //           </TouchableOpacity>
+  //         </View>
+  //       )}
+  //     </View>
+
+  //     {/* Problem Description Section */}
+  //     <View style={styles.section}>
+  //       <View style={styles.sectionHeaderWithIcon}>
+  //         <View style={styles.sectionTitleContainer}>
+  //           <View style={styles.iconContainer}>
+  //             <Ionicons name="document-text-outline" size={20} color="#007AFF" />
+  //           </View>
+  //           <View>
+  //             <Text style={styles.sectionTitle}>Describe Problem</Text>
+  //           </View>
+  //         </View>
+  //         <View style={styles.compulsaryBadge}>
+  //           <Text style={styles.compulsoryText}>Compulsory</Text>
+  //         </View>
+  //       </View>
+        
+  //       <TextInput
+  //         style={styles.problemInput}
+  //         multiline
+  //         numberOfLines={4}
+  //         placeholder="e.g., My kitchen sink is leaking from the faucet base. It started yesterday and water drips every few seconds. I need someone to fix or replace the faucet..."
+  //         placeholderTextColor="#999"
+  //         value={problemDescription}
+  //         onChangeText={setProblemDescription}
+  //         textAlignVertical="top"
+  //       />
+  //       <View style={styles.inputFooter}>
+  //         <Text style={styles.characterCount}>{problemDescription.length}/500</Text>
+  //       </View>
+  //     </View>
+
+  //     {/* Location Section */}
+  //     <View style={styles.section}>
+  //       <View style={styles.sectionHeaderWithIcon}>
+  //         <View style={styles.sectionTitleContainer}>
+  //           <View style={styles.iconContainer}>
+  //             <Ionicons name="location-outline" size={20} color="#007AFF" />
+  //           </View>
+  //           <View>
+  //             <Text style={styles.sectionTitle}>Location</Text>
+  //           </View>
+  //         </View>
+  //       </View>
+  //       <View style={styles.locationContainer}>
+  //         <TextInput
+  //           style={styles.locationInput}
+  //           placeholder="Enter location manually or use GPS"
+  //           placeholderTextColor="#999"
+  //           value={location}
+  //           onChangeText={setLocation}
+  //         />
+  //         <TouchableOpacity 
+  //           style={[styles.locationBtn, isLocationLoading && styles.locationBtnDisabled]}
+  //           onPress={getCurrentLocation}
+  //           disabled={isLocationLoading}
+  //         >
+  //           <Ionicons 
+  //             name={isLocationLoading ? "refresh" : "location"} 
+  //             size={20} 
+  //             color="#fff" 
+  //           />
+  //         </TouchableOpacity>
+  //       </View>
+  //     </View>
+
+  //     {/* Urgency Section */}
+  //     {/* <View style={styles.section}>
+  //       <View style={styles.sectionHeaderWithIcon}>
+  //         <View style={styles.sectionTitleContainer}>
+  //           <View style={styles.iconContainer}>
+  //             <Ionicons name="timer-outline" size={20} color="#007AFF" />
+  //           </View>
+  //           <View>
+  //             <Text style={styles.sectionTitle}>Urgency Level</Text>
+  //           </View>
+  //         </View>
+  //       </View>
+  //       <View style={styles.optionsContainer}>
+  //         {urgencyOptions.map((option) => (
+  //           <TouchableOpacity
+  //             key={option.value}
+  //             style={[
+  //               styles.optionBtn,
+  //               urgency === option.value && (option.value === "urgent" ? styles.optionBtnUrgentSelected : styles.optionBtnSelected)
+  //             ]}
+  //             onPress={() => setUrgency(option.value)}
+  //           >
+  //             <MaterialIcons 
+  //               name={option.icon} 
+  //               size={20} 
+  //               color={urgency === option.value ? "#fff" : option.value === "urgent" ? "#FF6B6B" : "#666"}
+  //             />
+  //             <Text style={[
+  //               styles.optionText,
+  //               urgency === option.value && styles.optionTextSelected
+  //             ]}>
+  //               {option.label}
+  //             </Text>
+  //           </TouchableOpacity>
+  //         ))}
+  //       </View>
+  //     </View> */}
+
+  //     {/* Contractor Preference Section */}
+  //     {/* <View style={styles.section}>
+  //       <View style={styles.sectionHeaderWithIcon}>
+  //         <View style={styles.sectionTitleContainer}>
+  //           <View style={styles.iconContainer}>
+  //             <Ionicons name="people-outline" size={20} color="#007AFF" />
+  //           </View>
+  //           <View>
+  //             <Text style={styles.sectionTitle}>Contractor Preference</Text>
+  //           </View>
+  //         </View>
+  //       </View>
+  //       <View style={styles.optionsContainer}>
+  //         {contractorOptions.map((option) => (
+  //           <TouchableOpacity
+  //             key={option.value}
+  //             style={[
+  //               styles.optionBtn,
+  //               contractorPreference === option.value && (
+  //                 option.value === "auto" ? styles.optionBtnAutoSelected : 
+  //                 option.value === "previous" ? styles.optionBtnPreviousSelected : 
+  //                 styles.optionBtnSelected
+  //               )
+  //             ]}
+  //             onPress={() => setContractorPreference(option.value)}
+  //           >
+  //             <MaterialIcons 
+  //               name={option.icon} 
+  //               size={20} 
+  //               color={contractorPreference === option.value ? "#fff" : 
+  //                 option.value === "auto" ? "#28a745" : 
+  //                 option.value === "previous" ? "#FF8C00" : "#666"}
+  //             />
+  //             <Text style={[
+  //               styles.optionText,
+  //               contractorPreference === option.value && styles.optionTextSelected
+  //             ]}>
+  //               {option.label}
+  //             </Text>
+  //           </TouchableOpacity>
+  //         ))}
+  //       </View>
+  //     </View> */}
+
+  //     {/* Submit Button */}
+  //     <View style={styles.submitContainer}>
+  //       <TouchableOpacity 
+  //         style={[styles.submitBtn, isSubmitting && styles.submitBtnDisabled]} 
+  //         onPress={handleSubmitRequest}
+  //         disabled={isSubmitting}
+  //       >
+  //         <View style={styles.submitContent}>
+  //           {isSubmitting ? (
+  //             <ActivityIndicator size="small" color="#fff" />
+  //           ) : (
+  //             <Ionicons name="checkmark-circle" size={24} color="#fff" />
+  //           )}
+  //           <Text style={styles.submitBtnText}>
+  //             {isSubmitting ? "Posting..." : "Post Request"}
+  //           </Text>
+  //         </View>
+  //         <Text style={styles.submitSubtext}>Free to post  •  Pay only when service is done</Text>
+  //       </TouchableOpacity>
+  //     </View>
+  //     </ScrollView>
+
+  //     <HelpModal />
+  //   </View>
+  // );
+
+  return(
     <View style={styles.container}>
       <AppHeader
-        title={'📝 Post Request'}
+        title={'Post Request'}
         showBack
         onBack={() => router.back()}
-        rightElement={
-          <TouchableOpacity style={styles.helpButton} onPress={() => setShowHelpModal(true)}>
-            <MaterialIcons name="help-outline" size={24} color="#fff" />
-          </TouchableOpacity>
-        }
       />
-
-      <ScrollView
-        style={styles.scrollContainer}
-        contentContainerStyle={styles.contentContainer}
-        showsVerticalScrollIndicator={false}
-      >
-
-      {/* Image Upload Section */}
-      <View style={styles.camerasection}>
-        <View style={styles.sectionHeaderWithIcon}>
-          <View style={styles.sectionTitleContainer}>
-            <View style={styles.iconContainer}>
-              <Ionicons name="camera-outline" size={20} color="#007AFF" />
-            </View>
-            <View>
-              <Text style={styles.sectionTitle}>Upload Image</Text>
-            </View>
-          </View>
-          <View style={styles.optionalBadge}>
-            <Text style={styles.optionalText}>Optional</Text>
-          </View>
-        </View>
-        
-        {selectedImage ? (
-          <View style={styles.imageContainer}>
-            <Image source={{ uri: selectedImage }} style={styles.selectedImage} />
-            <TouchableOpacity 
-              style={styles.removeImageBtn}
-              onPress={() => setSelectedImage(null)}
-            >
-              <Ionicons name="close-circle" size={28} color="#FF6B6B" />
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <View style={styles.imageUploadOptions}>
-            <TouchableOpacity 
-              style={styles.imageUploadButton}
-              onPress={takePhoto}
-            >
-              <View style={styles.imageUploadIconContainer}>
-                <Ionicons name="camera" size={28} color="#007AFF" />
-              </View>
-              <Text style={styles.imageUploadTitle}>Camera</Text>
-              <Text style={styles.imageUploadSubtitle}>Take a photo</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={styles.imageUploadButton}
-              onPress={pickFromGallery}
-            >
-              <View style={styles.imageUploadIconContainer}>
-                <Ionicons name="images" size={28} color="#007AFF" />
-              </View>
-              <Text style={styles.imageUploadTitle}>Gallery</Text>
-              <Text style={styles.imageUploadSubtitle}>Choose from gallery</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
-
-      {/* Problem Description Section */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeaderWithIcon}>
-          <View style={styles.sectionTitleContainer}>
-            <View style={styles.iconContainer}>
-              <Ionicons name="document-text-outline" size={20} color="#007AFF" />
-            </View>
-            <View>
-              <Text style={styles.sectionTitle}>Describe Problem</Text>
-            </View>
-          </View>
-          <View style={styles.compulsaryBadge}>
-            <Text style={styles.compulsoryText}>Compulsory</Text>
-          </View>
-        </View>
-        
-        <TextInput
-          style={styles.problemInput}
-          multiline
-          numberOfLines={4}
-          placeholder="e.g., My kitchen sink is leaking from the faucet base. It started yesterday and water drips every few seconds. I need someone to fix or replace the faucet..."
-          placeholderTextColor="#999"
-          value={problemDescription}
-          onChangeText={setProblemDescription}
-          textAlignVertical="top"
+      <View style={styles.comingSoonContainer}>
+        <Image 
+          style={styles.comingSoonImage} 
+          source={require('../../../../../../assets/images/comingSoon.png')}
+          resizeMode="contain"
         />
-        <View style={styles.inputFooter}>
-          <Text style={styles.characterCount}>{problemDescription.length}/500</Text>
-        </View>
       </View>
-
-      {/* Location Section */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeaderWithIcon}>
-          <View style={styles.sectionTitleContainer}>
-            <View style={styles.iconContainer}>
-              <Ionicons name="location-outline" size={20} color="#007AFF" />
-            </View>
-            <View>
-              <Text style={styles.sectionTitle}>Location</Text>
-            </View>
-          </View>
-        </View>
-        <View style={styles.locationContainer}>
-          <TextInput
-            style={styles.locationInput}
-            placeholder="Enter location manually or use GPS"
-            placeholderTextColor="#999"
-            value={location}
-            onChangeText={setLocation}
-          />
-          <TouchableOpacity 
-            style={[styles.locationBtn, isLocationLoading && styles.locationBtnDisabled]}
-            onPress={getCurrentLocation}
-            disabled={isLocationLoading}
-          >
-            <Ionicons 
-              name={isLocationLoading ? "refresh" : "location"} 
-              size={20} 
-              color="#fff" 
-            />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Urgency Section */}
-      {/* <View style={styles.section}>
-        <View style={styles.sectionHeaderWithIcon}>
-          <View style={styles.sectionTitleContainer}>
-            <View style={styles.iconContainer}>
-              <Ionicons name="timer-outline" size={20} color="#007AFF" />
-            </View>
-            <View>
-              <Text style={styles.sectionTitle}>Urgency Level</Text>
-            </View>
-          </View>
-        </View>
-        <View style={styles.optionsContainer}>
-          {urgencyOptions.map((option) => (
-            <TouchableOpacity
-              key={option.value}
-              style={[
-                styles.optionBtn,
-                urgency === option.value && (option.value === "urgent" ? styles.optionBtnUrgentSelected : styles.optionBtnSelected)
-              ]}
-              onPress={() => setUrgency(option.value)}
-            >
-              <MaterialIcons 
-                name={option.icon} 
-                size={20} 
-                color={urgency === option.value ? "#fff" : option.value === "urgent" ? "#FF6B6B" : "#666"}
-              />
-              <Text style={[
-                styles.optionText,
-                urgency === option.value && styles.optionTextSelected
-              ]}>
-                {option.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View> */}
-
-      {/* Contractor Preference Section */}
-      {/* <View style={styles.section}>
-        <View style={styles.sectionHeaderWithIcon}>
-          <View style={styles.sectionTitleContainer}>
-            <View style={styles.iconContainer}>
-              <Ionicons name="people-outline" size={20} color="#007AFF" />
-            </View>
-            <View>
-              <Text style={styles.sectionTitle}>Contractor Preference</Text>
-            </View>
-          </View>
-        </View>
-        <View style={styles.optionsContainer}>
-          {contractorOptions.map((option) => (
-            <TouchableOpacity
-              key={option.value}
-              style={[
-                styles.optionBtn,
-                contractorPreference === option.value && (
-                  option.value === "auto" ? styles.optionBtnAutoSelected : 
-                  option.value === "previous" ? styles.optionBtnPreviousSelected : 
-                  styles.optionBtnSelected
-                )
-              ]}
-              onPress={() => setContractorPreference(option.value)}
-            >
-              <MaterialIcons 
-                name={option.icon} 
-                size={20} 
-                color={contractorPreference === option.value ? "#fff" : 
-                  option.value === "auto" ? "#28a745" : 
-                  option.value === "previous" ? "#FF8C00" : "#666"}
-              />
-              <Text style={[
-                styles.optionText,
-                contractorPreference === option.value && styles.optionTextSelected
-              ]}>
-                {option.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View> */}
-
-      {/* Submit Button */}
-      <View style={styles.submitContainer}>
-        <TouchableOpacity 
-          style={[styles.submitBtn, isSubmitting && styles.submitBtnDisabled]} 
-          onPress={handleSubmitRequest}
-          disabled={isSubmitting}
-        >
-          <View style={styles.submitContent}>
-            {isSubmitting ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Ionicons name="checkmark-circle" size={24} color="#fff" />
-            )}
-            <Text style={styles.submitBtnText}>
-              {isSubmitting ? "Posting..." : "Post Request"}
-            </Text>
-          </View>
-          <Text style={styles.submitSubtext}>Free to post  •  Pay only when service is done</Text>
-        </TouchableOpacity>
-      </View>
-      </ScrollView>
-
-      <HelpModal />
     </View>
   );
 }
@@ -1002,5 +1017,32 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  // Coming Soon Styles
+  comingSoonContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    backgroundColor: '#f8f9fa',
+  },
+  comingSoonImage: {
+    width: screenWidth * 0.8,
+    height: screenHeight * 0.4,
+    marginBottom: 100,
+  },
+  comingSoonTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  comingSoonSubtitle: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 24,
+    paddingHorizontal: 20,
   },
 });

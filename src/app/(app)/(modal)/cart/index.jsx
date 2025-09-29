@@ -10,6 +10,7 @@ import {
   ScrollView,
   StatusBar,
   StyleSheet,
+  TextInput,
   TouchableOpacity,
   View
 } from 'react-native';
@@ -19,6 +20,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 
 import Constants from 'expo-constants';
+import CartPageBottomBar from '../../../../components/common/CartPageBottomBar';
 import Text from "../../../../components/ui/Text.jsx";
 import { useAppStates } from '../../../../context/AppStates';
 import { useAuth } from '../../../../context/AuthProvider.jsx';
@@ -84,6 +86,15 @@ export default function Cart() {
   const [itemToDelete, setItemToDelete] = useState(null);
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
   const [updatingItemId, setUpdatingItemId] = useState(null);
+
+  // Coupon related state
+  const [couponCode, setCouponCode] = useState("");
+  const [isCouponApplied, setIsCouponApplied] = useState(false);
+  const [prebookingDiscount, setPrebookingDiscount] = useState(0);
+  const [prebookingDiscountPercent, setPrebookingDiscountPercent] = useState(0);
+  const [showCouponInput, setShowCouponInput] = useState(false);
+  const [couponError, setCouponError] = useState("");
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
 
   // Minimal Custom Alert State
   const [customAlert, setCustomAlert] = useState({
@@ -302,7 +313,7 @@ export default function Cart() {
 
   // Function to fetch cart data from server
   const fetchCartData = async () => {
-    const { serviceCharge, subTotal, onlinePaymentDiscount, onlineDiscountPercent, totalAmount, totalAmountWithOnlineDiscount, totalAmountPaise, totalAmountWithOnlineDiscountPaise, arr, rawCartData } = await fetchCart();
+    const { serviceCharge, subTotal, onlinePaymentDiscount, onlineDiscountPercent, totalAmount, totalAmountWithOnlineDiscount, totalAmountPaise, totalAmountWithOnlineDiscountPaise, arr, rawCartData, prebookingDiscount, prebookingDiscountPercent, isCouponApplied: couponApplied } = await fetchCart(isCouponApplied);
     setTotal(totalAmount);
     setSubTotal(subTotal);
     setOnlinePaymentDiscount(onlinePaymentDiscount);
@@ -314,6 +325,9 @@ export default function Cart() {
     setSetservice_charge(serviceCharge);
     setCartData(arr);
     setRawcart(rawCartData);
+    // Set prebooking discount data
+    setPrebookingDiscount(prebookingDiscount || 0);
+    setPrebookingDiscountPercent(prebookingDiscountPercent || 0);
     // setLocation({ additionalInfo: "", city: "", district: "", houseNumber: address, pincode: "" });
     // Only set mobile number from server if no mobile number is set in AppStates
     if (!selectedMobileNumber) {
@@ -333,6 +347,11 @@ export default function Cart() {
       setMobileNumber(selectedMobileNumber);
     }
   }, []);
+
+  // Refresh cart when coupon is applied or removed
+  useEffect(() => {
+    fetchCartData();
+  }, [isCouponApplied]);
 
   // Listen for mobile number updates from AppStates context
   useEffect(() => {
@@ -354,6 +373,51 @@ export default function Cart() {
   useEffect(() => {
   }, [mobileNumber]);
 
+  // Coupon application functions
+  const applyCoupon = async () => {
+    setCouponError(""); // Clear previous errors
+    if (couponCode.trim().toLowerCase() === "prebooking30") {
+      setIsCouponApplied(true);
+      // fetchCartData will be called by useEffect automatically
+      Toast.show({
+        type: 'success',
+        text1: 'Coupon Applied!',
+        text2: '30% prebooking discount applied successfully',
+        position: 'bottom',
+        bottomOffset: 100,
+      });
+    } else {
+      setCouponError("Invalid coupon code. Please try again.");
+    }
+  };
+
+  const applyPrebookingCoupon = async () => {
+    // Prevent double application or multiple clicks
+    if (isCouponApplied || isApplyingCoupon) return;
+    
+    setIsApplyingCoupon(true);
+    setCouponCode("PREBOOKING30");
+    setCouponError(""); // Clear previous errors
+    setIsCouponApplied(true);
+    
+    // fetchCartData will be called by useEffect automatically
+    setTimeout(() => {
+      setIsApplyingCoupon(false);
+      Toast.show({
+        type: 'success',
+        text1: 'Coupon Applied!',
+        text2: '30% prebooking discount applied successfully',
+        position: 'bottom',
+        bottomOffset: 100,
+      });
+    }, 500); // Small delay to ensure cart data is updated
+  };
+
+  const removeCoupon = async () => {
+    setIsCouponApplied(false);
+    setCouponCode("");
+    // fetchCartData will be called by useEffect automatically
+  };
 
   const calculateCategoryTotal = (items) => {
     return items.reduce((total, item) => total + (item.price * item.quantity), 0);
@@ -438,6 +502,23 @@ export default function Cart() {
   };
 
   /**
+   * Calculate TM and Company percentages regardless of payment method
+   * This ensures percentages are always available for UI display
+   */
+  const calculatePaymentPercentages = () => {
+    const companyShare = calculateCompanyShareTotal();
+    const tmShare = calculateTMShareTotal();
+    const total = companyShare + tmShare;
+    
+    if (total === 0) return { tmPercentage: 0, companyPercentage: 0 };
+    
+    return {
+      tmPercentage: Math.round((tmShare / total) * 100),
+      companyPercentage: Math.round((companyShare / total) * 100)
+    };
+  };
+
+  /**
    * Calculate breakdown totals to ensure they match the displayed total
    * This function ensures the payment breakdown components add up exactly
    */
@@ -456,12 +537,16 @@ export default function Cart() {
       const companyShare = calculateCompanyShareTotal();
       const tmShare = calculateTMShareTotal();
       const total = companyShare + tmShare; // Full total amount
+      const tmPercentage = Math.round((tmShare / total) * 100); // Calculate actual TM percentage
+      const companyPercentage = Math.round((companyShare / total) * 100); // Calculate actual company percentage
       return { 
         subtotal, 
         serviceFee, 
         companyShare, 
         tmShare, 
-        total // Full amount (company + TM share)
+        total, // Full amount (company + TM share)
+        tmPercentage, // Actual TM percentage based on tm_share/total_amount
+        companyPercentage // Actual company percentage based on company_share/total_amount
       };
     }
   };
@@ -537,12 +622,17 @@ export default function Cart() {
       } else {
         // Refetch cart data from server instead of optimistic updates
         await fetchCartData();
+        Toast.show({
+          type: 'success',
+          text1: 'Success',
+          text2: 'Item removed from cart successfully',
+        });
       }
     } catch (error) {
       Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Failed to clear cart',
+        type: 'success',
+        text1: 'Success',
+        text2: 'Item removed from cart successfully',
       });
     } finally {
       setDeletingItemId(null);
@@ -601,15 +691,20 @@ export default function Cart() {
 
   /**
    * Prepare cart data for backend by filtering out unnecessary fields and applying discount logic
-   * Only sends essential fields: company_share, tm_share, online_discount_amount
+   * Only sends essential fields: company_share, tm_share, online_discount_amount, prebooking_discount_amount
    */
   const prepareCartDataForBackend = (cartItems, paymentMethod) => {
     return cartItems.map(item => {
+      // Calculate prebooking discount amount per item if coupon is applied
+      const itemPrebookingDiscount = isCouponApplied ? (item.price * prebookingDiscountPercent / 100) : 0;
+      
+      // Apply prebooking discount to the base price
+      const discountedPrice = item.price - itemPrebookingDiscount;
+      
       // Base fields that should always be included
       const baseItem = {
         id: item.id,
-        count: item.count,
-        price: item.price,
+        price: Math.round(discountedPrice), // Apply prebooking discount to price
         title: item.title,
         ratings: item.ratings,
         category: item.category,
@@ -623,25 +718,33 @@ export default function Cart() {
         sub_category: item.sub_category,
         count_in_cart: item.count_in_cart,
         original_price: item.original_price,
-        service_fee_percent: item.service_fee_percent
+        service_fee_percent: item.service_fee_percent,
+        prebooking_discount_amount: Math.round(itemPrebookingDiscount), // Include prebooking discount amount
+        prebooking_discount_percent: isCouponApplied ? prebookingDiscountPercent : 0
       };
 
       // Financial fields with discount logic applied
       if (paymentMethod === 'Online Payment') {
-        // For online payment: company share should have discount already deducted
+        // For online payment: apply both prebooking and online payment discounts
+        const adjustedCompanyShare = item.company_share - itemPrebookingDiscount;
+        const adjustedTMShare = item.tm_share - itemPrebookingDiscount;
+        
         return {
           ...baseItem,
-          company_share: item.company_share_after_discount || item.company_share, // Use discounted amount
-          tm_share: item.tm_share,
+          company_share: Math.round(adjustedCompanyShare - item.online_discount_amount), // Apply both discounts
+          tm_share: Math.round(adjustedTMShare),
           online_discount_amount: item.online_discount_amount
         };
       } else {
-        // For pay on service: no discount applied, send original company share
+        // For pay on service: apply prebooking discount but no online payment discount
+        const adjustedCompanyShare = item.company_share - itemPrebookingDiscount;
+        const adjustedTMShare = item.tm_share - itemPrebookingDiscount;
+        
         return {
           ...baseItem,
-          company_share: item.company_share, // Original company share (no discount)
-          tm_share: item.tm_share,
-          online_discount_amount: 0 // No discount for pay on service
+          company_share: Math.round(adjustedCompanyShare), // Apply prebooking discount only
+          tm_share: Math.round(adjustedTMShare),
+          online_discount_amount: 0 // No online discount for pay on service
         };
       }
     });
@@ -652,6 +755,7 @@ export default function Cart() {
   const createbookings = async (razorpay_oid) => {
     // Prepare clean cart data for backend
     const cleanCartItems = prepareCartDataForBackend(rawcart, selectedPaymentMethod);
+    console.log(cleanCartItems);
     
     const bookingdata = {
       items: cleanCartItems, // Use filtered cart data
@@ -677,6 +781,11 @@ export default function Cart() {
       },
       paymentmethod: selectedPaymentMethod,
       razorpay_oid: razorpay_oid,
+      // Include prebooking discount information
+      prebooking_discount_applied: isCouponApplied,
+      prebooking_discount_percent: isCouponApplied ? prebookingDiscountPercent : 0,
+      prebooking_discount_amount: isCouponApplied ? Math.round(prebookingDiscount) : 0,
+      coupon_code: isCouponApplied ? couponCode : null,
     };
     
     try {
@@ -917,7 +1026,7 @@ export default function Cart() {
       <View style={styles.itemInfo}>
         <Text style={styles.itemName}>{item.name}</Text>
         <Text style={styles.itemDuration}>{item.duration}</Text>
-        <Text style={styles.itemPrice}>₹{item.price}</Text>
+        <Text style={styles.itemPrice}>₹{Math.round(item.price)}</Text>
       </View>
 
       <View style={styles.itemActions}>
@@ -962,7 +1071,7 @@ export default function Cart() {
       {/* Category Header */}
       <View style={styles.categoryHeader}>
         <Text style={styles.categoryTitle}>{categoryData.category}</Text>
-        <Text style={styles.categoryTotal}>₹{calculateCategoryTotal(categoryData.items)}</Text>
+        <Text style={styles.categoryTotal}>₹{Math.round(calculateCategoryTotal(categoryData.items))}</Text>
       </View>
 
       {/* Provider Info */}
@@ -1360,8 +1469,22 @@ export default function Cart() {
                 <View style={styles.billRows}>
                   <View style={styles.billRow}>
                     <Text style={styles.billLabel}>Subtotal</Text>
-                    <Text style={styles.billAmount}>₹{calculateBreakdownTotals().subtotal}</Text>
+                    <Text style={styles.billAmount}>₹{Math.round(calculateBreakdownTotals().subtotal)}</Text>
                   </View>
+
+                  {/* Prebooking Discount Display */}
+                  {isCouponApplied && prebookingDiscount > 0 && (
+                    <View style={styles.billRow}>
+                      <View style={styles.billLabelWithIcon}>
+                        <Text style={styles.billLabel}>Prebooking Discount ({prebookingDiscountPercent}%)</Text>
+                        <View style={styles.discountBadge}>
+                          <Text style={styles.discountBadgeText}>SAVE</Text>
+                        </View>
+                      </View>
+                      <Text style={[styles.billAmount, styles.discountAmount]}>-₹{Math.round(prebookingDiscount)}</Text>
+                    </View>
+                  )}
+
                   <View style={[styles.billRow, { position: 'relative' }]}>
                     <View style={styles.billLabelWithIcon}>
                       <Text style={styles.billLabel}>Convenience Fee + Platform Fee</Text>
@@ -1372,7 +1495,7 @@ export default function Cart() {
                         <Ionicons name="information-circle-outline" size={16} color="#666" />
                       </TouchableOpacity>
                     </View>
-                    <Text style={styles.billAmount}>₹{calculateBreakdownTotals().serviceFee}</Text>
+                    <Text style={styles.billAmount}>₹{Math.round(calculateBreakdownTotals().serviceFee)}</Text>
 
                     {/* Service Fee Tooltip */}
                     {showServiceFeeTooltip && (
@@ -1396,7 +1519,7 @@ export default function Cart() {
                           <Text style={styles.discountBadgeText}>SAVE</Text>
                         </View>
                       </View>
-                      <Text style={[styles.billAmount, styles.discountAmount]}>-₹{calculateBreakdownTotals().onlineDiscount}</Text>
+                      <Text style={[styles.billAmount, styles.discountAmount]}>-₹{Math.round(calculateBreakdownTotals().onlineDiscount)}</Text>
                     </View>
                   )}
 
@@ -1408,12 +1531,12 @@ export default function Cart() {
                         <Text style={styles.breakdownHeaderText}>Payment Breakdown</Text>
                       </View>
                       <View style={styles.billRow}>
-                        <Text style={styles.billLabel}>Pay Online Now (Company Share)</Text>
-                        <Text style={styles.billAmount}>₹{calculateBreakdownTotals().companyShare}</Text>
+                        <Text style={styles.billLabel}>Pay Online Now ({calculatePaymentPercentages().companyPercentage}%)</Text>
+                        <Text style={styles.billAmount}>₹{Math.round(calculateBreakdownTotals().companyShare)}</Text>
                       </View>
                       <View style={styles.billRow}>
                         <Text style={styles.billLabel}>Pay to Service Provider</Text>
-                        <Text style={styles.billAmount}>₹{calculateBreakdownTotals().tmShare}</Text>
+                        <Text style={styles.billAmount}>₹{Math.round(calculateBreakdownTotals().tmShare)}</Text>
                       </View>
                     </View>
                   )}
@@ -1428,7 +1551,7 @@ export default function Cart() {
                       </Text>
                     </View>
                     <Text style={styles.billTotalAmount}>
-                      ₹{calculateBreakdownTotals().total}
+                      ₹{Math.round(calculateBreakdownTotals().total)}
                     </Text>
                   </View>
                 </View>
@@ -1453,7 +1576,7 @@ export default function Cart() {
                   {
                     key: 'Pay on Service',
                     icon: 'cash',
-                    label: 'Pay on Service',
+                    label: `Pay ${calculatePaymentPercentages().tmPercentage}% on Service`,
                     subtitle: 'Pay company share online + service amount to provider'
                   }
                 ].map((method) => (
@@ -1532,7 +1655,7 @@ export default function Cart() {
               <View style={styles.servicesOverviewHeader}>
                 <Ionicons name="construct" size={20} color="#3898B3" />
                 <Text style={styles.servicesOverviewTitle}>Services ({cartData.reduce((total, cat) => total + cat.items.length, 0)})</Text>
-                <Text style={styles.servicesOverviewTotal}>₹{calculateGrandTotal()}</Text>
+                <Text style={styles.servicesOverviewTotal}>₹{Math.round(calculateGrandTotal())}</Text>
               </View>
 
               {cartData.map((category, index) => (
@@ -1546,7 +1669,7 @@ export default function Cart() {
                       />
                     </View>
                     <Text style={styles.serviceCategoryName}>{category.category}</Text>
-                    <Text style={styles.serviceCategoryPrice}>₹{calculateCategoryTotal(category.items)}</Text>
+                    <Text style={styles.serviceCategoryPrice}>₹{Math.round(calculateCategoryTotal(category.items))}</Text>
                   </View>
 
                   {category.items.map((item, itemIndex) => (
@@ -1555,7 +1678,7 @@ export default function Cart() {
                         <Text style={styles.serviceItemName}>{item.name}</Text>
                         <Text style={styles.serviceItemQty}>Qty: {item.quantity}</Text>
                       </View>
-                      <Text style={styles.serviceItemPrice}>₹{item.price * item.quantity}</Text>
+                      <Text style={styles.serviceItemPrice}>₹{Math.round(item.price * item.quantity)}</Text>
                     </View>
                   ))}
                 </View>
@@ -1570,9 +1693,9 @@ export default function Cart() {
                 {selectedPaymentMethod === 'Online Payment' ? 'Pay Now' : 'Pay Online Now'}
               </Text>
               <Text style={styles.payAmountValue}>
-                ₹{selectedPaymentMethod === 'Online Payment' 
+                ₹{Math.round(selectedPaymentMethod === 'Online Payment' 
                   ? calculateBreakdownTotals().total 
-                  : calculateBreakdownTotals().companyShare}
+                  : calculateBreakdownTotals().companyShare)}
               </Text>
             </View>
             <TouchableOpacity
@@ -1806,24 +1929,66 @@ export default function Cart() {
           </Text>
         </TouchableOpacity>
 
-        {/* Compact Online Payment Discount Banner */}
+        {/* Online Payment Discount Banner */}
         {!isCartEmptyOrZero() && (
-          <View style={styles.discountBanner}>
-            <View style={styles.discountBannerHeader}>
-              <View style={styles.discountBannerIcon}>
-                <Ionicons name="card" size={16} color="#4CAF50" />
-              </View>
-              <Text style={styles.discountBannerText}>
-                Save ₹{onlinePaymentDiscount} ({onlineDiscountPercent}%) with online payment
-              </Text>
+          <View style={styles.onlineDiscountContainer}>
+            <View style={styles.onlineDiscountIconContainer}>
+              <Ionicons name="card" size={18} color="#4CAF50" />
             </View>
-            <View style={styles.discountBannerPriceRow}>
-              <Text style={styles.discountBannerOriginalPrice}>₹{Math.round(total)}</Text>
-              <Ionicons name="arrow-forward" size={14} color="#666" style={styles.discountArrow} />
-              <Text style={styles.discountBannerDiscountedPrice}>₹{Math.round(totalAmountWithOnlineDiscount)}</Text>
+            <View style={styles.onlineDiscountTextContainer}>
+              <Text style={styles.onlineDiscountText}>
+                Save <Text style={styles.onlineDiscountAmount}>₹{Math.round(onlinePaymentDiscount)} ({onlineDiscountPercent}%)</Text> with 
+                <Text style={styles.onlineDiscountMethod}> online payment</Text>
+              </Text>
             </View>
           </View>
         )}
+
+        {/* Coupon Code Section */}
+        <View style={styles.couponSection}>
+          {!isCouponApplied ? (
+            <View>
+              {/* Suggested coupon */}
+              <View style={styles.suggestedCouponContainer}>
+                <Text style={styles.suggestedCouponLabel}>Available Coupon:</Text>
+                <TouchableOpacity 
+                  style={[
+                    styles.suggestedCouponButton,
+                    isApplyingCoupon && styles.suggestedCouponButtonDisabled
+                  ]}
+                  onPress={applyPrebookingCoupon}
+                  disabled={isApplyingCoupon}
+                >
+                  <View style={styles.suggestedCouponContent}>
+                    <Text style={styles.suggestedCouponCode}>PREBOOKING30</Text>
+                    <Text style={styles.suggestedCouponDiscount}>30% OFF</Text>
+                  </View>
+                  <Text style={styles.suggestedCouponApplyText}>
+                    {isApplyingCoupon ? 'Applying...' : 'Apply'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            <View style={styles.couponAppliedContainer}>
+              <View style={styles.couponAppliedRow}>
+                <View style={styles.couponAppliedInfo}>
+                  <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
+                  <Text style={styles.couponAppliedText}>PREBOOKING30 applied</Text>
+                </View>
+                <TouchableOpacity 
+                  style={styles.removeCouponButton}
+                  onPress={removeCoupon}
+                >
+                  <Text style={styles.removeCouponText}>Remove</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        </View>
+
+        {/* Promotional Message for Discount */}
+        
 
         {/* Cart Categories */}
         {cartData.length === 0 ? (
@@ -1846,7 +2011,7 @@ export default function Cart() {
             {cartData.map((category, index) => (
               <View key={index} style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>{category.category}</Text>
-                <Text style={styles.summaryAmount}>₹{calculateCategoryTotal(category.items)}</Text>
+                <Text style={styles.summaryAmount}>₹{Math.round(calculateCategoryTotal(category.items))}</Text>
               </View>
             ))}
 
@@ -1909,6 +2074,13 @@ export default function Cart() {
       <PaymentModal />
       <DeleteConfirmationModal />
       <CustomAlert />
+      
+      {/* Cart Bottom Bar - shows when cart has items */}
+      <CartPageBottomBar 
+        cartItemCount={cartData.reduce((total, cat) => total + cat.items.length, 0)} 
+        isVisible={cartData.length > 0 && !isCartEmptyOrZero()}
+        onProceed={handleProceedNow}
+      />
       </View>
     </SafeAreaView>
   );
@@ -3825,59 +3997,41 @@ const styles = StyleSheet.create({
   customAlertButtonTextDestructive: {
     color: '#fff',
   },
-  // Compact Discount Banner Styles
-  discountBanner: {
-    backgroundColor: '#E8F5E8',
-    borderRadius: 12,
-    marginHorizontal: 20,
-    marginTop: 12,
-    padding: 16,
-    borderLeftWidth: 4,
-    borderLeftColor: '#4CAF50',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  discountBannerHeader: {
+  // Online Discount Banner Styles (matching promo message design)
+  onlineDiscountContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    backgroundColor: '#E8F5E8',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginBottom: 15,
+    borderLeftWidth: 3,
+    borderLeftColor: '#4CAF50',
   },
-  discountBannerIcon: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 8,
+  onlineDiscountIconContainer: {
+    marginRight: 10,
   },
-  discountBannerText: {
-    fontSize: 14,
-    color: '#2E7D32',
-    fontWeight: '500',
+  onlineDiscountTextContainer: {
     flex: 1,
   },
-  discountBannerPriceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 4,
-  },
-  discountBannerOriginalPrice: {
+  onlineDiscountText: {
     fontSize: 16,
-    color: '#666',
-    textDecorationLine: 'line-through',
-    fontWeight: '500',
+    color: '#333',
+    lineHeight: 20,
   },
-  discountArrow: {
-    marginHorizontal: 8,
-  },
-  discountBannerDiscountedPrice: {
+  onlineDiscountAmount: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: 'bold',
+    color: '#2E7D32',
+    backgroundColor: '#C8E6C9',
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 3,
+  },
+  onlineDiscountMethod: {
+    fontSize: 14,
+    fontWeight: 'bold',
     color: '#1B5E20',
   },
   // Discount Badge Styles (keeping for payment modal)
@@ -3916,5 +4070,193 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#F57C00',
     marginLeft: 4,
+  },
+  // Coupon Styles
+  couponSection: {
+    marginVertical: 8,
+  },
+  applyCouponButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#3898B3',
+    borderStyle: 'dashed',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#F8FFFE',
+  },
+  applyCouponText: {
+    color: '#3898B3',
+    fontSize: 14,
+    fontWeight: '500',
+    marginLeft: 8,
+  },
+  couponInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: '#fff',
+  },
+  couponInput: {
+    flex: 1,
+    fontSize: 14,
+    color: '#333',
+    paddingVertical: 4,
+  },
+  applyButton: {
+    backgroundColor: '#3898B3',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+    marginLeft: 8,
+  },
+  applyButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  cancelButton: {
+    padding: 8,
+    marginLeft: 4,
+  },
+  // New coupon section styles
+  couponInputSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: '#fff',
+    marginBottom: 8,
+  },
+  couponErrorText: {
+    color: '#F44336',
+    fontSize: 12,
+    marginBottom: 8,
+    marginLeft: 4,
+  },
+  suggestedCouponContainer: {
+    marginTop: 8,
+  },
+  suggestedCouponLabel: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 8,
+  },
+  suggestedCouponButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFF3E0',
+    borderRadius: 8,
+    padding: 12,
+    borderLeftWidth: 3,
+    borderLeftColor: '#FF6B35',
+  },
+  suggestedCouponButtonDisabled: {
+    opacity: 0.6,
+    backgroundColor: '#F5F5F5',
+  },
+  suggestedCouponContent: {
+    flex: 1,
+  },
+  suggestedCouponCode: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#FF6B35',
+    marginBottom: 2,
+  },
+  suggestedCouponDiscount: {
+    fontSize: 12,
+    color: '#2E7D32',
+    fontWeight: '600',
+  },
+  suggestedCouponApplyText: {
+    color: '#3898B3',
+    fontSize: 14,
+    fontWeight: '600',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#fff',
+    borderRadius: 6,
+  },
+  couponAppliedContainer: {
+    backgroundColor: '#E8F5E8',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderLeftWidth: 3,
+    borderLeftColor: '#4CAF50',
+  },
+  couponAppliedRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  couponAppliedInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  couponAppliedText: {
+    color: '#2E7D32',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  removeCouponButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+  },
+  removeCouponText: {
+    color: '#666',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  // Promo message styles
+  promoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF3E0',
+    borderRadius: 8,
+    padding: 12,
+    marginHorizontal: 20,
+    marginBottom: 15,
+    borderLeftWidth: 3,
+    borderLeftColor: '#FF6B35',
+  },
+  promoIconContainer: {
+    marginRight: 10,
+  },
+  promoTextContainer: {
+    flex: 1,
+  },
+  promoText: {
+    fontSize: 13,
+    color: '#333',
+    lineHeight: 18,
+  },
+  promoCode: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#FF6B35',
+    backgroundColor: '#FFE0B2',
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 3,
+  },
+  promoDiscount: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#2E7D32',
   },
 });

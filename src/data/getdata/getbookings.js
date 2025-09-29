@@ -38,15 +38,20 @@ export default async function getbookings() {
       location: element.location,
       status: element.status,
       provider: element.tm_name,
-      price: element.payment_amount,
+      priceOfOne: element.service_price,
+      price: element.service_price * element.count,
+      count: element.count, // ✅ Add count field
+      service_price: element.service_price, // ✅ Add service_price field  
+      payment_amount: element.payment_amount, // ✅ Add payment_amount field
+      tm_share: element.tm_share, // ✅ Add tm_share field
       category: element.category,
       bookingTime: date,
       contact: `+91 ${element.tm_contact}`,
       description: element.service_description || element.service_name, // Use description if available
       estimatedDuration: element.estimated_duration || '1-2 hours',
-      paymentMethod: element.payment_method || 'Cash on Delivery',
+      paymentMethod: element.payment_method ,
       bookingId: `BK${element.id.toString().padStart(10, '0')}`,
-      razorpay_oid: element.razorpay_oid || "Pay after service ",
+      razorpay_oid: element.razorpay_oid ,
       serviceNotes: element.service_notes || 'Our technician will call 15 minutes before arrival.',
       taskMaster: {
         name: element.tm_name,
