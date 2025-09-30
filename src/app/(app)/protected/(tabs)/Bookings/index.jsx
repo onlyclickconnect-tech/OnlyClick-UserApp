@@ -272,7 +272,7 @@ export default function Bookings() {
                           location: item.location,
                           status: item.status,
                           provider: item.status !== 'Pending' ? item.provider : 'Provider not assigned yet',
-                          price: item.payment_amount || item.price,
+                          price: item.price,
                           quantity: item.count || 1,
                           unitPrice: item.service_price || (item.payment_amount ? item.payment_amount / Math.max(item.count || 1, 1) : item.price),
                           category: item.category,
