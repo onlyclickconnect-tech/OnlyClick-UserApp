@@ -403,11 +403,9 @@ export default function Cart() {
       setIsCartLoading(true);
     }
     
-    console.log("Fetching cart data with couponApplied:", isCouponApplied);
     
     try {
       const cartResponse = await fetchCart(isCouponApplied);
-      console.log("Cart response:", cartResponse);
       
       if (cartResponse.error) {
         console.error("Error fetching cart:", cartResponse.error);
@@ -759,7 +757,6 @@ export default function Cart() {
    * Sends clean data with calculated shares and discount amounts
    */
   const prepareCartDataForBackend = (cartItems, paymentMethod) => {
-    console.log("Preparing cart data for backend:", { cartItems, paymentMethod });
     
     return cartItems.map(item => {
       // Base fields for backend
@@ -804,7 +801,6 @@ export default function Cart() {
     
     // Prepare clean cart data for backend with new pricing system
     const cleanCartItems = prepareCartDataForBackend(rawcart, selectedPaymentMethod);
-    console.log("Clean cart items for backend:", cleanCartItems);
     
     const bookingdata = {
       items: cleanCartItems,
@@ -856,7 +852,6 @@ export default function Cart() {
       }
     };
     
-    console.log("Final booking data being sent to backend:", bookingdata);
     
     try {
       const { data, error } = await confirmbookings(bookingdata);
@@ -952,13 +947,7 @@ export default function Cart() {
     const payableAmountRupees = getPayableAmount();
     const payableAmountPaise = Math.round(payableAmountRupees * 100); // Convert to paise for Razorpay
 
-    console.log("Payment details:", {
-      paymentMethod: selectedPaymentMethod,
-      payableAmountRupees,
-      payableAmountPaise,
-      totalCompanyShare,
-      totalTMShare
-    });
+
     
     if (selectedPaymentMethod === "Online Payment") {
       try {

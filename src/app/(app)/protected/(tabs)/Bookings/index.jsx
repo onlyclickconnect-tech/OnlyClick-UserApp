@@ -38,7 +38,6 @@ export default function Bookings() {
         return;
       }
       setbookings(arr); // ✅ directly set array
-      console.log(arr);
       setLoading(false);
     };
 
