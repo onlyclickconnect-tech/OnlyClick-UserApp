@@ -19,7 +19,12 @@ export default async function fetchCart(couponApplied = false) {
 
         // Convert [{key, value}, ...] → {key: value, ...}
         const result = data.reduce((acc, { key, value }) => {
-            acc[key] = parseFloat(value); // Keep as float for precise calculations
+            // Parse as float for numeric values, keep as string for text values like coupon codes and dates
+            if (key === 'PREBOOKING_COUPON' || key === 'PREBOOKING_DATE') {
+                acc[key] = value; // Keep coupon code and date as string
+            } else {
+                acc[key] = parseFloat(value); // Parse numeric values as float
+            }
             return acc;
         }, {});
 
@@ -28,17 +33,19 @@ export default async function fetchCart(couponApplied = false) {
 
     // Fetch system configuration
     const systemConfig = await getDiscountAndCommission();
-    const COMMISSION_PERCENT = systemConfig.commission_percent || 15;
-    const ONLINE_PAYMENT_DISCOUNT_PERCENT = systemConfig.online_payment_discount_percent || 2;
-    const PREBOOKING_DISCOUNT_PERCENT = systemConfig.PREBOOKING_DISCOUNT_PERCENT || 30;
-    const PREBOOKING_COUPON = systemConfig.PREBOOKING_COUPON || "PREBOOKING30";
-    const CONVENIENCE_FEE_PERCENT = 5; // 5% convenience charge + platform fees
+    const COMMISSION_PERCENT = systemConfig.commission_percent;
+    const ONLINE_PAYMENT_DISCOUNT_PERCENT = systemConfig.online_payment_discount_percent;
+    const PREBOOKING_DISCOUNT_PERCENT = systemConfig.PREBOOKING_DISCOUNT_PERCENT;
+    const PREBOOKING_COUPON = systemConfig.PREBOOKING_COUPON;
+    const PREBOOKING_DATE = systemConfig.PREBOOKING_DATE;
+    const CONVENIENCE_FEE_PERCENT = systemConfig.CONVENIENCE_FEE_PERCENT;
 
     console.log("System config:", {
         COMMISSION_PERCENT,
         ONLINE_PAYMENT_DISCOUNT_PERCENT,
         PREBOOKING_DISCOUNT_PERCENT,
         PREBOOKING_COUPON,
+        PREBOOKING_DATE,
         CONVENIENCE_FEE_PERCENT
     });
 
@@ -223,6 +230,7 @@ export default async function fetchCart(couponApplied = false) {
             ONLINE_PAYMENT_DISCOUNT_PERCENT,
             PREBOOKING_DISCOUNT_PERCENT,
             PREBOOKING_COUPON,
+            PREBOOKING_DATE,
             CONVENIENCE_FEE_PERCENT
         }
     };

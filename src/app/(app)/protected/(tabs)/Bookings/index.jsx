@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Dimensions,
@@ -38,6 +38,7 @@ export default function Bookings() {
         return;
       }
       setbookings(arr); // ✅ directly set array
+      console.log(arr);
       setLoading(false);
     };
 
@@ -65,19 +66,63 @@ export default function Bookings() {
     }
   };
 
-  const filteredBookings = activeTab === 'All'
-    ? [...bookings].sort((a, b) => {
-        // Extract numeric part from booking ID (e.g., "BK0001" -> 1)
-        const aId = parseInt(a.bookingId.replace(/\D/g, '')) || 0;
-        const bId = parseInt(b.bookingId.replace(/\D/g, '')) || 0;
-        return bId - aId; // Higher numbers first
-      })
-    : bookings.filter(booking => booking.status === activeTab).sort((a, b) => {
-        // Extract numeric part from booking ID (e.g., "BK0001" -> 1)
-        const aId = parseInt(a.bookingId.replace(/\D/g, '')) || 0;
-        const bId = parseInt(b.bookingId.replace(/\D/g, '')) || 0;
-        return bId - aId; // Higher numbers first
+  const filteredBookings = useMemo(() => {
+    const filtered = activeTab === 'All'
+      ? [...bookings].sort((a, b) => {
+          // Extract numeric part from booking ID (e.g., "BK0001" -> 1)
+          const aId = parseInt(a.bookingId.replace(/\D/g, '')) || 0;
+          const bId = parseInt(b.bookingId.replace(/\D/g, '')) || 0;
+          return bId - aId; // Higher numbers first
+        })
+      : bookings.filter(booking => booking.status === activeTab).sort((a, b) => {
+          // Extract numeric part from booking ID (e.g., "BK0001" -> 1)
+          const aId = parseInt(a.bookingId.replace(/\D/g, '')) || 0;
+          const bId = parseInt(b.bookingId.replace(/\D/g, '')) || 0;
+          return bId - aId; // Higher numbers first
+        });
+    return filtered;
+  }, [bookings, activeTab]);
+
+  // Group bookings by cart UUID and category
+  const groupedBookings = useMemo(() => {
+    const groupBookings = (bookings) => {
+      const grouped = {};
+      
+      bookings.forEach(booking => {
+        const groupKey = `${booking.cart_uuid}_${booking.category}`;
+        
+        if (!grouped[groupKey]) {
+          grouped[groupKey] = {
+            groupKey,
+            cart_uuid: booking.cart_uuid,
+            otp: booking.otp,
+            category: booking.category,
+            date: booking.date,
+            time: booking.time,
+            location: booking.location,
+            provider: booking.provider,
+            status: booking.status,
+            paymentMethod: booking.paymentMethod,
+            razorpay_oid: booking.razorpay_oid,
+            taskMaster: booking.taskMaster,
+            contact: booking.contact || booking.Contact,
+            bookings: []
+          };
+        }
+        
+        grouped[groupKey].bookings.push(booking);
       });
+      
+      return Object.values(grouped).sort((a, b) => {
+        // Sort by the highest booking ID in each group
+        const aMaxId = Math.max(...a.bookings.map(b => parseInt(b.bookingId.replace(/\D/g, '')) || 0));
+        const bMaxId = Math.max(...b.bookings.map(b => parseInt(b.bookingId.replace(/\D/g, '')) || 0));
+        return bMaxId - aMaxId;
+      });
+    };
+
+    return groupBookings(filteredBookings);
+  }, [filteredBookings]);
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -168,86 +213,97 @@ export default function Bookings() {
               <ActivityIndicator size="large" color="#3898B3" />
               <Text style={styles.loadingText}>Loading bookings...</Text>
             </View>
-          ) : filteredBookings.length > 0 ? (
-            filteredBookings.map((item) => (
+          ) : groupedBookings.length > 0 ? (
+            groupedBookings.map((group) => (
                 <View
-                  key={item.id}
+                  key={group.groupKey}
                   style={styles.bookingCard}
                 >
                   <View style={styles.cardHeader}>
                     <View style={styles.serviceInfo}>
                       <View style={styles.serviceTitleRow}>
-                        <View style={[styles.statusDot, { backgroundColor: getStatusColor(item.status) }]} />
-                        <Text style={styles.service_name}>{item.service_name}</Text>
+                        <View style={[styles.statusDot, { backgroundColor: getStatusColor(group.status) }]} />
+                        <Text style={styles.service_name}>{group.category.charAt(0).toUpperCase() + group.category.slice(1)} Services</Text>
                       </View>
+                      <Text style={styles.serviceCount}>({group.bookings.length} service{group.bookings.length > 1 ? 's' : ''})</Text>
                       <View style={styles.bookingIdRow}>
-                        <Text style={styles.bookingIdText}>Booking ID: {item.bookingId}</Text>
+                        <Text style={styles.razorpayOidText}>
+                          {group.razorpay_oid !== "Pay after service " ? `Payment ID: ${group.razorpay_oid}` : `Payment Mode: ${group.razorpay_oid}`}
+                        </Text>
                       </View>
-                      {item.razorpay_oid !== "Pay after service " ? (
-                        <View style={styles.bookingIdRow}>
-                          <Text style={styles.razorpayOidText}>Payment ID: {item.razorpay_oid}</Text>
-                        </View>
-                      ) : (
-                        <View style={styles.bookingIdRow}>
-                          <Text style={styles.razorpayOidText}>Payment Mode: {item.razorpay_oid}</Text>
-                        </View>
-                      )}
-                      <Text style={styles.category}>{item.category}</Text>
                     </View>
-                    <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
+                    <View style={[styles.statusBadge, { backgroundColor: getStatusColor(group.status) }]}>
                       <Ionicons
-                        name={getStatusIcon(item.status)}
+                        name={getStatusIcon(group.status)}
                         size={14}
                         color="white"
                         style={styles.statusIcon}
                       />
-                      <Text style={styles.statusText}>{item.status}</Text>
+                      <Text style={styles.statusText}>{group.status}</Text>
                     </View>
+                  </View>
+
+                  {/* Services List */}
+                  <View style={styles.servicesListContainer}>
+                    {group.bookings.map((booking, index) => (
+                      <View key={booking.id} style={[styles.serviceItem, index !== group.bookings.length - 1 && styles.serviceItemBorder]}>
+                        <View style={styles.serviceItemLeft}>
+                          <Text style={styles.serviceItemName}>{booking.service_name}</Text>
+                          <Text style={styles.serviceItemId}>ID: {booking.bookingId}</Text>
+                          {booking.count > 1 && (
+                            <Text style={styles.serviceItemQty}>Qty: {booking.count}</Text>
+                          )}
+                        </View>
+                        <Text style={styles.serviceItemPrice}>₹{booking.price.toFixed(2)}</Text>
+                      </View>
+                    ))}
                   </View>
 
                   <View style={styles.cardBody}>
                     <View style={styles.cardBodyLeft}>
                       <View style={styles.infoRow}>
                         <Ionicons name="calendar-outline" size={16} color="#666" />
-                        <Text style={styles.infoText}>{formatDate(item.date)} at {formatTime(item.time)}</Text>
+                        <Text style={styles.infoText}>{formatDate(group.date)} at {formatTime(group.time)}</Text>
                       </View>
 
                       <View style={styles.infoRow}>
                         <Ionicons name="location-outline" size={16} color="#666" />
-                        <Text style={styles.infoText} numberOfLines={1}>{item.location}</Text>
+                        <Text style={styles.infoText} numberOfLines={1}>{group.location}</Text>
                       </View>
 
                       {/* Only show provider info if booking is not pending */}
-                      {item.status !== 'Pending' && (
+                      {group.status !== 'Pending' && group.provider && (
                         <View style={styles.infoRow}>
                           <Ionicons name="construct-outline" size={16} color="#666" />
-                          <Text style={styles.infoText}>{item.provider}</Text>
+                          <Text style={styles.infoText}>{group.provider}</Text>
                         </View>
                       )}
 
                       {/* Show pending message for pending bookings */}
-                      {item.status === 'Pending' && (
+                      {group.status === 'Pending' && (
                         <View style={styles.infoRow}>
                           <Ionicons name="time-outline" size={16} color="#FFA500" />
                           <Text style={styles.infoText}>Provider will be assigned soon</Text>
                         </View>
-
                       )}
-                        {/* Only show provider payment for Pay on Service */}
-                        {(item.paymentMethod && 
-                          (item.paymentMethod.toLowerCase().includes('pay on service') )) && (
-                          <View style={styles.infoRow}>
-                            <Ionicons name="wallet-outline" size={16} color="#4CAF50" />
-                            <Text style={styles.providerPaymentText}>Pay on Service: ₹{item.tm_share || '0'}</Text>
-                          </View>
-                        )}
+
+                      {/* Only show provider payment for Pay on Service */}
+                      {(group.paymentMethod && 
+                        (group.paymentMethod.toLowerCase().includes('pay on service'))) && (
+                        <View style={styles.infoRow}>
+                          <Ionicons name="wallet-outline" size={16} color="#4CAF50" />
+                          <Text style={styles.providerPaymentText}>
+                            Pay on Service: ₹{group.bookings.reduce((sum, booking) => sum + (parseFloat(booking.tm_share) || 0), 0).toFixed(2)}
+                          </Text>
+                        </View>
+                      )}
                     </View>
 
                     {/* Show OTP on the right side for accepted bookings */}
-                    {item.status === 'Accepted' && item.otp && (
+                    {group.status === 'Accepted' && group.otp && (
                       <View style={styles.otpContainer}>
                         <View style={styles.otpBadge}>
-                          <Text style={styles.otpNumber}>{item.otp}</Text>
+                          <Text style={styles.otpNumber}>{group.otp}</Text>
                         </View>
                         <Text style={styles.otpLabel}>OTP</Text>
                       </View>
@@ -256,40 +312,19 @@ export default function Bookings() {
 
                   <View style={styles.cardFooter}>
                     <View style={styles.priceContainer}>
-                      <Text style={styles.price}>₹{item.price}</Text>
-                      {item.count && item.count >= 1 && (
-                        <Text style={styles.countText}>Qty: {item.count}</Text>
-                      )}
+                      <Text style={styles.price}>₹{group.bookings.reduce((sum, booking) => sum + booking.price, 0).toFixed(2)}</Text>
+                      <Text style={styles.countText}>Total for {group.bookings.length} service{group.bookings.length > 1 ? 's' : ''}</Text>
                     </View>
                     <TouchableOpacity
                       style={styles.viewDetailsButton}
                       onPress={() => {
-                        // Pass complete booking data as navigation params (excluding id since it's in pathname)
-                        const params = {
-                          serviceName: item.service_name,
-                          date: item.date,
-                          time: item.time,
-                          location: item.location,
-                          status: item.status,
-                          provider: item.status !== 'Pending' ? item.provider : 'Provider not assigned yet',
-                          price: item.price,
-                          quantity: item.count || 1,
-                          unitPrice: item.service_price || (item.payment_amount ? item.payment_amount / Math.max(item.count || 1, 1) : item.price),
-                          category: item.category,
-                          contact: item.status !== 'Pending' ? (item.contact || item.Contact) : null,
-                          description: item.description,
-                          otp: item.otp,
-                          tm_share: item.tm_share || '0',
-                          taskMaster: JSON.stringify(item.taskMaster),
-                          estimatedDuration: item.estimated_duration || item.estimatedDuration,
-                          paymentMethod: item.payment_method || item.paymentMethod,
-                          bookingId: item.bookingId,
-                          razorpay_oid: item.razorpay_oid,
-                          serviceNotes: item.serviceNotes
-                        };
+                        // Navigate to group details page with all bookings data
                         router.push({
-                          pathname: `/protected/(tabs)/Bookings/${item.id}`,
-                          params
+                          pathname: `/protected/(tabs)/Bookings/group`,
+                          params: {
+                            groupData: JSON.stringify(group),
+                            bookingsData: JSON.stringify(group.bookings)
+                          }
                         });
                       }}
                     >
@@ -410,6 +445,62 @@ const styles = StyleSheet.create({
   serviceTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  serviceCount: {
+    fontSize: 12,
+    color: '#666',
+    marginLeft: 18, // Align with service title (statusDot width + margin)
+    fontWeight: '500',
+    marginTop: 2,
+    marginBottom: 4,
+  },
+  servicesListContainer: {
+    backgroundColor: '#F8F9FA',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+  },
+  serviceItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  serviceItemBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5E5',
+    marginBottom: 8,
+    paddingBottom: 12,
+  },
+  serviceItemLeft: {
+    flex: 1,
+  },
+  serviceItemName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    marginBottom: 2,
+  },
+  serviceItemId: {
+    fontSize: 11,
+    color: '#3898B3',
+    fontFamily: 'monospace',
+    fontWeight: '500',
+    marginBottom: 2,
+  },
+  serviceItemQty: {
+    fontSize: 11,
+    color: '#666',
+    backgroundColor: '#E8F4F8',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    alignSelf: 'flex-start',
+  },
+  serviceItemPrice: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#3898B3',
   },
   statusDot: {
     width: 10,

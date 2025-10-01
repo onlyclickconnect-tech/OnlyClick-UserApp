@@ -86,6 +86,11 @@ export default function Cart() {
   const [itemToDelete, setItemToDelete] = useState(null);
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
   const [updatingItemId, setUpdatingItemId] = useState(null);
+  
+  // Loading states
+  const [isCartLoading, setIsCartLoading] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
 
   // Coupon related state
   const [couponCode, setCouponCode] = useState("");
@@ -232,37 +237,115 @@ export default function Cart() {
   useEffect(() => {
     const generateDates = () => {
       const dates = [];
-      const today = new Date();
+      
+      // Check if current time is after 6 PM
+      const now = new Date();
+      const currentHour = now.getHours();
+      const isAfter6PM = currentHour >= 18; // 18:00 = 6 PM in 24-hour format
+      
+      // Use prebooking date from backend or fall back to today
+      let startDate;
+      if (systemConfig.PREBOOKING_DATE) {
+        const prebookingDate = new Date(systemConfig.PREBOOKING_DATE);
+        const today = new Date();
+        
+        // Use the later of prebooking date or today
+        startDate = prebookingDate > today ? prebookingDate : today;
+      } else {
+        startDate = new Date(); // Fallback to today if no prebooking date
+      }
+      
+      // If it's after 6 PM today, start from tomorrow
+      if (isAfter6PM && startDate.toDateString() === now.toDateString()) {
+        startDate = new Date(now);
+        startDate.setDate(now.getDate() + 1); // Move to tomorrow
+      }
+      
+      // Generate 7 days starting from the determined start date
       for (let i = 0; i < 7; i++) {
-        const date = new Date(today);
-        date.setDate(today.getDate() + i);
+        const date = new Date(startDate);
+        date.setDate(startDate.getDate() + i);
+        
+        const today = new Date();
+        const isToday = date.toDateString() === today.toDateString();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(today.getDate() + 1);
+        const isTomorrow = date.toDateString() === tomorrow.toDateString();
+        
         dates.push({
           date: date,
           dayName: date.toLocaleDateString('en-US', { weekday: 'short' }),
           dayNumber: date.getDate().toString().padStart(2, '0'),
           month: date.toLocaleDateString('en-US', { month: 'short' }),
-          isToday: i === 0,
-          isTomorrow: i === 1
+          isToday: isToday,
+          isTomorrow: isTomorrow
         });
       }
       setdates(dates)
     };
     generateDates();
-  }, [])
+  }, [systemConfig.PREBOOKING_DATE]) // Regenerate dates when prebooking date changes
 
+  // Function to get available time slots based on selected date and current time
+  const getAvailableTimeSlots = (selectedDate) => {
+    const baseTimeSlots = [
+      { id: 1, time: '09:00 AM', label: 'Morning' },
+      { id: 2, time: '10:00 AM', label: 'Morning' },
+      { id: 3, time: '11:00 AM', label: 'Morning' },
+      { id: 4, time: '12:00 PM', label: 'Afternoon' },
+      { id: 5, time: '01:00 PM', label: 'Afternoon' },
+      { id: 6, time: '02:00 PM', label: 'Afternoon' },
+      { id: 7, time: '03:00 PM', label: 'Afternoon' },
+      { id: 8, time: '04:00 PM', label: 'Evening' },
+      { id: 9, time: '05:00 PM', label: 'Evening' },
+      { id: 10, time: '06:00 PM', label: 'Evening' },
+    ];
 
-  const timeSlots = [
-    { id: 1, time: '09:00 AM', label: 'Morning', available: true },
-    { id: 2, time: '10:00 AM', label: 'Morning', available: true },
-    { id: 3, time: '11:00 AM', label: 'Morning', available: true },
-    { id: 4, time: '12:00 PM', label: 'Afternoon', available: true },
-    { id: 5, time: '01:00 PM', label: 'Afternoon', available: true },
-    { id: 6, time: '02:00 PM', label: 'Afternoon', available: true },
-    { id: 7, time: '03:00 PM', label: 'Afternoon', available: true },
-    { id: 8, time: '04:00 PM', label: 'Evening', available: true },
-    { id: 9, time: '05:00 PM', label: 'Evening', available: true },
-    { id: 10, time: '06:00 PM', label: 'Evening', available: true },
-  ];
+    if (!selectedDate) {
+      return baseTimeSlots.map(slot => ({ ...slot, available: true }));
+    }
+
+    const currentTime = new Date();
+    const currentDateString = currentTime.toDateString();
+    const selectedDateString = selectedDate.toDateString();
+    
+    // If selected date is not today, all slots are available
+    if (selectedDateString !== currentDateString) {
+      return baseTimeSlots.map(slot => ({ ...slot, available: true }));
+    }
+
+    // For today, check if each slot is at least 1 hour from now
+    const oneHourFromNow = new Date(currentTime.getTime() + 60 * 60 * 1000); // Add 1 hour
+
+    return baseTimeSlots.map(slot => {
+      // Parse the slot time
+      const [timeStr, period] = slot.time.split(' ');
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      
+      // Convert to 24-hour format
+      let slotHours = hours;
+      if (period === 'PM' && hours !== 12) {
+        slotHours += 12;
+      } else if (period === 'AM' && hours === 12) {
+        slotHours = 0;
+      }
+
+      // Create a Date object for the slot time today
+      const slotTime = new Date(selectedDate);
+      slotTime.setHours(slotHours, minutes, 0, 0);
+
+      // Check if slot time is at least 1 hour from now
+      const available = slotTime >= oneHourFromNow;
+
+      return {
+        ...slot,
+        available
+      };
+    });
+  };
+
+  // Get time slots for the currently selected date
+  const timeSlots = getAvailableTimeSlots(selectedDate);
 
   const handleKindnessClick = () => {
     setHasClickedKindness(!hasClickedKindness);
@@ -313,32 +396,46 @@ export default function Cart() {
 
   // Function to fetch cart data from server
   const fetchCartData = async () => {
+    // Use overlay loading for subsequent calls, initial loading for first call
+    if (isInitialLoading) {
+      // Keep isInitialLoading true until first load completes
+    } else {
+      setIsCartLoading(true);
+    }
+    
     console.log("Fetching cart data with couponApplied:", isCouponApplied);
     
-    const cartResponse = await fetchCart(isCouponApplied);
-    console.log("Cart response:", cartResponse);
-    
-    if (cartResponse.error) {
-      console.error("Error fetching cart:", cartResponse.error);
-      return;
-    }
+    try {
+      const cartResponse = await fetchCart(isCouponApplied);
+      console.log("Cart response:", cartResponse);
+      
+      if (cartResponse.error) {
+        console.error("Error fetching cart:", cartResponse.error);
+        return;
+      }
 
-    // Update state with new pricing system data
-    setSubTotal(cartResponse.subTotal);
-    setConvenienceFee(cartResponse.convenienceFee);
-    setGrandTotal(cartResponse.grandTotal);
-    setTotalTMShare(cartResponse.totalTMShare);
-    setTotalCompanyShare(cartResponse.totalCompanyShare);
-    setOnlinePaymentDiscount(cartResponse.onlinePaymentDiscount);
-    setOnlineDiscountPercent(cartResponse.onlineDiscountPercent);
-    setTotalWithOnlineDiscount(cartResponse.totalWithOnlineDiscount);
-    setPrebookingDiscount(cartResponse.prebookingDiscount || 0);
-    setPrebookingDiscountPercent(cartResponse.prebookingDiscountPercent || 0);
-    setSystemConfig(cartResponse.systemConfig || {});
-    
-    // Update cart display data and raw cart data
-    setCartData(cartResponse.arr);
-    setRawcart(cartResponse.rawCartData);
+      // Update state with new pricing system data
+      setSubTotal(cartResponse.subTotal);
+      setConvenienceFee(cartResponse.convenienceFee);
+      setGrandTotal(cartResponse.grandTotal);
+      setTotalTMShare(cartResponse.totalTMShare);
+      setTotalCompanyShare(cartResponse.totalCompanyShare);
+      setOnlinePaymentDiscount(cartResponse.onlinePaymentDiscount);
+      setOnlineDiscountPercent(cartResponse.onlineDiscountPercent);
+      setTotalWithOnlineDiscount(cartResponse.totalWithOnlineDiscount);
+      setPrebookingDiscount(cartResponse.prebookingDiscount || 0);
+      setPrebookingDiscountPercent(cartResponse.prebookingDiscountPercent || 0);
+      setSystemConfig(cartResponse.systemConfig || {});
+      
+      // Update cart display data and raw cart data
+      setCartData(cartResponse.arr);
+      setRawcart(cartResponse.rawCartData);
+    } catch (error) {
+      console.error("Error in fetchCartData:", error);
+    } finally {
+      setIsInitialLoading(false);
+      setIsCartLoading(false);
+    }
 
     // Only set mobile number from server if no mobile number is set in AppStates
     if (!selectedMobileNumber) {
@@ -385,18 +482,30 @@ export default function Cart() {
   // Coupon application functions
   const applyCoupon = async () => {
     setCouponError(""); // Clear previous errors
-    if (couponCode.trim().toLowerCase() === systemConfig.PREBOOKING_COUPON?.toLowerCase() || couponCode.trim().toLowerCase() === "prebooking30") {
-      setIsCouponApplied(true);
-      // fetchCartData will be called by useEffect automatically
-      Toast.show({
-        type: 'success',
-        text1: 'Coupon Applied!',
-        text2: `${systemConfig.PREBOOKING_DISCOUNT_PERCENT}% prebooking discount applied successfully`,
-        position: 'bottom',
-        bottomOffset: 100,
-      });
-    } else {
-      setCouponError("Invalid coupon code. Please try again.");
+    setIsApplyingCoupon(true);
+    
+    try {
+      // Check if prebooking date has passed
+      if (systemConfig.PREBOOKING_DATE && new Date() >= new Date(systemConfig.PREBOOKING_DATE)) {
+        setCouponError("Prebooking period has ended. This coupon is no longer valid.");
+        return;
+      }
+      
+      if (couponCode.trim().toLowerCase() === systemConfig.PREBOOKING_COUPON?.toLowerCase()) {
+        setIsCouponApplied(true);
+        // fetchCartData will be called by useEffect automatically
+        Toast.show({
+          type: 'success',
+          text1: 'Coupon Applied!',
+          text2: `${systemConfig.PREBOOKING_DISCOUNT_PERCENT}% prebooking discount applied successfully`,
+          position: 'bottom',
+          bottomOffset: 100,
+        });
+      } else {
+        setCouponError("Invalid coupon code. Please try again.");
+      }
+    } finally {
+      setIsApplyingCoupon(false);
     }
   };
 
@@ -404,8 +513,20 @@ export default function Cart() {
     // Prevent double application or multiple clicks
     if (isCouponApplied || isApplyingCoupon) return;
     
+    // Check if prebooking date has passed
+    if (systemConfig.PREBOOKING_DATE && new Date() >= new Date(systemConfig.PREBOOKING_DATE)) {
+      Toast.show({
+        type: 'error',
+        text1: 'Coupon Expired',
+        text2: 'Prebooking period has ended. This coupon is no longer valid.',
+        position: 'bottom',
+        bottomOffset: 100,
+      });
+      return;
+    }
+    
     setIsApplyingCoupon(true);
-    setCouponCode(systemConfig.PREBOOKING_COUPON || "PREBOOKING30");
+    setCouponCode(systemConfig.PREBOOKING_COUPON);
     setCouponError(""); // Clear previous errors
     setIsCouponApplied(true);
     
@@ -415,7 +536,7 @@ export default function Cart() {
       Toast.show({
         type: 'success',
         text1: 'Coupon Applied!',
-        text2: `${systemConfig.PREBOOKING_DISCOUNT_PERCENT || 30}% prebooking discount applied successfully`,
+        text2: `${systemConfig.PREBOOKING_DISCOUNT_PERCENT}% prebooking discount applied successfully`,
         position: 'bottom',
         bottomOffset: 100,
       });
@@ -679,6 +800,8 @@ export default function Cart() {
 
 
   const createbookings = async (razorpay_oid) => {
+    setIsConfirmingPayment(true);
+    
     // Prepare clean cart data for backend with new pricing system
     const cleanCartItems = prepareCartDataForBackend(rawcart, selectedPaymentMethod);
     console.log("Clean cart items for backend:", cleanCartItems);
@@ -739,6 +862,7 @@ export default function Cart() {
       const { data, error } = await confirmbookings(bookingdata);
 
       if (error) {
+        setIsConfirmingPayment(false);
         showCustomAlert(
           'Sorry! Unable to book',
           'There was an error processing your booking. Please try again later.',
@@ -769,6 +893,7 @@ export default function Cart() {
             {
               text: 'OK',
               onPress: () => {
+                setIsConfirmingPayment(false);
                 router.push('/protected/(tabs)/Bookings');
               }
             }
@@ -778,6 +903,7 @@ export default function Cart() {
       }
     } catch (bookingError) {
       console.error("Booking error:", bookingError);
+      setIsConfirmingPayment(false);
       showCustomAlert(
         'Booking Error',
         'There was an error creating your booking. Please contact support.',
@@ -791,6 +917,8 @@ export default function Cart() {
         ],
         'error'
       );
+    } finally {
+      setIsConfirmingPayment(false);
     }
   }
 
@@ -1212,6 +1340,8 @@ export default function Cart() {
                     onPress={() => {
                       setSelectedDate(dateItem.date);
                       setSelectedDateItem(dateItem);
+                      // Reset selected time slot when date changes since availability changes
+                      setSelectedTimeSlot(null);
                     }}
                   >
                     <Text style={[
@@ -1269,18 +1399,8 @@ export default function Cart() {
                     ]}>
                       {slot.time}
                     </Text>
-                    <Text style={[
-                      styles.timeSlotLabel,
-                      !slot.available && styles.unavailableText,
-                      selectedTimeSlot?.id === slot.id && styles.selectedTimeText
-                    ]}>
-                      {slot.label}
-                    </Text>
-                    {!slot.available && (
-                      <View style={styles.unavailableBadge}>
-                        <Text style={styles.unavailableBadgeText}>Booked</Text>
-                      </View>
-                    )}
+                    
+                    
                   </TouchableOpacity>
                 ))}
               </View>
@@ -1468,11 +1588,11 @@ export default function Cart() {
                         <Text style={styles.breakdownHeaderText}>Payment Breakdown</Text>
                       </View>
                       <View style={styles.billRow}>
-                        <Text style={styles.billLabel}>Pay Online Now ({getSharePercentages().companyPercentage}%)</Text>
+                        <Text style={styles.billLabel}>Pay Online Now ({Math.round(getSharePercentages().companyPercentage)}%)</Text>
                         <Text style={styles.billAmount}>₹{totalCompanyShare.toFixed(2)}</Text>
                       </View>
                       <View style={styles.billRow}>
-                        <Text style={styles.billLabel}>Pay to Service Provider ({getSharePercentages().tmPercentage}%)</Text>
+                        <Text style={styles.billLabel}>Pay to Service Provider ({Math.round(getSharePercentages().tmPercentage)}%)</Text>
                         <Text style={styles.billAmount}>₹{totalTMShare.toFixed(2)}</Text>
                       </View>
                     </View>
@@ -1517,7 +1637,7 @@ export default function Cart() {
                   {
                     key: 'Pay on Service',
                     icon: 'cash',
-                    label: `Pay ${getSharePercentages().tmPercentage}% on Service`,
+                    label: `Pay ${Math.round(getSharePercentages().tmPercentage)}% on Service`,
                     subtitle: 'Pay company share online + service amount to provider'
                   }
                 ].map((method) => (
@@ -1676,11 +1796,11 @@ export default function Cart() {
               <Ionicons name="trash-outline" size={32} color="#F44336" />
 
             </View>
-            <Text style={styles.deleteModalTitle}>Clear Cart</Text>
+            <Text style={styles.deleteModalTitle}>Remove Item</Text>
           </View>
 
           <Text style={styles.deleteModalMessage}>
-            Are you sure you want to remove all items from your cart?
+            Are you sure you want to remove this item from your cart?
           </Text>
 
           <View style={styles.deleteModalButtons}>
@@ -1705,7 +1825,7 @@ export default function Cart() {
               {deletingItemId === itemToDelete?.service_id ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
-                <Text style={styles.deleteConfirmButtonText}>Clear Cart</Text>
+                <Text style={styles.deleteConfirmButtonText}>Remove Item</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -1802,12 +1922,19 @@ export default function Cart() {
           onBack={() => router.back()}
         />
 
-        <ScrollView
-          style={styles.scrollContainer}
-          contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        bounces={true}
-      >
+        {/* Initial Loading Screen */}
+        {isInitialLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#3898B3" />
+            <Text style={styles.loadingText}>Loading your cart...</Text>
+          </View>
+        ) : (
+          <ScrollView
+            style={styles.scrollContainer}
+            contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          bounces={true}
+        >
         {/* Location Confirmation */}
         <TouchableOpacity
           style={styles.locationCard}
@@ -1876,55 +2003,60 @@ export default function Cart() {
             </View>
             <View style={styles.onlineDiscountTextContainer}>
               <Text style={styles.onlineDiscountText}>
-                <Text>Save </Text><Text style={styles.onlineDiscountAmount}>₹{Math.round(onlinePaymentDiscount)} ({onlineDiscountPercent}%)</Text><Text> with </Text>
+                <Text>Save </Text><Text style={styles.onlineDiscountAmount}>₹{(onlinePaymentDiscount)} ({onlineDiscountPercent}%)</Text><Text> with </Text>
                 <Text style={styles.onlineDiscountMethod}>online payment</Text>
               </Text>
             </View>
           </View>
         )}
 
-        {/* Coupon Code Section */}
-        <View style={styles.couponSection}>
-          {!isCouponApplied ? (
-            <View>
-              {/* Suggested coupon */}
-              <View style={styles.suggestedCouponContainer}>
-                <Text style={styles.suggestedCouponLabel}>Available Coupon:</Text>
-                <TouchableOpacity 
-                  style={[
-                    styles.suggestedCouponButton,
-                    isApplyingCoupon && styles.suggestedCouponButtonDisabled
-                  ]}
-                  onPress={applyPrebookingCoupon}
-                  disabled={isApplyingCoupon}
-                >
-                  <View style={styles.suggestedCouponContent}>
-                    <Text style={styles.suggestedCouponCode}>{systemConfig.PREBOOKING_COUPON || 'PREBOOKING30'}</Text>
-                    <Text style={styles.suggestedCouponDiscount}>{systemConfig.PREBOOKING_DISCOUNT_PERCENT || 30}% OFF</Text>
-                  </View>
-                  <Text style={styles.suggestedCouponApplyText}>
-                    {isApplyingCoupon ? 'Applying...' : 'Apply'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          ) : (
-            <View style={styles.couponAppliedContainer}>
-              <View style={styles.couponAppliedRow}>
-                <View style={styles.couponAppliedInfo}>
-                  <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
-                  <Text style={styles.couponAppliedText}>{systemConfig.PREBOOKING_COUPON || 'PREBOOKING30'} applied</Text>
+        {/* Coupon Code Section - Only show if prebooking discount is available, coupon code exists, and prebooking date hasn't passed */}
+        {systemConfig.PREBOOKING_DISCOUNT_PERCENT > 0 && 
+         systemConfig.PREBOOKING_COUPON && 
+         systemConfig.PREBOOKING_DATE && 
+         new Date() < new Date(systemConfig.PREBOOKING_DATE) && (
+          <View style={styles.couponSection}>
+            {!isCouponApplied ? (
+              <View>
+                {/* Suggested coupon */}
+                <View style={styles.suggestedCouponContainer}>
+                  <Text style={styles.suggestedCouponLabel}>Available Coupon:</Text>
+                  <TouchableOpacity 
+                    style={[
+                      styles.suggestedCouponButton,
+                      isApplyingCoupon && styles.suggestedCouponButtonDisabled
+                    ]}
+                    onPress={applyPrebookingCoupon}
+                    disabled={isApplyingCoupon}
+                  >
+                    <View style={styles.suggestedCouponContent}>
+                      <Text style={styles.suggestedCouponCode}>{systemConfig.PREBOOKING_COUPON}</Text>
+                      <Text style={styles.suggestedCouponDiscount}>{systemConfig.PREBOOKING_DISCOUNT_PERCENT}% OFF</Text>
+                    </View>
+                    <Text style={styles.suggestedCouponApplyText}>
+                      {isApplyingCoupon ? 'Applying...' : 'Apply'}
+                    </Text>
+                  </TouchableOpacity>
                 </View>
-                <TouchableOpacity 
-                  style={styles.removeCouponButton}
-                  onPress={removeCoupon}
-                >
-                  <Text style={styles.removeCouponText}>Remove</Text>
-                </TouchableOpacity>
               </View>
-            </View>
-          )}
-        </View>
+            ) : (
+              <View style={styles.couponAppliedContainer}>
+                <View style={styles.couponAppliedRow}>
+                  <View style={styles.couponAppliedInfo}>
+                    <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
+                    <Text style={styles.couponAppliedText}>{systemConfig.PREBOOKING_COUPON} applied</Text>
+                  </View>
+                  <TouchableOpacity 
+                    style={styles.removeCouponButton}
+                    onPress={removeCoupon}
+                  >
+                    <Text style={styles.removeCouponText}>Remove</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+          </View>
+        )}
 
         {/* Promotional Message for Discount */}
         
@@ -1980,16 +2112,6 @@ export default function Cart() {
               <Text style={styles.totalAmount}>₹{grandTotal.toFixed(2)}</Text>
             </View>
 
-            {/* Show payment breakdown */}
-            <View style={styles.summaryDivider} />
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Task Master Share ({getSharePercentages().tmPercentage}%)</Text>
-              <Text style={styles.summaryAmount}>₹{totalTMShare.toFixed(2)}</Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Company Share ({getSharePercentages().companyPercentage}%)</Text>
-              <Text style={styles.summaryAmount}>₹{totalCompanyShare.toFixed(2)}</Text>
-            </View>
           </View>
         )}
 
@@ -2003,6 +2125,7 @@ export default function Cart() {
           <Ionicons name="chevron-forward" size={16} color="#666" />
         </TouchableOpacity>
       </ScrollView>
+      )}
 
       {/* Fixed Bottom Section */}
       <View style={styles.bottomSection}>
@@ -2045,6 +2168,37 @@ export default function Cart() {
         isVisible={cartData.length > 0 && !isCartEmptyOrZero()}
         onProceed={handleProceedNow}
       />
+
+      {/* Overlay Loading for Cart */}
+      {(isCartLoading && !isInitialLoading) && (
+        <View style={styles.overlayLoading}>
+          <View style={styles.overlayLoadingContent}>
+            <ActivityIndicator size="large" color="#3898B3" />
+            <Text style={styles.overlayLoadingText}>Updating cart...</Text>
+          </View>
+        </View>
+      )}
+
+      {/* Overlay Loading for Coupon */}
+      {isApplyingCoupon && (
+        <View style={styles.overlayLoading}>
+          <View style={styles.overlayLoadingContent}>
+            <ActivityIndicator size="large" color="#3898B3" />
+            <Text style={styles.overlayLoadingText}>Applying coupon...</Text>
+          </View>
+        </View>
+      )}
+
+      {/* Overlay Loading for Payment Confirmation */}
+      {isConfirmingPayment && (
+        <View style={styles.overlayLoading}>
+          <View style={styles.overlayLoadingContent}>
+            <ActivityIndicator size="large" color="#3898B3" />
+            <Text style={styles.overlayLoadingText}>Confirming payment...</Text>
+          </View>
+        </View>
+      )}
+
       </View>
     </SafeAreaView>
   );
@@ -2062,6 +2216,47 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingHorizontal: 20,
     paddingBottom: 100,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+  },
+  overlayLoading: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 9999,
+  },
+  overlayLoadingContent: {
+    backgroundColor: '#fff',
+    padding: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+  },
+  overlayLoadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#333',
+    textAlign: 'center',
+    fontWeight: '500',
   },
   header: {
     position: 'absolute',

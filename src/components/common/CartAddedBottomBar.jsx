@@ -18,7 +18,7 @@ const CartAddedBottomBar = ({ isVisible, onClose, cartItemCount = 0 }) => {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { bottom: insets.bottom + 50 }]}>
       <View style={styles.content}>
         <View style={styles.leftSection}>
           <Ionicons name="cart" size={20} color="#3898B3" />
@@ -39,7 +39,6 @@ const CartAddedBottomBar = ({ isVisible, onClose, cartItemCount = 0 }) => {
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    bottom: 60, // Position above the tab bar (tab bar height is ~60px + safe area)
     left: 0,
     right: 0,
     backgroundColor: '#fff',

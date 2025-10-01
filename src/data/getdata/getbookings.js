@@ -61,6 +61,7 @@ export default async function getbookings() {
       // Keep the original field names for backward compatibility
       service_name: element.service_name,
       Contact: `+91 ${element.tm_contact}`,
+      cart_uuid: element.cart_uuid
     };
   };
 

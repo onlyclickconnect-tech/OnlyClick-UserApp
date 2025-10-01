@@ -245,6 +245,15 @@ function ServicesPage() {
       });
     }
     else {
+      // Show success toast notification
+      Toast.show({
+        type: 'success',
+        text1: 'Added to Cart!',
+        text2: `${service.title} has been added to your cart`,
+        position: 'bottom',
+        bottomOffset: 100,
+      });
+      
       // Show bottom bar notification
       setIsCartAddedBottomBarVisible(true);
       
