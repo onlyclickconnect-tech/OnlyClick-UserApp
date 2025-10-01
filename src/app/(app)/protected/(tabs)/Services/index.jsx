@@ -232,7 +232,6 @@ function ServicesPage() {
     delete cartPayload.ratings;
     delete cartPayload.service_fee_percent
     delete cartPayload.total_tax
-    console.log("cart payload",cartPayload);
     const { error } = await addToCart(cartPayload)
 
     // Show success feedback (you can customize this)

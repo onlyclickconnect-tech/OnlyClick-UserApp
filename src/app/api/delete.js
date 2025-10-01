@@ -11,7 +11,6 @@ const clearAllAppState = async () => {
     // Sign out from Supabase
     await supabase.auth.signOut();
 
-    console.log("✅ All app state and user data cleared successfully");
   } catch (error) {
     console.error("❌ Error clearing app state:", error);
     // Even if clearing fails, we should continue with the deletion
@@ -40,7 +39,6 @@ export const deleteUser = async () => {
     return response.data;
   } catch (error) {
 
-    console.log("⚠️ Server deletion failed, but clearing local data anyway");
 
     throw error;
   }

@@ -1,7 +1,6 @@
 import supabase from "../supabaseClient";
 
 export default async function fetchCart(couponApplied = false) {
-    console.log("fetchCart called with couponApplied:", couponApplied);
     
     // 1) Get coupon details for prebooking, online discount, and commission
     const getDiscountAndCommission = async () => {
@@ -15,7 +14,6 @@ export default async function fetchCart(couponApplied = false) {
             return {};
         }
 
-        console.log("General data:", data);
 
         // Convert [{key, value}, ...] → {key: value, ...}
         const result = data.reduce((acc, { key, value }) => {
@@ -40,14 +38,7 @@ export default async function fetchCart(couponApplied = false) {
     const PREBOOKING_DATE = systemConfig.PREBOOKING_DATE;
     const CONVENIENCE_FEE_PERCENT = systemConfig.CONVENIENCE_FEE_PERCENT;
 
-    console.log("System config:", {
-        COMMISSION_PERCENT,
-        ONLINE_PAYMENT_DISCOUNT_PERCENT,
-        PREBOOKING_DISCOUNT_PERCENT,
-        PREBOOKING_COUPON,
-        PREBOOKING_DATE,
-        CONVENIENCE_FEE_PERCENT
-    });
+
 
     // 2) Get cart data
     const { data, error } = await supabase
@@ -56,7 +47,6 @@ export default async function fetchCart(couponApplied = false) {
         .select("cart")
         .single();
 
-    console.log("Cart data from DB:", data);
 
     if (error) {
         console.error("Error fetching cart:", error);
@@ -67,7 +57,6 @@ export default async function fetchCart(couponApplied = false) {
         return { arr: [], error: null };
     }
 
-    console.log("Cart items:", data.cart);
 
     // Extract service IDs from cart
     const serviceIds = data.cart.items.map(item => item.service_id);
@@ -198,16 +187,6 @@ export default async function fetchCart(couponApplied = false) {
 
     const arr = transformCartData(processedCartItems);
 
-    console.log("Final calculations:", {
-        subTotal: parseFloat(subTotal.toFixed(2)),
-        totalConvenienceFee: parseFloat(totalConvenienceFee.toFixed(2)),
-        grandTotal: parseFloat(grandTotal.toFixed(2)),
-        totalTMShare: parseFloat(totalTMShare.toFixed(2)),
-        totalCompanyShare: parseFloat(totalCompanyShare.toFixed(2)),
-        totalOnlineDiscount: parseFloat(totalOnlineDiscount.toFixed(2)),
-        totalPrebookingDiscount: parseFloat(totalPrebookingDiscount.toFixed(2)),
-        totalWithOnlineDiscount: parseFloat(totalWithOnlineDiscount.toFixed(2))
-    });
 
     return {
         arr,

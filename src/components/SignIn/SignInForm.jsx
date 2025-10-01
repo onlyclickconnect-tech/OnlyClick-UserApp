@@ -40,13 +40,9 @@ export default function LoginScreen() {
 
     try {
 
-      console.log(" here all okay");
       const response = await api.post("/api/v1/auth", {
         email,
       });
-      console.log(" i am here");
-      console.log(response.data);
-      console.log(response.email);
 
       setEmailSentMessage("An email is sent, please verify in email");
       setEmailSent(true);

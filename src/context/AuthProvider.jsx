@@ -120,7 +120,6 @@ export default function AuthProvider({ children }) {
       // If we're doing a background refresh and already have good cached data, 
       // don't overwrite it with potentially empty network responses
       if (skipIfCachedDataExists && user && user.name && user.phone) {
-        console.log("🔄 Skipping background refresh - good cached data exists");
         return;
       }
 
@@ -133,13 +132,11 @@ export default function AuthProvider({ children }) {
       // If all fetched fields are empty, do NOT overwrite cached data
       const isFetchedDataEmpty = !fullName && !avatar && !email && !phone && !address;
       if (isFetchedDataEmpty && user && user._id) {
-        console.log("🚫 Network failed, keeping cached user data");
         return;
       }
 
       // Don't update if we got empty name/phone and we already have better cached data
       if (user && user.name && user.phone && (!fullName || !phone)) {
-        console.log("🚫 Rejecting empty network data - keeping cached data");
         return;
       }
 
@@ -311,14 +308,7 @@ export default function AuthProvider({ children }) {
       const savedUserDetails = await getStoredUserDetails();
       const savedAuthToken = await getAuthToken();
       const savedIsNewUser = await getIsNewUser();
-      
-      console.log("📱 STORAGE DEBUG:", {
-        savedIsLoggedIn,
-        savedIsNewUser,
-        hasUserDetails: !!savedUserDetails,
-        userDetails: savedUserDetails,
-        hasAuthToken: !!savedAuthToken
-      });
+
       
       return {
         savedIsLoggedIn,

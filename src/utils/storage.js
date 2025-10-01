@@ -118,7 +118,6 @@ export const clearAllAppStorage = async () => {
     ];
 
     await AsyncStorage.multiRemove(keys);
-    console.log("✅ All app storage cleared successfully");
   } catch (error) {
     console.error("❌ Error clearing app storage:", error);
     throw error;

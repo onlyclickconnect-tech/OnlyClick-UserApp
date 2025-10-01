@@ -22,7 +22,6 @@ export const useCartManager = () => {
       
       return totalItems;
     } catch (error) {
-      console.log('Error updating cart count:', error);
       setCartItemCount(0);
       setIsCartBottomBarVisible(false);
       return 0;

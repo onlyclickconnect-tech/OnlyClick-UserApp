@@ -22,11 +22,9 @@ export default function Info() {
         .order('id', { ascending: true })
 
       if (error) {
-        console.log(error);
         return;
       }
 
-      console.log('Raw data from DB:', data);
       
       const transformedData = data?.map(item => ({
         id: item.id,
@@ -35,7 +33,6 @@ export default function Info() {
         image: { uri: item.image  }
       })) || [];
       
-      console.log('Transformed data:', transformedData);
       setcarouselData(transformedData);
     }
     getcarouselData()
