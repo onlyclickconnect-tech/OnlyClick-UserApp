@@ -28,6 +28,7 @@ export default function BookingDetails() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const [showCancellationModal, setShowCancellationModal] = useState(false);
+  const [showCancelConfirmModal, setShowCancelConfirmModal] = useState(false);
   const [otp, setOtp] = useState('');
   const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -110,22 +111,39 @@ export default function BookingDetails() {
   ).current;
 
   const handleCancellation = () => {
-    Alert.alert(
-      'Cancel Booking',
-      'Are you sure you want to cancel this booking? This action cannot be undone.',
-      [
-        { text: 'No', style: 'cancel' },
-        {
-          text: 'Yes, Cancel',
-          style: 'destructive',
-          onPress: () => {
-            // Handle cancellation logic
-            Alert.alert('Booking Cancelled', 'Your booking has been cancelled successfully.');
-            router.back();
-          }
-        }
-      ]
-    );
+    // Create WhatsApp message with booking details
+    const whatsappMessage = `Hello Only Click Team,
+
+I would like to cancel my booking with the following details:
+
+📋 Booking ID: ${booking?.bookingId || 'N/A'}
+🔧 Service: ${booking?.serviceName || 'N/A'}
+📅 Date: ${booking?.date ? formatDate(booking.date) : 'N/A'}
+⏰ Time: ${booking?.time ? formatTime(booking.time) : 'N/A'}
+📍 Location: ${booking?.location || 'N/A'}
+💰 Amount: ₹${booking?.price || 'N/A'}
+${booking?.razorpay_oid && booking?.razorpay_oid !== "Pay after service " ? `💳 Payment ID: ${booking.razorpay_oid}` : '💳 Payment Mode: Pay on Service'}
+
+Please process my cancellation request. Thank you!`;
+
+    const encodedMessage = encodeURIComponent(whatsappMessage);
+    const whatsappUrl = `https://wa.me/919121377419?text=${encodedMessage}`;
+    
+    Linking.openURL(whatsappUrl).then(() => {
+      // After opening WhatsApp, show success and go back
+      Alert.alert(
+        'Cancellation Request Sent',
+        'Your cancellation request has been sent to our support team via WhatsApp. They will process it shortly.',
+        [{ text: 'OK', onPress: () => router.back() }]
+      );
+    }).catch(() => {
+      // Fallback if WhatsApp is not available
+      Alert.alert(
+        'Unable to Open WhatsApp',
+        'Please contact our support team at +91-9121377419 for cancellation assistance.',
+        [{ text: 'OK' }]
+      );
+    });
   };
 
   const formatTime = (timeString) => {
@@ -173,10 +191,13 @@ export default function BookingDetails() {
             status: params.status,
             provider: params.provider,
             price: parseFloat(params.price) || 0,
+            quantity: parseInt(params.quantity) || 1,
+            unitPrice: parseFloat(params.unitPrice) || (parseFloat(params.price) / Math.max(parseInt(params.quantity) || 1, 1)),
             category: params.category,
             contact: params.contact,
             description: params.description,
             otp: parseInt(params.otp),
+            tm_share: params.tm_share || '0',
             taskMaster: params.taskMaster ? JSON.parse(params.taskMaster) : {
               name: params.provider,
               contact: params.contact,
@@ -250,23 +271,96 @@ export default function BookingDetails() {
   };
 
   const handleCancelBooking = () => {
-    Alert.alert(
-      'Cancel Booking',
-      'Are you sure you want to cancel this booking?',
-      [
-        { text: 'No', style: 'cancel' },
-        { 
-          text: 'Yes, Cancel', 
-          style: 'destructive',
-          onPress: () => {
-            // Handle cancellation logic
-            Alert.alert('Booking Cancelled', 'Your booking has been cancelled successfully.');
-            router.back();
-          }
-        }
-      ]
-    );
+    setShowCancelConfirmModal(true);
   };
+
+  const confirmCancellation = () => {
+    setShowCancelConfirmModal(false);
+    
+    // Create WhatsApp message with booking details
+    const whatsappMessage = `Hello Only Click Team,
+
+I would like to cancel my booking with the following details:
+
+📋 Booking ID: ${booking?.bookingId || 'N/A'}
+🔧 Service: ${booking?.serviceName || 'N/A'}
+📅 Date: ${booking?.date ? formatDate(booking.date) : 'N/A'}
+⏰ Time: ${booking?.time ? formatTime(booking.time) : 'N/A'}
+📍 Location: ${booking?.location || 'N/A'}
+💰 Amount: ₹${booking?.price || 'N/A'}
+${booking?.razorpay_oid && booking?.razorpay_oid !== "Pay after service " ? `💳 Payment ID: ${booking.razorpay_oid}` : '💳 Payment Mode: Pay on Service'}
+
+Please process my cancellation request. Thank you!`;
+
+    const encodedMessage = encodeURIComponent(whatsappMessage);
+    const whatsappUrl = `https://wa.me/919121377419?text=${encodedMessage}`;
+    
+    Linking.openURL(whatsappUrl).then(() => {
+      // After opening WhatsApp, show success and go back
+      Alert.alert(
+        'Cancellation Request Sent',
+        'Your cancellation request has been sent to our support team via WhatsApp. They will process it shortly.',
+        [{ text: 'OK', onPress: () => router.back() }]
+      );
+    }).catch(() => {
+      // Fallback if WhatsApp is not available
+      Alert.alert(
+        'Unable to Open WhatsApp',
+        'Please contact our support team at +91-9121377419 for cancellation assistance.',
+        [{ text: 'OK' }]
+      );
+    });
+  };
+
+  const CancelConfirmModal = () => (
+    <Modal visible={showCancelConfirmModal} transparent animationType="fade">
+      <View style={styles.cancelModalOverlay}>
+        <View style={styles.cancelModalContainer}>
+          {/* Icon */}
+          <View style={styles.cancelIconContainer}>
+            <Ionicons name="warning" size={64} color="#F44336" />
+          </View>
+          
+          {/* Title */}
+          <Text style={styles.cancelModalTitle}>Cancel Booking?</Text>
+          
+          {/* Message */}
+          <Text style={styles.cancelModalMessage}>
+            Are you sure you want to cancel this booking? This will send a cancellation request to our support team via WhatsApp.
+          </Text>
+          
+          {/* Booking Summary */}
+          <View style={styles.cancelBookingSummary}>
+            <Text style={styles.cancelSummaryTitle}>Booking Details:</Text>
+            <Text style={styles.cancelSummaryText}>Service: {booking?.serviceName}</Text>
+            <Text style={styles.cancelSummaryText}>Date: {booking?.date ? formatDate(booking.date) : 'N/A'}</Text>
+            <Text style={styles.cancelSummaryText}>Time: {booking?.time ? formatTime(booking.time) : 'N/A'}</Text>
+            <Text style={styles.cancelSummaryText}>Amount: ₹{booking?.price}</Text>
+          </View>
+          
+          {/* Buttons */}
+          <View style={styles.cancelModalButtons}>
+            <TouchableOpacity 
+              style={styles.cancelModalButtonSecondary}
+              onPress={() => setShowCancelConfirmModal(false)}
+            >
+              <Text style={styles.cancelModalButtonSecondaryText}>Keep Booking</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.cancelModalButtonPrimary}
+              onPress={confirmCancellation}
+            >
+              <View style={styles.whatsappButtonContent}>
+                <Ionicons name="logo-whatsapp" size={20} color="#fff" />
+                <Text style={styles.cancelModalButtonPrimaryText}>Send to WhatsApp</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
 
   const CancellationRulesModal = () => (
     <Modal visible={showCancellationModal} transparent animationType="none">
@@ -630,10 +724,37 @@ export default function BookingDetails() {
         <View style={booking.status === 'Completed' ? styles.infoCardCompleted : styles.infoCard}>
           <Text style={styles.sectionTitle}>Payment Information</Text>
           
+          {/* Service Details with Quantity */}
+          {booking.quantity > 1 && (
+            <View style={styles.serviceDetailsRow}>
+              <View style={styles.serviceInfo}>
+                <Text style={styles.serviceNameText}>{booking.serviceName}</Text>
+                <Text style={styles.serviceQuantityText}>Quantity: {booking.quantity}</Text>
+              </View>
+              <View style={styles.servicePriceInfo}>
+                <Text style={styles.unitPriceText}>
+                  ₹{Math.round(booking.unitPrice || (booking.price / Math.max(booking.quantity, 1)))} each
+                </Text>
+                <Text style={styles.totalPriceText}>₹{booking.price}</Text>
+              </View>
+            </View>
+          )}
+
+          {booking.quantity > 1 && <View style={styles.paymentDivider} />}
+          
           <View style={styles.paymentRow}>
-            <Text style={styles.paymentLabel}>Service Charge</Text>
+            <Text style={styles.paymentLabel}>Total Service Charge</Text>
             <Text style={styles.paymentAmount}>₹{booking.price}</Text>
           </View>
+          
+          {/* Only show provider payment for Pay on Service */}
+          {(booking.paymentMethod && 
+            (booking.paymentMethod.toLowerCase().includes('pay on service') )) && (
+            <View style={styles.paymentRow}>
+              <Text style={styles.paymentLabel}>Pay to Provider</Text>
+              <Text style={styles.providerPaymentAmount}>₹{params.tm_share || booking.tm_share || '0'}</Text>
+            </View>
+          )}
           
           <View style={styles.paymentRow}>
             <Text style={styles.paymentLabel}>Payment Method</Text>
@@ -678,6 +799,7 @@ export default function BookingDetails() {
 
       </ScrollView>
 
+      <CancelConfirmModal />
       <CancellationRulesModal />
     </View>
   );
@@ -854,10 +976,57 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#3898B3',
   },
+  providerPaymentAmount: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#4CAF50',
+  },
   paymentMethod: {
     fontSize: 16,
     color: '#1A1A1A',
     fontWeight: '500',
+  },
+  serviceDetailsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    backgroundColor: '#F8F9FA',
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  serviceInfo: {
+    flex: 1,
+    marginRight: 12,
+  },
+  serviceNameText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    marginBottom: 4,
+  },
+  serviceQuantityText: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '500',
+  },
+  servicePriceInfo: {
+    alignItems: 'flex-end',
+  },
+  unitPriceText: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 2,
+  },
+  totalPriceText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#3898B3',
+  },
+  paymentDivider: {
+    height: 1,
+    backgroundColor: '#E5E5E5',
+    marginVertical: 12,
   },
   cancellationCard: {
     backgroundColor: '#fff',
@@ -1147,5 +1316,106 @@ const styles = StyleSheet.create({
     marginTop: 20,
     fontStyle: 'italic',
     textAlign: 'center',
+  },
+  // Cancel Confirmation Modal Styles
+  cancelModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  cancelModalContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
+    maxWidth: 340,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  cancelIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#FFEBEE',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  cancelModalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#1A1A1A',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  cancelModalMessage: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 20,
+  },
+  cancelBookingSummary: {
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    padding: 16,
+    width: '100%',
+    marginBottom: 24,
+  },
+  cancelSummaryTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#3898B3',
+    marginBottom: 8,
+  },
+  cancelSummaryText: {
+    fontSize: 14,
+    color: '#333',
+    marginBottom: 4,
+    paddingLeft: 8,
+  },
+  cancelModalButtons: {
+    flexDirection: 'row',
+    width: '100%',
+    gap: 12,
+  },
+  cancelModalButtonSecondary: {
+    flex: 1,
+    backgroundColor: '#F5F5F5',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelModalButtonSecondaryText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#666',
+  },
+  cancelModalButtonPrimary: {
+    flex: 1,
+    backgroundColor: '#25D366',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  whatsappButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  cancelModalButtonPrimaryText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
   },
 });

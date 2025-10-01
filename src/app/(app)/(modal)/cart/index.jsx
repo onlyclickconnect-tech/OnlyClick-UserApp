@@ -19,6 +19,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 
 import Constants from 'expo-constants';
+import CartPageBottomBar from '../../../../components/common/CartPageBottomBar';
 import Text from "../../../../components/ui/Text.jsx";
 import { useAppStates } from '../../../../context/AppStates';
 import { useAuth } from '../../../../context/AuthProvider.jsx';
@@ -70,20 +71,35 @@ export default function Cart() {
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedDateItem, setSelectedDateItem] = useState(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState(null);
-  const [service_charge, setSetservice_charge] = useState()
-  const [total, setTotal] = useState()
-  const [subTotal, setSubTotal] = useState(0)
-  const [onlinePaymentDiscount, setOnlinePaymentDiscount] = useState(0)
-  const [onlineDiscountPercent, setOnlineDiscountPercent] = useState(2)
-  const [totalAmountWithOnlineDiscount, setTotalAmountWithOnlineDiscount] = useState(0)
-  // Add paise state variables for precise calculations
-  const [totalAmountPaise, setTotalAmountPaise] = useState(0)
-  const [totalAmountWithOnlineDiscountPaise, setTotalAmountWithOnlineDiscountPaise] = useState(0)
+  // New pricing system state variables
+  const [subTotal, setSubTotal] = useState(0);
+  const [convenienceFee, setConvenienceFee] = useState(0);
+  const [grandTotal, setGrandTotal] = useState(0);
+  const [totalTMShare, setTotalTMShare] = useState(0);
+  const [totalCompanyShare, setTotalCompanyShare] = useState(0);
+  const [onlinePaymentDiscount, setOnlinePaymentDiscount] = useState(0);
+  const [onlineDiscountPercent, setOnlineDiscountPercent] = useState(2);
+  const [totalWithOnlineDiscount, setTotalWithOnlineDiscount] = useState(0);
+  const [systemConfig, setSystemConfig] = useState({});
   const [deletingItemId, setDeletingItemId] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
   const [updatingItemId, setUpdatingItemId] = useState(null);
+  
+  // Loading states
+  const [isCartLoading, setIsCartLoading] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
+
+  // Coupon related state
+  const [couponCode, setCouponCode] = useState("");
+  const [isCouponApplied, setIsCouponApplied] = useState(false);
+  const [prebookingDiscount, setPrebookingDiscount] = useState(0);
+  const [prebookingDiscountPercent, setPrebookingDiscountPercent] = useState(0);
+  const [showCouponInput, setShowCouponInput] = useState(false);
+  const [couponError, setCouponError] = useState("");
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
 
   // Minimal Custom Alert State
   const [customAlert, setCustomAlert] = useState({
@@ -221,37 +237,115 @@ export default function Cart() {
   useEffect(() => {
     const generateDates = () => {
       const dates = [];
-      const today = new Date();
+      
+      // Check if current time is after 6 PM
+      const now = new Date();
+      const currentHour = now.getHours();
+      const isAfter6PM = currentHour >= 18; // 18:00 = 6 PM in 24-hour format
+      
+      // Use prebooking date from backend or fall back to today
+      let startDate;
+      if (systemConfig.PREBOOKING_DATE) {
+        const prebookingDate = new Date(systemConfig.PREBOOKING_DATE);
+        const today = new Date();
+        
+        // Use the later of prebooking date or today
+        startDate = prebookingDate > today ? prebookingDate : today;
+      } else {
+        startDate = new Date(); // Fallback to today if no prebooking date
+      }
+      
+      // If it's after 6 PM today, start from tomorrow
+      if (isAfter6PM && startDate.toDateString() === now.toDateString()) {
+        startDate = new Date(now);
+        startDate.setDate(now.getDate() + 1); // Move to tomorrow
+      }
+      
+      // Generate 7 days starting from the determined start date
       for (let i = 0; i < 7; i++) {
-        const date = new Date(today);
-        date.setDate(today.getDate() + i);
+        const date = new Date(startDate);
+        date.setDate(startDate.getDate() + i);
+        
+        const today = new Date();
+        const isToday = date.toDateString() === today.toDateString();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(today.getDate() + 1);
+        const isTomorrow = date.toDateString() === tomorrow.toDateString();
+        
         dates.push({
           date: date,
           dayName: date.toLocaleDateString('en-US', { weekday: 'short' }),
           dayNumber: date.getDate().toString().padStart(2, '0'),
           month: date.toLocaleDateString('en-US', { month: 'short' }),
-          isToday: i === 0,
-          isTomorrow: i === 1
+          isToday: isToday,
+          isTomorrow: isTomorrow
         });
       }
       setdates(dates)
     };
     generateDates();
-  }, [])
+  }, [systemConfig.PREBOOKING_DATE]) // Regenerate dates when prebooking date changes
 
+  // Function to get available time slots based on selected date and current time
+  const getAvailableTimeSlots = (selectedDate) => {
+    const baseTimeSlots = [
+      { id: 1, time: '09:00 AM', label: 'Morning' },
+      { id: 2, time: '10:00 AM', label: 'Morning' },
+      { id: 3, time: '11:00 AM', label: 'Morning' },
+      { id: 4, time: '12:00 PM', label: 'Afternoon' },
+      { id: 5, time: '01:00 PM', label: 'Afternoon' },
+      { id: 6, time: '02:00 PM', label: 'Afternoon' },
+      { id: 7, time: '03:00 PM', label: 'Afternoon' },
+      { id: 8, time: '04:00 PM', label: 'Evening' },
+      { id: 9, time: '05:00 PM', label: 'Evening' },
+      { id: 10, time: '06:00 PM', label: 'Evening' },
+    ];
 
-  const timeSlots = [
-    { id: 1, time: '09:00 AM', label: 'Morning', available: true },
-    { id: 2, time: '10:00 AM', label: 'Morning', available: true },
-    { id: 3, time: '11:00 AM', label: 'Morning', available: true },
-    { id: 4, time: '12:00 PM', label: 'Afternoon', available: true },
-    { id: 5, time: '01:00 PM', label: 'Afternoon', available: true },
-    { id: 6, time: '02:00 PM', label: 'Afternoon', available: true },
-    { id: 7, time: '03:00 PM', label: 'Afternoon', available: true },
-    { id: 8, time: '04:00 PM', label: 'Evening', available: true },
-    { id: 9, time: '05:00 PM', label: 'Evening', available: true },
-    { id: 10, time: '06:00 PM', label: 'Evening', available: true },
-  ];
+    if (!selectedDate) {
+      return baseTimeSlots.map(slot => ({ ...slot, available: true }));
+    }
+
+    const currentTime = new Date();
+    const currentDateString = currentTime.toDateString();
+    const selectedDateString = selectedDate.toDateString();
+    
+    // If selected date is not today, all slots are available
+    if (selectedDateString !== currentDateString) {
+      return baseTimeSlots.map(slot => ({ ...slot, available: true }));
+    }
+
+    // For today, check if each slot is at least 1 hour from now
+    const oneHourFromNow = new Date(currentTime.getTime() + 60 * 60 * 1000); // Add 1 hour
+
+    return baseTimeSlots.map(slot => {
+      // Parse the slot time
+      const [timeStr, period] = slot.time.split(' ');
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      
+      // Convert to 24-hour format
+      let slotHours = hours;
+      if (period === 'PM' && hours !== 12) {
+        slotHours += 12;
+      } else if (period === 'AM' && hours === 12) {
+        slotHours = 0;
+      }
+
+      // Create a Date object for the slot time today
+      const slotTime = new Date(selectedDate);
+      slotTime.setHours(slotHours, minutes, 0, 0);
+
+      // Check if slot time is at least 1 hour from now
+      const available = slotTime >= oneHourFromNow;
+
+      return {
+        ...slot,
+        available
+      };
+    });
+  };
+
+  // Get time slots for the currently selected date
+  const timeSlots = getAvailableTimeSlots(selectedDate);
 
   const handleKindnessClick = () => {
     setHasClickedKindness(!hasClickedKindness);
@@ -302,25 +396,51 @@ export default function Cart() {
 
   // Function to fetch cart data from server
   const fetchCartData = async () => {
-    const { serviceCharge, subTotal, onlinePaymentDiscount, onlineDiscountPercent, totalAmount, totalAmountWithOnlineDiscount, totalAmountPaise, totalAmountWithOnlineDiscountPaise, arr, rawCartData } = await fetchCart();
-    setTotal(totalAmount);
-    setSubTotal(subTotal);
-    setOnlinePaymentDiscount(onlinePaymentDiscount);
-    setOnlineDiscountPercent(onlineDiscountPercent);
-    setTotalAmountWithOnlineDiscount(totalAmountWithOnlineDiscount);
-    // Set paise values for precise calculations
-    setTotalAmountPaise(totalAmountPaise);
-    setTotalAmountWithOnlineDiscountPaise(totalAmountWithOnlineDiscountPaise);
-    setSetservice_charge(serviceCharge);
-    setCartData(arr);
-    setRawcart(rawCartData);
-    // setLocation({ additionalInfo: "", city: "", district: "", houseNumber: address, pincode: "" });
-    // Only set mobile number from server if no mobile number is set in AppStates
-    if (!selectedMobileNumber) {
-     
-      setMobileNumber(userData.phone);
+    // Use overlay loading for subsequent calls, initial loading for first call
+    if (isInitialLoading) {
+      // Keep isInitialLoading true until first load completes
+    } else {
+      setIsCartLoading(true);
     }
     
+    console.log("Fetching cart data with couponApplied:", isCouponApplied);
+    
+    try {
+      const cartResponse = await fetchCart(isCouponApplied);
+      console.log("Cart response:", cartResponse);
+      
+      if (cartResponse.error) {
+        console.error("Error fetching cart:", cartResponse.error);
+        return;
+      }
+
+      // Update state with new pricing system data
+      setSubTotal(cartResponse.subTotal);
+      setConvenienceFee(cartResponse.convenienceFee);
+      setGrandTotal(cartResponse.grandTotal);
+      setTotalTMShare(cartResponse.totalTMShare);
+      setTotalCompanyShare(cartResponse.totalCompanyShare);
+      setOnlinePaymentDiscount(cartResponse.onlinePaymentDiscount);
+      setOnlineDiscountPercent(cartResponse.onlineDiscountPercent);
+      setTotalWithOnlineDiscount(cartResponse.totalWithOnlineDiscount);
+      setPrebookingDiscount(cartResponse.prebookingDiscount || 0);
+      setPrebookingDiscountPercent(cartResponse.prebookingDiscountPercent || 0);
+      setSystemConfig(cartResponse.systemConfig || {});
+      
+      // Update cart display data and raw cart data
+      setCartData(cartResponse.arr);
+      setRawcart(cartResponse.rawCartData);
+    } catch (error) {
+      console.error("Error in fetchCartData:", error);
+    } finally {
+      setIsInitialLoading(false);
+      setIsCartLoading(false);
+    }
+
+    // Only set mobile number from server if no mobile number is set in AppStates
+    if (!selectedMobileNumber) {
+      setMobileNumber(userData.phone);
+    }
   };
 
   useEffect(() => {
@@ -333,6 +453,11 @@ export default function Cart() {
       setMobileNumber(selectedMobileNumber);
     }
   }, []);
+
+  // Refresh cart when coupon is applied or removed
+  useEffect(() => {
+    fetchCartData();
+  }, [isCouponApplied]);
 
   // Listen for mobile number updates from AppStates context
   useEffect(() => {
@@ -354,6 +479,75 @@ export default function Cart() {
   useEffect(() => {
   }, [mobileNumber]);
 
+  // Coupon application functions
+  const applyCoupon = async () => {
+    setCouponError(""); // Clear previous errors
+    setIsApplyingCoupon(true);
+    
+    try {
+      // Check if prebooking date has passed
+      if (systemConfig.PREBOOKING_DATE && new Date() >= new Date(systemConfig.PREBOOKING_DATE)) {
+        setCouponError("Prebooking period has ended. This coupon is no longer valid.");
+        return;
+      }
+      
+      if (couponCode.trim().toLowerCase() === systemConfig.PREBOOKING_COUPON?.toLowerCase()) {
+        setIsCouponApplied(true);
+        // fetchCartData will be called by useEffect automatically
+        Toast.show({
+          type: 'success',
+          text1: 'Coupon Applied!',
+          text2: `${systemConfig.PREBOOKING_DISCOUNT_PERCENT}% prebooking discount applied successfully`,
+          position: 'bottom',
+          bottomOffset: 100,
+        });
+      } else {
+        setCouponError("Invalid coupon code. Please try again.");
+      }
+    } finally {
+      setIsApplyingCoupon(false);
+    }
+  };
+
+  const applyPrebookingCoupon = async () => {
+    // Prevent double application or multiple clicks
+    if (isCouponApplied || isApplyingCoupon) return;
+    
+    // Check if prebooking date has passed
+    if (systemConfig.PREBOOKING_DATE && new Date() >= new Date(systemConfig.PREBOOKING_DATE)) {
+      Toast.show({
+        type: 'error',
+        text1: 'Coupon Expired',
+        text2: 'Prebooking period has ended. This coupon is no longer valid.',
+        position: 'bottom',
+        bottomOffset: 100,
+      });
+      return;
+    }
+    
+    setIsApplyingCoupon(true);
+    setCouponCode(systemConfig.PREBOOKING_COUPON);
+    setCouponError(""); // Clear previous errors
+    setIsCouponApplied(true);
+    
+    // fetchCartData will be called by useEffect automatically
+    setTimeout(() => {
+      setIsApplyingCoupon(false);
+      Toast.show({
+        type: 'success',
+        text1: 'Coupon Applied!',
+        text2: `${systemConfig.PREBOOKING_DISCOUNT_PERCENT}% prebooking discount applied successfully`,
+        position: 'bottom',
+        bottomOffset: 100,
+      });
+    }, 500); // Small delay to ensure cart data is updated
+  };
+
+  const removeCoupon = async () => {
+    setIsCouponApplied(false);
+    setCouponCode("");
+    // fetchCartData will be called by useEffect automatically
+  };
 
   const calculateCategoryTotal = (items) => {
     return items.reduce((total, item) => total + (item.price * item.quantity), 0);
@@ -363,112 +557,68 @@ export default function Cart() {
     return cartData.reduce((total, category) => total + calculateCategoryTotal(category.items), 0);
   };
 
+  // New pricing system calculation functions
   /**
-   * Calculate company share total using paise-based arithmetic for precision
-   * Company Share = (15% of base price) + (service_fee_percent of base price)
-   * Returns amount in rupees (rounded from paise)
+   * Get the amount user needs to pay online based on payment method
    */
-  const calculateCompanyShareTotal = () => {
-    if (!rawcart) return 0;
-    
-    let totalCompanySharePaise = 0;
-    
-    rawcart.forEach(item => {
-      // Use pre-calculated paise values for precise arithmetic (now nested in _paise_values)
-      if (item._paise_values && item._paise_values.company_share_paise) {
-        totalCompanySharePaise += item._paise_values.company_share_paise;
-      }
-    });
-    
-    // Convert back to rupees and round only once
-    return Math.round(totalCompanySharePaise / 100);
-  };
-
-  /**
-   * Calculate TM share total using paise-based arithmetic for precision
-   * TM Share = 85% of base price
-   * Returns amount in rupees (rounded from paise)
-   */
-  const calculateTMShareTotal = () => {
-    if (!rawcart) return 0;
-    
-    let totalTMSharePaise = 0;
-    
-    rawcart.forEach(item => {
-      // Use pre-calculated paise values for precise arithmetic (now nested in _paise_values)
-      if (item._paise_values && item._paise_values.tm_share_paise) {
-        totalTMSharePaise += item._paise_values.tm_share_paise;
-      }
-    });
-    
-    // Convert back to rupees and round only once
-    return Math.round(totalTMSharePaise / 100);
-  };
-
-  /**
-   * Calculate company share total in paise for precise Razorpay payment amount
-   * Returns amount in paise for payment gateway
-   */
-  const calculateCompanyShareTotalPaise = () => {
-    if (!rawcart) return 0;
-    
-    let totalCompanySharePaise = 0;
-    
-    rawcart.forEach(item => {
-      if (item._paise_values && item._paise_values.company_share_paise) {
-        totalCompanySharePaise += item._paise_values.company_share_paise;
-      }
-    });
-    
-    return totalCompanySharePaise;
-  };
-
-  /**
-   * Calculate the displayed total amount based on payment method using paise precision
-   * Returns amount in rupees (rounded from paise)
-   */
-  const calculateDisplayedTotal = () => {
+  const getPayableAmount = () => {
     if (selectedPaymentMethod === 'Online Payment') {
-      // For online payment: show total with discount applied
-      return Math.round(totalAmountWithOnlineDiscountPaise / 100);
+      // For online payment: total amount minus online discount
+      return totalWithOnlineDiscount;
     } else {
-      // For pay on service: show only company share (platform fees) that user pays online
-      return calculateCompanyShareTotal();
+      // For pay on service: only company share (platform fees) paid online
+      return totalCompanyShare;
     }
   };
 
   /**
-   * Calculate breakdown totals to ensure they match the displayed total
-   * This function ensures the payment breakdown components add up exactly
+   * Get the amount to be paid to service provider (only for pay on service)
    */
-  const calculateBreakdownTotals = () => {
-    const subtotal = calculateGrandTotal(); // Base service amounts
-    const serviceFee = Math.round(service_charge); // Platform + convenience fees
-    // Round the online discount before using it in calculations
-    const onlineDiscount = selectedPaymentMethod === 'Online Payment' ? Math.round(onlinePaymentDiscount) : 0;
-    
+  const getServiceProviderAmount = () => {
+    return totalTMShare;
+  };
+
+  /**
+   * Calculate payment breakdown for display
+   */
+  const getPaymentBreakdown = () => {
     if (selectedPaymentMethod === 'Online Payment') {
-      // Online Payment: Subtotal + Service Fee - Rounded Discount = Total
-      const total = subtotal + serviceFee - onlineDiscount;
-      return { subtotal, serviceFee, onlineDiscount, total };
+      return {
+        subtotal: subTotal,
+        convenienceFee: convenienceFee,
+        onlineDiscount: onlinePaymentDiscount,
+        total: totalWithOnlineDiscount,
+        showOnlineDiscount: true
+      };
     } else {
-      // Pay on Service: Show full amount breakdown (Company Share + TM Share = Total)
-      const companyShare = calculateCompanyShareTotal();
-      const tmShare = calculateTMShareTotal();
-      const total = companyShare + tmShare; // Full total amount
-      return { 
-        subtotal, 
-        serviceFee, 
-        companyShare, 
-        tmShare, 
-        total // Full amount (company + TM share)
+      return {
+        subtotal: subTotal,
+        convenienceFee: convenienceFee,
+        companyShare: totalCompanyShare,
+        tmShare: totalTMShare,
+        total: grandTotal,
+        payOnlineNow: totalCompanyShare,
+        payToProvider: totalTMShare,
+        showOnlineDiscount: false
       };
     }
   };
 
+  /**
+   * Calculate TM and Company percentages for display
+   */
+  const getSharePercentages = () => {
+    const total = totalTMShare + totalCompanyShare;
+    if (total === 0) return { tmPercentage: 0, companyPercentage: 0 };
+    
+    return {
+      tmPercentage: parseFloat(((totalTMShare / total) * 100).toFixed(1)),
+      companyPercentage: parseFloat(((totalCompanyShare / total) * 100).toFixed(1))
+    };
+  };
+
   // Check if cart is empty or total is 0
   const isCartEmptyOrZero = () => {
-    const grandTotal = calculateGrandTotal();
     const totalItems = cartData.reduce((total, cat) => total + cat.items.length, 0);
     return totalItems === 0 || grandTotal === 0;
   };
@@ -537,12 +687,17 @@ export default function Cart() {
       } else {
         // Refetch cart data from server instead of optimistic updates
         await fetchCartData();
+        Toast.show({
+          type: 'success',
+          text1: 'Success',
+          text2: 'Item removed from cart successfully',
+        });
       }
     } catch (error) {
       Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Failed to clear cart',
+        type: 'success',
+        text1: 'Success',
+        text2: 'Item removed from cart successfully',
       });
     } finally {
       setDeletingItemId(null);
@@ -600,61 +755,59 @@ export default function Cart() {
   };
 
   /**
-   * Prepare cart data for backend by filtering out unnecessary fields and applying discount logic
-   * Only sends essential fields: company_share, tm_share, online_discount_amount
+   * Prepare cart data for backend with new pricing system
+   * Sends clean data with calculated shares and discount amounts
    */
   const prepareCartDataForBackend = (cartItems, paymentMethod) => {
+    console.log("Preparing cart data for backend:", { cartItems, paymentMethod });
+    
     return cartItems.map(item => {
-      // Base fields that should always be included
-      const baseItem = {
+      // Base fields for backend
+      const backendItem = {
         id: item.id,
-        count: item.count,
-        price: item.price,
         title: item.title,
-        ratings: item.ratings,
         category: item.category,
-        discount: item.discount,
-        duration: item.duration,
-        image_url: item.image_url,
-        total_tax: item.total_tax,
-        created_at: item.created_at,
-        service_id: item.service_id,
-        description: item.description,
         sub_category: item.sub_category,
+        service_id: item.service_id,
         count_in_cart: item.count_in_cart,
+        duration: item.duration,
         original_price: item.original_price,
-        service_fee_percent: item.service_fee_percent
+        service_price: item.service_price, // Price after prebooking discount
+        convenience_fee: item.convenience_fee,
+        total_price: item.total_price, // service_price + convenience_fee
+        tm_share: item.tm_share,
+        company_share: item.company_share,
+        prebooking_discount_amount: item.prebooking_discount_amount,
+        prebooking_discount_applied: item.prebooking_discount_applied,
+        prebooking_discount_percent: item.prebooking_discount_percent
       };
 
-      // Financial fields with discount logic applied
+      // Add payment-specific fields
       if (paymentMethod === 'Online Payment') {
-        // For online payment: company share should have discount already deducted
-        return {
-          ...baseItem,
-          company_share: item.company_share_after_discount || item.company_share, // Use discounted amount
-          tm_share: item.tm_share,
-          online_discount_amount: item.online_discount_amount
-        };
+        // For online payment: include online discount
+        backendItem.online_discount_amount = item.online_discount_amount;
+        backendItem.final_company_share = item.company_share - item.online_discount_amount;
       } else {
-        // For pay on service: no discount applied, send original company share
-        return {
-          ...baseItem,
-          company_share: item.company_share, // Original company share (no discount)
-          tm_share: item.tm_share,
-          online_discount_amount: 0 // No discount for pay on service
-        };
+        // For pay on service: no online discount
+        backendItem.online_discount_amount = 0;
+        backendItem.final_company_share = item.company_share;
       }
+
+      return backendItem;
     });
   };
 
 
 
   const createbookings = async (razorpay_oid) => {
-    // Prepare clean cart data for backend
+    setIsConfirmingPayment(true);
+    
+    // Prepare clean cart data for backend with new pricing system
     const cleanCartItems = prepareCartDataForBackend(rawcart, selectedPaymentMethod);
+    console.log("Clean cart items for backend:", cleanCartItems);
     
     const bookingdata = {
-      items: cleanCartItems, // Use filtered cart data
+      items: cleanCartItems,
       ph_no: mobileNumber,
       location:
         location.houseNumber +
@@ -677,12 +830,39 @@ export default function Cart() {
       },
       paymentmethod: selectedPaymentMethod,
       razorpay_oid: razorpay_oid,
+      // Pricing summary for backend
+      pricing_summary: {
+        subtotal: subTotal,
+        convenience_fee: convenienceFee,
+        grand_total: grandTotal,
+        total_tm_share: totalTMShare,
+        total_company_share: totalCompanyShare,
+        online_payment_discount: onlinePaymentDiscount,
+        prebooking_discount: prebookingDiscount,
+        total_with_online_discount: totalWithOnlineDiscount,
+        amount_paid_online: getPayableAmount(),
+        amount_to_pay_provider: selectedPaymentMethod === 'Pay on Service' ? totalTMShare : 0
+      },
+      // Coupon information
+      coupon_applied: isCouponApplied,
+      coupon_code: isCouponApplied ? (systemConfig.PREBOOKING_COUPON || couponCode) : null,
+      prebooking_discount_percent: isCouponApplied ? prebookingDiscountPercent : 0,
+      // System configuration used
+      system_config: {
+        commission_percent: systemConfig.COMMISSION_PERCENT,
+        online_discount_percent: systemConfig.ONLINE_PAYMENT_DISCOUNT_PERCENT,
+        prebooking_discount_percent: systemConfig.PREBOOKING_DISCOUNT_PERCENT,
+        convenience_fee_percent: systemConfig.CONVENIENCE_FEE_PERCENT
+      }
     };
+    
+    console.log("Final booking data being sent to backend:", bookingdata);
     
     try {
       const { data, error } = await confirmbookings(bookingdata);
 
       if (error) {
+        setIsConfirmingPayment(false);
         showCustomAlert(
           'Sorry! Unable to book',
           'There was an error processing your booking. Please try again later.',
@@ -704,7 +884,7 @@ export default function Cart() {
         
         const successMessage = selectedPaymentMethod === 'Online Payment'
           ? 'Your booking has been confirmed successfully!'
-          : `Platform fees paid online. Please pay ₹${Math.round(calculateTMShareTotal())} to the service provider when they arrive.`;
+          : `Platform fees paid online. Please pay ₹${totalTMShare.toFixed(2)} to the service provider when they arrive.`;
 
         showCustomAlert(
           successTitle,
@@ -713,6 +893,7 @@ export default function Cart() {
             {
               text: 'OK',
               onPress: () => {
+                setIsConfirmingPayment(false);
                 router.push('/protected/(tabs)/Bookings');
               }
             }
@@ -721,6 +902,8 @@ export default function Cart() {
         );
       }
     } catch (bookingError) {
+      console.error("Booking error:", bookingError);
+      setIsConfirmingPayment(false);
       showCustomAlert(
         'Booking Error',
         'There was an error creating your booking. Please contact support.',
@@ -734,13 +917,15 @@ export default function Cart() {
         ],
         'error'
       );
+    } finally {
+      setIsConfirmingPayment(false);
     }
   }
 
 
 
 
-  // company share is to be taken online even in case of pay on service
+  // Payment handling with new pricing system
   const handlePayment = async () => {
     // Final validation check for location and mobile number
     if (!selectedLocationObject || Object.keys(selectedLocationObject).length === 0) {
@@ -763,21 +948,28 @@ export default function Cart() {
 
     setIsPaymentLoading(true);
 
-    // Calculate amounts for both payment methods using precise paise calculations
-    const platformFeeAmountPaise = calculateCompanyShareTotalPaise(); // Company share in paise for Pay on Service
-    const platformFeeAmount = Math.round(platformFeeAmountPaise / 100); // For display
-    const serviceProviderAmount = Math.round(calculateGrandTotal()); // Only the service amounts
+    // Get the amount to be paid online based on payment method
+    const payableAmountRupees = getPayableAmount();
+    const payableAmountPaise = Math.round(payableAmountRupees * 100); // Convert to paise for Razorpay
+
+    console.log("Payment details:", {
+      paymentMethod: selectedPaymentMethod,
+      payableAmountRupees,
+      payableAmountPaise,
+      totalCompanyShare,
+      totalTMShare
+    });
     
     if (selectedPaymentMethod === "Online Payment") {
       try {
-        // Convert paise to rupees and round, then convert back to paise for Razorpay (which expects paise)
-        const roundedAmountInRupees = Math.round(totalAmountWithOnlineDiscountPaise / 100);
-        const finalAmountInPaise = roundedAmountInRupees * 100;
-        const { data, error } = await createRazorpayOrder(rawcart, finalAmountInPaise);
+        const { data, error } = await createRazorpayOrder(rawcart, payableAmountPaise);
+        if (error) {
+          throw new Error(error);
+        }
         const order = data;
 
         let options = {
-          description: "OnlyClick Service Booking",
+          description: "OnlyClick Service Booking - Full Payment",
           image: "https://avatars.githubusercontent.com/u/230859053?v=4",
           currency: "INR",
           key: Constants.expoConfig?.extra?.expoPublicRazorPayKeyId, 
@@ -804,14 +996,9 @@ export default function Cart() {
               setShowDeleteModal(false);
               setIsPaymentLoading(false);
 
-              // here we create the bookings
+              // Create the booking
               await createbookings(data.razorpay_order_id);
             } else {
-              setShowPaymentModal(false);
-              setShowDateTimeModal(false);
-              setShowCancellationPolicy(false);
-              setShowServiceFeeTooltip(false);
-              setShowDeleteModal(false);
               setIsPaymentLoading(false);
               showCustomAlert('Payment Failed', 'Sorry! Something went wrong. If the amount was debited from your account, please contact us for assistance.', [
                 { text: 'OK' }
@@ -819,26 +1006,22 @@ export default function Cart() {
             }
           })
           .catch((error) => {
-            setShowPaymentModal(false);
-            setShowDateTimeModal(false);
-            setShowCancellationPolicy(false);
-            setShowServiceFeeTooltip(false);
-            setShowDeleteModal(false);
             setIsPaymentLoading(false);
             showCustomAlert('Payment Failed', 'Sorry! Something went wrong. If the amount was debited from your account, please contact us for assistance.', [
               { text: 'OK' }
             ], 'error');
           });
       } catch (err) {
+        console.error("Online payment error:", err);
         setIsPaymentLoading(false);
       }
     } else {
-      // Pay on Service - Pay platform fees online first
+      // Pay on Service - Pay platform fees (company share) online first
       try {
-        // Convert paise to rupees and round, then convert back to paise for Razorpay (which expects paise)
-        const roundedAmountInRupees = Math.round(platformFeeAmountPaise / 100);
-        const finalAmountInPaise = roundedAmountInRupees * 100;
-        const { data, error } = await createRazorpayOrder(rawcart, finalAmountInPaise);
+        const { data, error } = await createRazorpayOrder(rawcart, payableAmountPaise);
+        if (error) {
+          throw new Error(error);
+        }
         const order = data;
 
         let options = {
@@ -868,13 +1051,10 @@ export default function Cart() {
               setShowServiceFeeTooltip(false);
               setShowDeleteModal(false);
               setIsPaymentLoading(false);
+              
+              // Create the booking
               await createbookings(data.razorpay_order_id);
             } else {
-              setShowPaymentModal(false);
-              setShowDateTimeModal(false);
-              setShowCancellationPolicy(false);
-              setShowServiceFeeTooltip(false);
-              setShowDeleteModal(false);
               setIsPaymentLoading(false);
               showCustomAlert('Payment Failed', 'Sorry! Something went wrong. If the amount was debited from your account, please contact us for assistance.', [
                 { text: 'OK' }
@@ -882,17 +1062,13 @@ export default function Cart() {
             }
           })
           .catch((error) => {
-            setShowPaymentModal(false);
-            setShowDateTimeModal(false);
-            setShowCancellationPolicy(false);
-            setShowServiceFeeTooltip(false);
-            setShowDeleteModal(false);
             setIsPaymentLoading(false);
             showCustomAlert('Payment Failed', 'Sorry! Something went wrong. If the amount was debited from your account, please contact us for assistance.', [
               { text: 'OK' }
             ], 'error');
           });
       } catch (err) {
+        console.error("Pay on service error:", err);
         setIsPaymentLoading(false);
       }
     }
@@ -917,7 +1093,7 @@ export default function Cart() {
       <View style={styles.itemInfo}>
         <Text style={styles.itemName}>{item.name}</Text>
         <Text style={styles.itemDuration}>{item.duration}</Text>
-        <Text style={styles.itemPrice}>₹{item.price}</Text>
+        <Text style={styles.itemPrice}>₹{Math.round(item.price)}</Text>
       </View>
 
       <View style={styles.itemActions}>
@@ -962,7 +1138,7 @@ export default function Cart() {
       {/* Category Header */}
       <View style={styles.categoryHeader}>
         <Text style={styles.categoryTitle}>{categoryData.category}</Text>
-        <Text style={styles.categoryTotal}>₹{calculateCategoryTotal(categoryData.items)}</Text>
+        <Text style={styles.categoryTotal}>₹{Math.round(calculateCategoryTotal(categoryData.items))}</Text>
       </View>
 
       {/* Provider Info */}
@@ -1164,6 +1340,8 @@ export default function Cart() {
                     onPress={() => {
                       setSelectedDate(dateItem.date);
                       setSelectedDateItem(dateItem);
+                      // Reset selected time slot when date changes since availability changes
+                      setSelectedTimeSlot(null);
                     }}
                   >
                     <Text style={[
@@ -1221,18 +1399,8 @@ export default function Cart() {
                     ]}>
                       {slot.time}
                     </Text>
-                    <Text style={[
-                      styles.timeSlotLabel,
-                      !slot.available && styles.unavailableText,
-                      selectedTimeSlot?.id === slot.id && styles.selectedTimeText
-                    ]}>
-                      {slot.label}
-                    </Text>
-                    {!slot.available && (
-                      <View style={styles.unavailableBadge}>
-                        <Text style={styles.unavailableBadgeText}>Booked</Text>
-                      </View>
-                    )}
+                    
+                    
                   </TouchableOpacity>
                 ))}
               </View>
@@ -1355,13 +1523,12 @@ export default function Cart() {
             {/* Bill Summary - Moved to Top */}
             {!isCartEmptyOrZero() && (
               <View style={styles.billSummaryCard}>
-                
-
                 <View style={styles.billRows}>
                   <View style={styles.billRow}>
                     <Text style={styles.billLabel}>Subtotal</Text>
-                    <Text style={styles.billAmount}>₹{calculateBreakdownTotals().subtotal}</Text>
+                    <Text style={styles.billAmount}>₹{subTotal.toFixed(2)}</Text>
                   </View>
+
                   <View style={[styles.billRow, { position: 'relative' }]}>
                     <View style={styles.billLabelWithIcon}>
                       <Text style={styles.billLabel}>Convenience Fee + Platform Fee</Text>
@@ -1372,7 +1539,7 @@ export default function Cart() {
                         <Ionicons name="information-circle-outline" size={16} color="#666" />
                       </TouchableOpacity>
                     </View>
-                    <Text style={styles.billAmount}>₹{calculateBreakdownTotals().serviceFee}</Text>
+                    <Text style={styles.billAmount}>₹{convenienceFee.toFixed(2)}</Text>
 
                     {/* Service Fee Tooltip */}
                     {showServiceFeeTooltip && (
@@ -1387,6 +1554,19 @@ export default function Cart() {
                     )}
                   </View>
 
+                  {/* Prebooking Discount Display */}
+                  {isCouponApplied && prebookingDiscount > 0 && (
+                    <View style={styles.billRow}>
+                      <View style={styles.billLabelWithIcon}>
+                        <Text style={styles.billLabel}>Prebooking Discount ({prebookingDiscountPercent}%)</Text>
+                        <View style={styles.discountBadge}>
+                          <Text style={styles.discountBadgeText}>SAVE</Text>
+                        </View>
+                      </View>
+                      <Text style={[styles.billAmount, styles.discountAmount]}>-₹{prebookingDiscount.toFixed(2)}</Text>
+                    </View>
+                  )}
+
                   {/* Online Payment Discount */}
                   {selectedPaymentMethod === 'Online Payment' && (
                     <View style={styles.billRow}>
@@ -1396,7 +1576,7 @@ export default function Cart() {
                           <Text style={styles.discountBadgeText}>SAVE</Text>
                         </View>
                       </View>
-                      <Text style={[styles.billAmount, styles.discountAmount]}>-₹{calculateBreakdownTotals().onlineDiscount}</Text>
+                      <Text style={[styles.billAmount, styles.discountAmount]}>-₹{onlinePaymentDiscount.toFixed(2)}</Text>
                     </View>
                   )}
 
@@ -1408,12 +1588,12 @@ export default function Cart() {
                         <Text style={styles.breakdownHeaderText}>Payment Breakdown</Text>
                       </View>
                       <View style={styles.billRow}>
-                        <Text style={styles.billLabel}>Pay Online Now (Company Share)</Text>
-                        <Text style={styles.billAmount}>₹{calculateBreakdownTotals().companyShare}</Text>
+                        <Text style={styles.billLabel}>Pay Online Now ({Math.round(getSharePercentages().companyPercentage)}%)</Text>
+                        <Text style={styles.billAmount}>₹{totalCompanyShare.toFixed(2)}</Text>
                       </View>
                       <View style={styles.billRow}>
-                        <Text style={styles.billLabel}>Pay to Service Provider</Text>
-                        <Text style={styles.billAmount}>₹{calculateBreakdownTotals().tmShare}</Text>
+                        <Text style={styles.billLabel}>Pay to Service Provider ({Math.round(getSharePercentages().tmPercentage)}%)</Text>
+                        <Text style={styles.billAmount}>₹{totalTMShare.toFixed(2)}</Text>
                       </View>
                     </View>
                   )}
@@ -1422,13 +1602,17 @@ export default function Cart() {
 
                   <View style={styles.billTotalRow}>
                     <View style={styles.billTotalTextContainer}>
-                      <Text style={styles.billTotalLabel}>Total Amount</Text>
+                      <Text style={styles.billTotalLabel}>
+                        {selectedPaymentMethod === 'Online Payment' ? 'Total Amount' : 'Pay Online Now'}
+                      </Text>
                       <Text style={styles.billTotalSubtext}>
-                        {selectedPaymentMethod === 'Online Payment' ? 'With online discount applied' : 'Platform fees paid online, service amount to provider'}
+                        {selectedPaymentMethod === 'Online Payment' 
+                          ? 'With online discount applied' 
+                          : 'Platform fees paid online, service amount to provider'}
                       </Text>
                     </View>
                     <Text style={styles.billTotalAmount}>
-                      ₹{calculateBreakdownTotals().total}
+                      ₹{getPayableAmount().toFixed(2)}
                     </Text>
                   </View>
                 </View>
@@ -1453,7 +1637,7 @@ export default function Cart() {
                   {
                     key: 'Pay on Service',
                     icon: 'cash',
-                    label: 'Pay on Service',
+                    label: `Pay ${Math.round(getSharePercentages().tmPercentage)}% on Service`,
                     subtitle: 'Pay company share online + service amount to provider'
                   }
                 ].map((method) => (
@@ -1532,7 +1716,7 @@ export default function Cart() {
               <View style={styles.servicesOverviewHeader}>
                 <Ionicons name="construct" size={20} color="#3898B3" />
                 <Text style={styles.servicesOverviewTitle}>Services ({cartData.reduce((total, cat) => total + cat.items.length, 0)})</Text>
-                <Text style={styles.servicesOverviewTotal}>₹{calculateGrandTotal()}</Text>
+                <Text style={styles.servicesOverviewTotal}>₹{subTotal.toFixed(2)}</Text>
               </View>
 
               {cartData.map((category, index) => (
@@ -1546,7 +1730,7 @@ export default function Cart() {
                       />
                     </View>
                     <Text style={styles.serviceCategoryName}>{category.category}</Text>
-                    <Text style={styles.serviceCategoryPrice}>₹{calculateCategoryTotal(category.items)}</Text>
+                    <Text style={styles.serviceCategoryPrice}>₹{calculateCategoryTotal(category.items).toFixed(2)}</Text>
                   </View>
 
                   {category.items.map((item, itemIndex) => (
@@ -1555,7 +1739,7 @@ export default function Cart() {
                         <Text style={styles.serviceItemName}>{item.name}</Text>
                         <Text style={styles.serviceItemQty}>Qty: {item.quantity}</Text>
                       </View>
-                      <Text style={styles.serviceItemPrice}>₹{item.price * item.quantity}</Text>
+                      <Text style={styles.serviceItemPrice}>₹{(item.price * item.quantity).toFixed(2)}</Text>
                     </View>
                   ))}
                 </View>
@@ -1570,9 +1754,7 @@ export default function Cart() {
                 {selectedPaymentMethod === 'Online Payment' ? 'Pay Now' : 'Pay Online Now'}
               </Text>
               <Text style={styles.payAmountValue}>
-                ₹{selectedPaymentMethod === 'Online Payment' 
-                  ? calculateBreakdownTotals().total 
-                  : calculateBreakdownTotals().companyShare}
+                ₹{getPayableAmount().toFixed(2)}
               </Text>
             </View>
             <TouchableOpacity
@@ -1614,11 +1796,11 @@ export default function Cart() {
               <Ionicons name="trash-outline" size={32} color="#F44336" />
 
             </View>
-            <Text style={styles.deleteModalTitle}>Clear Cart</Text>
+            <Text style={styles.deleteModalTitle}>Remove Item</Text>
           </View>
 
           <Text style={styles.deleteModalMessage}>
-            Are you sure you want to remove all items from your cart?
+            Are you sure you want to remove this item from your cart?
           </Text>
 
           <View style={styles.deleteModalButtons}>
@@ -1643,7 +1825,7 @@ export default function Cart() {
               {deletingItemId === itemToDelete?.service_id ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
-                <Text style={styles.deleteConfirmButtonText}>Clear Cart</Text>
+                <Text style={styles.deleteConfirmButtonText}>Remove Item</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -1740,12 +1922,19 @@ export default function Cart() {
           onBack={() => router.back()}
         />
 
-        <ScrollView
-          style={styles.scrollContainer}
-          contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        bounces={true}
-      >
+        {/* Initial Loading Screen */}
+        {isInitialLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#3898B3" />
+            <Text style={styles.loadingText}>Loading your cart...</Text>
+          </View>
+        ) : (
+          <ScrollView
+            style={styles.scrollContainer}
+            contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          bounces={true}
+        >
         {/* Location Confirmation */}
         <TouchableOpacity
           style={styles.locationCard}
@@ -1806,24 +1995,71 @@ export default function Cart() {
           </Text>
         </TouchableOpacity>
 
-        {/* Compact Online Payment Discount Banner */}
+        {/* Online Payment Discount Banner */}
         {!isCartEmptyOrZero() && (
-          <View style={styles.discountBanner}>
-            <View style={styles.discountBannerHeader}>
-              <View style={styles.discountBannerIcon}>
-                <Ionicons name="card" size={16} color="#4CAF50" />
-              </View>
-              <Text style={styles.discountBannerText}>
-                Save ₹{onlinePaymentDiscount} ({onlineDiscountPercent}%) with online payment
-              </Text>
+          <View style={styles.onlineDiscountContainer}>
+            <View style={styles.onlineDiscountIconContainer}>
+              <Ionicons name="card" size={18} color="#4CAF50" />
             </View>
-            <View style={styles.discountBannerPriceRow}>
-              <Text style={styles.discountBannerOriginalPrice}>₹{Math.round(total)}</Text>
-              <Ionicons name="arrow-forward" size={14} color="#666" style={styles.discountArrow} />
-              <Text style={styles.discountBannerDiscountedPrice}>₹{Math.round(totalAmountWithOnlineDiscount)}</Text>
+            <View style={styles.onlineDiscountTextContainer}>
+              <Text style={styles.onlineDiscountText}>
+                <Text>Save </Text><Text style={styles.onlineDiscountAmount}>₹{(onlinePaymentDiscount)} ({onlineDiscountPercent}%)</Text><Text> with </Text>
+                <Text style={styles.onlineDiscountMethod}>online payment</Text>
+              </Text>
             </View>
           </View>
         )}
+
+        {/* Coupon Code Section - Only show if prebooking discount is available, coupon code exists, and prebooking date hasn't passed */}
+        {systemConfig.PREBOOKING_DISCOUNT_PERCENT > 0 && 
+         systemConfig.PREBOOKING_COUPON && 
+         systemConfig.PREBOOKING_DATE && 
+         new Date() < new Date(systemConfig.PREBOOKING_DATE) && (
+          <View style={styles.couponSection}>
+            {!isCouponApplied ? (
+              <View>
+                {/* Suggested coupon */}
+                <View style={styles.suggestedCouponContainer}>
+                  <Text style={styles.suggestedCouponLabel}>Available Coupon:</Text>
+                  <TouchableOpacity 
+                    style={[
+                      styles.suggestedCouponButton,
+                      isApplyingCoupon && styles.suggestedCouponButtonDisabled
+                    ]}
+                    onPress={applyPrebookingCoupon}
+                    disabled={isApplyingCoupon}
+                  >
+                    <View style={styles.suggestedCouponContent}>
+                      <Text style={styles.suggestedCouponCode}>{systemConfig.PREBOOKING_COUPON}</Text>
+                      <Text style={styles.suggestedCouponDiscount}>{systemConfig.PREBOOKING_DISCOUNT_PERCENT}% OFF</Text>
+                    </View>
+                    <Text style={styles.suggestedCouponApplyText}>
+                      {isApplyingCoupon ? 'Applying...' : 'Apply'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : (
+              <View style={styles.couponAppliedContainer}>
+                <View style={styles.couponAppliedRow}>
+                  <View style={styles.couponAppliedInfo}>
+                    <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
+                    <Text style={styles.couponAppliedText}>{systemConfig.PREBOOKING_COUPON} applied</Text>
+                  </View>
+                  <TouchableOpacity 
+                    style={styles.removeCouponButton}
+                    onPress={removeCoupon}
+                  >
+                    <Text style={styles.removeCouponText}>Remove</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Promotional Message for Discount */}
+        
 
         {/* Cart Categories */}
         {cartData.length === 0 ? (
@@ -1846,21 +2082,36 @@ export default function Cart() {
             {cartData.map((category, index) => (
               <View key={index} style={styles.summaryRow}>
                 <Text style={styles.summaryLabel}>{category.category}</Text>
-                <Text style={styles.summaryAmount}>₹{calculateCategoryTotal(category.items)}</Text>
+                <Text style={styles.summaryAmount}>₹{calculateCategoryTotal(category.items).toFixed(2)}</Text>
               </View>
             ))}
 
             <View style={styles.summaryDivider} />
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Convenience Fee + Platform Fee</Text>
-              <Text style={styles.summaryAmount}>{'₹' + Math.round(service_charge)}</Text>
+              <Text style={styles.summaryLabel}>Subtotal</Text>
+              <Text style={styles.summaryAmount}>₹{subTotal.toFixed(2)}</Text>
             </View>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Convenience Fee + Platform Fee</Text>
+              <Text style={styles.summaryAmount}>₹{convenienceFee.toFixed(2)}</Text>
+            </View>
+
+            {/* Show prebooking discount if applied */}
+            {isCouponApplied && prebookingDiscount > 0 && (
+              <View style={styles.summaryRow}>
+                <Text style={[styles.summaryLabel, { color: '#4CAF50' }]}>
+                  Prebooking Discount ({prebookingDiscountPercent}%)
+                </Text>
+                <Text style={[styles.summaryAmount, { color: '#4CAF50' }]}>-₹{prebookingDiscount.toFixed(2)}</Text>
+              </View>
+            )}
 
             <View style={styles.summaryDivider} />
             <View style={styles.summaryRow}>
               <Text style={styles.totalLabel}>Total Amount</Text>
-              <Text style={styles.totalAmount}>₹{Math.round(total)}</Text>
+              <Text style={styles.totalAmount}>₹{grandTotal.toFixed(2)}</Text>
             </View>
+
           </View>
         )}
 
@@ -1874,12 +2125,13 @@ export default function Cart() {
           <Ionicons name="chevron-forward" size={16} color="#666" />
         </TouchableOpacity>
       </ScrollView>
+      )}
 
       {/* Fixed Bottom Section */}
       <View style={styles.bottomSection}>
         <View style={styles.totalContainer}>
           <Text style={styles.bottomTotalLabel}>Total</Text>
-          <Text style={styles.bottomTotalAmount}>₹{Math.round(calculateGrandTotal() + service_charge)}</Text>
+          <Text style={styles.bottomTotalAmount}>₹{grandTotal.toFixed(2)}</Text>
         </View>
         <TouchableOpacity
           style={[
@@ -1909,6 +2161,44 @@ export default function Cart() {
       <PaymentModal />
       <DeleteConfirmationModal />
       <CustomAlert />
+      
+      {/* Cart Bottom Bar - shows when cart has items */}
+      <CartPageBottomBar 
+        cartItemCount={cartData.reduce((total, cat) => total + cat.items.length, 0)} 
+        isVisible={cartData.length > 0 && !isCartEmptyOrZero()}
+        onProceed={handleProceedNow}
+      />
+
+      {/* Overlay Loading for Cart */}
+      {(isCartLoading && !isInitialLoading) && (
+        <View style={styles.overlayLoading}>
+          <View style={styles.overlayLoadingContent}>
+            <ActivityIndicator size="large" color="#3898B3" />
+            <Text style={styles.overlayLoadingText}>Updating cart...</Text>
+          </View>
+        </View>
+      )}
+
+      {/* Overlay Loading for Coupon */}
+      {isApplyingCoupon && (
+        <View style={styles.overlayLoading}>
+          <View style={styles.overlayLoadingContent}>
+            <ActivityIndicator size="large" color="#3898B3" />
+            <Text style={styles.overlayLoadingText}>Applying coupon...</Text>
+          </View>
+        </View>
+      )}
+
+      {/* Overlay Loading for Payment Confirmation */}
+      {isConfirmingPayment && (
+        <View style={styles.overlayLoading}>
+          <View style={styles.overlayLoadingContent}>
+            <ActivityIndicator size="large" color="#3898B3" />
+            <Text style={styles.overlayLoadingText}>Confirming payment...</Text>
+          </View>
+        </View>
+      )}
+
       </View>
     </SafeAreaView>
   );
@@ -1926,6 +2216,47 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingHorizontal: 20,
     paddingBottom: 100,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+  },
+  overlayLoading: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 9999,
+  },
+  overlayLoadingContent: {
+    backgroundColor: '#fff',
+    padding: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+  },
+  overlayLoadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#333',
+    textAlign: 'center',
+    fontWeight: '500',
   },
   header: {
     position: 'absolute',
@@ -3825,59 +4156,41 @@ const styles = StyleSheet.create({
   customAlertButtonTextDestructive: {
     color: '#fff',
   },
-  // Compact Discount Banner Styles
-  discountBanner: {
-    backgroundColor: '#E8F5E8',
-    borderRadius: 12,
-    marginHorizontal: 20,
-    marginTop: 12,
-    padding: 16,
-    borderLeftWidth: 4,
-    borderLeftColor: '#4CAF50',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  discountBannerHeader: {
+  // Online Discount Banner Styles (matching promo message design)
+  onlineDiscountContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    backgroundColor: '#E8F5E8',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginBottom: 15,
+    borderLeftWidth: 3,
+    borderLeftColor: '#4CAF50',
   },
-  discountBannerIcon: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 8,
+  onlineDiscountIconContainer: {
+    marginRight: 10,
   },
-  discountBannerText: {
-    fontSize: 14,
-    color: '#2E7D32',
-    fontWeight: '500',
+  onlineDiscountTextContainer: {
     flex: 1,
   },
-  discountBannerPriceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 4,
-  },
-  discountBannerOriginalPrice: {
+  onlineDiscountText: {
     fontSize: 16,
-    color: '#666',
-    textDecorationLine: 'line-through',
-    fontWeight: '500',
+    color: '#333',
+    lineHeight: 20,
   },
-  discountArrow: {
-    marginHorizontal: 8,
-  },
-  discountBannerDiscountedPrice: {
+  onlineDiscountAmount: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: 'bold',
+    color: '#2E7D32',
+    backgroundColor: '#C8E6C9',
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 3,
+  },
+  onlineDiscountMethod: {
+    fontSize: 14,
+    fontWeight: 'bold',
     color: '#1B5E20',
   },
   // Discount Badge Styles (keeping for payment modal)
@@ -3916,5 +4229,193 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#F57C00',
     marginLeft: 4,
+  },
+  // Coupon Styles
+  couponSection: {
+    marginVertical: 8,
+  },
+  applyCouponButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#3898B3',
+    borderStyle: 'dashed',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#F8FFFE',
+  },
+  applyCouponText: {
+    color: '#3898B3',
+    fontSize: 14,
+    fontWeight: '500',
+    marginLeft: 8,
+  },
+  couponInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: '#fff',
+  },
+  couponInput: {
+    flex: 1,
+    fontSize: 14,
+    color: '#333',
+    paddingVertical: 4,
+  },
+  applyButton: {
+    backgroundColor: '#3898B3',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+    marginLeft: 8,
+  },
+  applyButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  cancelButton: {
+    padding: 8,
+    marginLeft: 4,
+  },
+  // New coupon section styles
+  couponInputSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: '#fff',
+    marginBottom: 8,
+  },
+  couponErrorText: {
+    color: '#F44336',
+    fontSize: 12,
+    marginBottom: 8,
+    marginLeft: 4,
+  },
+  suggestedCouponContainer: {
+    marginTop: 8,
+  },
+  suggestedCouponLabel: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 8,
+  },
+  suggestedCouponButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFF3E0',
+    borderRadius: 8,
+    padding: 12,
+    borderLeftWidth: 3,
+    borderLeftColor: '#FF6B35',
+  },
+  suggestedCouponButtonDisabled: {
+    opacity: 0.6,
+    backgroundColor: '#F5F5F5',
+  },
+  suggestedCouponContent: {
+    flex: 1,
+  },
+  suggestedCouponCode: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#FF6B35',
+    marginBottom: 2,
+  },
+  suggestedCouponDiscount: {
+    fontSize: 12,
+    color: '#2E7D32',
+    fontWeight: '600',
+  },
+  suggestedCouponApplyText: {
+    color: '#3898B3',
+    fontSize: 14,
+    fontWeight: '600',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#fff',
+    borderRadius: 6,
+  },
+  couponAppliedContainer: {
+    backgroundColor: '#E8F5E8',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderLeftWidth: 3,
+    borderLeftColor: '#4CAF50',
+  },
+  couponAppliedRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  couponAppliedInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  couponAppliedText: {
+    color: '#2E7D32',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  removeCouponButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+  },
+  removeCouponText: {
+    color: '#666',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  // Promo message styles
+  promoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF3E0',
+    borderRadius: 8,
+    padding: 12,
+    marginHorizontal: 20,
+    marginBottom: 15,
+    borderLeftWidth: 3,
+    borderLeftColor: '#FF6B35',
+  },
+  promoIconContainer: {
+    marginRight: 10,
+  },
+  promoTextContainer: {
+    flex: 1,
+  },
+  promoText: {
+    fontSize: 13,
+    color: '#333',
+    lineHeight: 18,
+  },
+  promoCode: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#FF6B35',
+    backgroundColor: '#FFE0B2',
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 3,
+  },
+  promoDiscount: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#2E7D32',
   },
 });

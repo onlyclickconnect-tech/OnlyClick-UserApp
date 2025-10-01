@@ -1,6 +1,6 @@
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Dimensions,
@@ -9,18 +9,38 @@ import {
   ScrollView,
   StatusBar,
   StyleSheet,
+  TextInput,
   TouchableOpacity,
   View
 } from 'react-native';
+import Toast from 'react-native-toast-message';
+import { addOneInCart, removeAllFromCart, removeOneFromCart } from '../../app/api/cart';
+import { useAuth } from '../../context/AuthProvider';
+import fetchCart from '../../data/getdata/getCart';
 import ConfirmModal from '../common/ConfirmModal';
 import Text from "../ui/Text";
 
 export default function Cart() {
   const router = useRouter();
+  const { userData } = useAuth();
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [showCancellationPolicy, setShowCancellationPolicy] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState('Home - 123 Main Street, City');
   const [confirmModal, setConfirmModal] = useState({ visible: false, title: null, message: null, buttons: null });
+  
+  // Real cart data state
+  const [cartData, setCartData] = useState([]);
+  const [rawcart, setRawcart] = useState([]);
+  const [subTotal, setSubTotal] = useState(0);
+  const [serviceCharge, setServiceCharge] = useState(0);
+  const [totalAmount, setTotalAmount] = useState(0);
+  
+  // Coupon related state
+  const [couponCode, setCouponCode] = useState("");
+  const [isCouponApplied, setIsCouponApplied] = useState(false);
+  const [prebookingDiscount, setPrebookingDiscount] = useState(0);
+  const [prebookingDiscountPercent, setPrebookingDiscountPercent] = useState(0);
+  const [showCouponInput, setShowCouponInput] = useState(false);
   
   // Gesture handling for modal
   const modalY = useRef(new Animated.Value(0)).current;
@@ -97,58 +117,64 @@ export default function Cart() {
     })
   ).current;
 
-  // Mock cart data grouped by category
-  const cartData = [
-    {
-      category: 'Plumbing',
-      provider: {
-        name: 'AquaFix Services',
-        rating: 4.8,
-        phone: '+91 98765 43210'
-      },
-      otpDetails: {
-        startOTP: '1234',
-        endOTP: '5678'
-      },
-      items: [
-        {
-          id: 1,
-          name: 'Pipe Repair',
-          price: 299,
-          quantity: 1,
-          duration: '1-2 hours'
-        },
-        {
-          id: 2,
-          name: 'Tap Installation',
-          price: 150,
-          quantity: 2,
-          duration: '30 min each'
-        }
-      ]
-    },
-    {
-      category: 'Electrical',
-      provider: {
-        name: 'PowerPro Electricians',
-        rating: 4.9,
-        phone: '+91 87654 32109'
-      },
-      otpDetails: {
-        startOTP: 'A1B2',
-        endOTP: 'C3D4'
-      },
-      items: [
-        {
-          id: 3,
-          name: 'Switch Replacement',
-          price: 199,
-          quantity: 3,
-          duration: '20 min each'
-        }
-      ]
+  // Function to fetch cart data from server
+  const fetchCartData = async () => {
+    try {
+      const { serviceCharge, subTotal, onlinePaymentDiscount, onlineDiscountPercent, totalAmount, totalAmountWithOnlineDiscount, totalAmountPaise, totalAmountWithOnlineDiscountPaise, arr, rawCartData, prebookingDiscount, prebookingDiscountPercent, isCouponApplied: couponApplied } = await fetchCart(isCouponApplied);
+      setSubTotal(subTotal);
+      setServiceCharge(serviceCharge);
+      setTotalAmount(totalAmount);
+      setCartData(arr);
+      setRawcart(rawCartData);
+      // Set prebooking discount data
+      setPrebookingDiscount(prebookingDiscount || 0);
+      setPrebookingDiscountPercent(prebookingDiscountPercent || 0);
+    } catch (error) {
+      console.error('Error fetching cart data:', error);
     }
-  ];
+  };
+
+  // Load cart data on component mount
+  useEffect(() => {
+    fetchCartData();
+  }, [isCouponApplied]); // Refresh when coupon state changes
+
+  // Coupon application functions
+  const applyCoupon = async () => {
+    if (couponCode.trim().toLowerCase() === "prebooking30") {
+      setIsCouponApplied(true);
+      setShowCouponInput(false);
+      await fetchCartData(); // Refresh cart with coupon applied
+      Toast.show({
+        type: 'success',
+        text1: 'Coupon Applied!',
+        text2: '30% prebooking discount applied successfully',
+        position: 'bottom',
+        bottomOffset: 100,
+      });
+    } else {
+      Toast.show({
+        type: 'error',
+        text1: 'Invalid Coupon',
+        text2: 'Please enter a valid coupon code',
+        position: 'bottom',
+        bottomOffset: 100,
+      });
+    }
+  };
+
+  const removeCoupon = async () => {
+    setIsCouponApplied(false);
+    setCouponCode("");
+    await fetchCartData(); // Refresh cart without coupon
+    Toast.show({
+      type: 'info',
+      text1: 'Coupon Removed',
+      text2: 'Prebooking discount has been removed',
+      position: 'bottom',
+      bottomOffset: 100,
+    });
+  };
 
   const calculateCategoryTotal = (items) => {
     return items.reduce((total, item) => total + (item.price * item.quantity), 0);
@@ -158,18 +184,65 @@ export default function Cart() {
     return cartData.reduce((total, category) => total + calculateCategoryTotal(category.items), 0);
   };
 
-  const handleQuantityChange = (categoryIndex, itemIndex, change) => {
-    setConfirmModal({ visible: true, title: 'Update Quantity', message: `Updated quantity for item` });
+  const handleQuantityChange = async (categoryIndex, itemIndex, change) => {
+    const item = cartData[categoryIndex]?.items[itemIndex];
+    if (!item) return;
+
+    try {
+      if (change > 0) {
+        await addOneInCart(item.service_id);
+      } else {
+        await removeOneFromCart(item.service_id);
+      }
+      await fetchCartData(); // Refresh cart after change
+      Toast.show({
+        type: 'success',
+        text1: 'Cart Updated',
+        text2: `Quantity ${change > 0 ? 'increased' : 'decreased'} for ${item.name}`,
+        position: 'bottom',
+        bottomOffset: 100,
+      });
+    } catch (error) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to update cart',
+        position: 'bottom',
+        bottomOffset: 100,
+      });
+    }
   };
 
   const handleRemoveItem = (categoryIndex, itemIndex) => {
+    const item = cartData[categoryIndex]?.items[itemIndex];
+    if (!item) return;
+
     setConfirmModal({
       visible: true,
       title: 'Remove Item',
-      message: 'Are you sure you want to remove this item from cart?',
+      message: `Are you sure you want to remove ${item.name} from cart?`,
       buttons: [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Remove', style: 'destructive', onPress: () => {
+        { text: 'Remove', style: 'destructive', onPress: async () => {
+          try {
+            await removeAllFromCart(item.service_id);
+            await fetchCartData(); // Refresh cart after removal
+            Toast.show({
+              type: 'success',
+              text1: 'Item Removed',
+              text2: `${item.name} has been removed from cart`,
+              position: 'bottom',
+              bottomOffset: 100,
+            });
+          } catch (error) {
+            Toast.show({
+              type: 'error',
+              text1: 'Error',
+              text2: 'Failed to remove item',
+              position: 'bottom',
+              bottomOffset: 100,
+            });
+          }
         }}
       ]
     });
@@ -492,28 +565,106 @@ export default function Cart() {
         <View style={styles.summaryCard}>
           <Text style={styles.summaryTitle}>Payment Summary</Text>
           
-          {cartData.map((category, index) => (
-            <View key={index} style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>{category.category}</Text>
-              <Text style={styles.summaryAmount}>₹{calculateCategoryTotal(category.items)}</Text>
-            </View>
-          ))}
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Subtotal</Text>
+            <Text style={styles.summaryAmount}>₹{subTotal}</Text>
+          </View>
           
-          <View style={styles.summaryDivider} />
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Service Fee</Text>
-            <Text style={styles.summaryAmount}>₹50</Text>
+            <Text style={styles.summaryAmount}>₹{serviceCharge}</Text>
           </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Taxes</Text>
-            <Text style={styles.summaryAmount}>₹{Math.round(calculateGrandTotal() * 0.18)}</Text>
-          </View>
+          
+          {/* Prebooking Discount Display */}
+          {isCouponApplied && prebookingDiscount > 0 && (
+            <View style={styles.summaryRow}>
+              <View style={styles.billLabelWithIcon}>
+                <Text style={styles.summaryLabel}>Prebooking Discount ({prebookingDiscountPercent}%)</Text>
+                <View style={styles.discountBadge}>
+                  <Text style={styles.discountBadgeText}>SAVE</Text>
+                </View>
+              </View>
+              <Text style={[styles.summaryAmount, styles.discountAmount]}>-₹{prebookingDiscount}</Text>
+            </View>
+          )}
           
           <View style={styles.summaryDivider} />
           <View style={styles.summaryRow}>
             <Text style={styles.totalLabel}>Total Amount</Text>
-            <Text style={styles.totalAmount}>₹{calculateGrandTotal() + 50 + Math.round(calculateGrandTotal() * 0.18)}</Text>
+            <Text style={styles.totalAmount}>₹{totalAmount}</Text>
           </View>
+        </View>
+
+        {/* Coupon Code Section */}
+        <View style={styles.couponCard}>
+          <Text style={styles.couponTitle}>Have a Coupon Code?</Text>
+          
+          {/* Promotional Message */}
+          <View style={styles.promoContainer}>
+            <View style={styles.promoIconContainer}>
+              <Ionicons name="gift-outline" size={18} color="#FF6B35" />
+            </View>
+            <View style={styles.promoTextContainer}>
+              <Text style={styles.promoText}>
+                Apply coupon code <Text style={styles.promoCode}>PREBOOKING30</Text> to get 
+                <Text style={styles.promoDiscount}> 30% discount</Text> on payment
+              </Text>
+            </View>
+          </View>
+          
+          {!isCouponApplied ? (
+            <View>
+              {!showCouponInput ? (
+                <TouchableOpacity 
+                  style={styles.applyCouponButton}
+                  onPress={() => setShowCouponInput(true)}
+                >
+                  <Ionicons name="pricetag-outline" size={16} color="#3898B3" />
+                  <Text style={styles.applyCouponText}>Apply Coupon Code</Text>
+                </TouchableOpacity>
+              ) : (
+                <View style={styles.couponInputContainer}>
+                  <TextInput
+                    style={styles.couponInput}
+                    placeholder="Enter coupon code (e.g., PREBOOKING30)"
+                    value={couponCode}
+                    onChangeText={setCouponCode}
+                    autoCapitalize="characters"
+                  />
+                  <TouchableOpacity 
+                    style={styles.applyButton}
+                    onPress={applyCoupon}
+                  >
+                    <Text style={styles.applyButtonText}>Apply</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={styles.cancelButton}
+                    onPress={() => {
+                      setShowCouponInput(false);
+                      setCouponCode("");
+                    }}
+                  >
+                    <Ionicons name="close" size={16} color="#666" />
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          ) : (
+            <View style={styles.couponAppliedContainer}>
+              <View style={styles.couponAppliedRow}>
+                <View style={styles.couponAppliedInfo}>
+                  <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
+                  <Text style={styles.couponAppliedText}>PREBOOKING30 applied</Text>
+                </View>
+                <TouchableOpacity 
+                  style={styles.removeCouponButton}
+                  onPress={removeCoupon}
+                >
+                  <Text style={styles.removeCouponText}>Remove</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
         </View>
 
         {/* Cancellation Policy */}
@@ -531,7 +682,7 @@ export default function Cart() {
       <View style={styles.bottomSection}>
         <View style={styles.totalContainer}>
           <Text style={styles.bottomTotalLabel}>Total</Text>
-          <Text style={styles.bottomTotalAmount}>₹{calculateGrandTotal() + 50 + Math.round(calculateGrandTotal() * 0.18)}</Text>
+          <Text style={styles.bottomTotalAmount}>₹{totalAmount}</Text>
         </View>
         <TouchableOpacity style={styles.proceedButton}>
           <Text style={styles.proceedButtonText}>Proceed to Payment</Text>
@@ -1002,5 +1153,163 @@ const styles = StyleSheet.create({
     marginTop: 20,
     fontStyle: 'italic',
     textAlign: 'center',
+  },
+  // Coupon Styles
+  couponCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 20,
+    marginVertical: 10,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  couponTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    marginBottom: 15,
+  },
+  applyCouponButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#3898B3',
+    borderStyle: 'dashed',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#F8FFFE',
+  },
+  applyCouponText: {
+    color: '#3898B3',
+    fontSize: 14,
+    fontWeight: '500',
+    marginLeft: 8,
+  },
+  couponInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: '#fff',
+  },
+  couponInput: {
+    flex: 1,
+    fontSize: 14,
+    color: '#333',
+    paddingVertical: 4,
+  },
+  applyButton: {
+    backgroundColor: '#3898B3',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+    marginLeft: 8,
+  },
+  applyButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  cancelButton: {
+    padding: 8,
+    marginLeft: 4,
+  },
+  couponAppliedContainer: {
+    backgroundColor: '#E8F5E8',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderLeftWidth: 3,
+    borderLeftColor: '#4CAF50',
+  },
+  couponAppliedRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  couponAppliedInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  couponAppliedText: {
+    color: '#2E7D32',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  removeCouponButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+  },
+  removeCouponText: {
+    color: '#666',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  billLabelWithIcon: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  discountBadge: {
+    backgroundColor: '#4CAF50',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginLeft: 8,
+  },
+  discountBadgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  discountAmount: {
+    color: '#4CAF50',
+    fontWeight: '600',
+  },
+  // Promo message styles
+  promoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF3E0',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 15,
+    borderLeftWidth: 3,
+    borderLeftColor: '#FF6B35',
+  },
+  promoIconContainer: {
+    marginRight: 10,
+  },
+  promoTextContainer: {
+    flex: 1,
+  },
+  promoText: {
+    fontSize: 13,
+    color: '#333',
+    lineHeight: 18,
+  },
+  promoCode: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#FF6B35',
+    backgroundColor: '#FFE0B2',
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 3,
+  },
+  promoDiscount: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#2E7D32',
   },
 });

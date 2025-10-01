@@ -1,192 +1,237 @@
 import supabase from "../supabaseClient";
 
-export default async function fetchCart() {
+export default async function fetchCart(couponApplied = false) {
+    console.log("fetchCart called with couponApplied:", couponApplied);
+    
+    // 1) Get coupon details for prebooking, online discount, and commission
+    const getDiscountAndCommission = async () => {
+        const { data, error } = await supabase
+            .schema('onlyclick')
+            .from('general_data')
+            .select('key, value');
+
+        if (error) {
+            console.error("Error fetching general_data:", error);
+            return {};
+        }
+
+        console.log("General data:", data);
+
+        // Convert [{key, value}, ...] → {key: value, ...}
+        const result = data.reduce((acc, { key, value }) => {
+            // Parse as float for numeric values, keep as string for text values like coupon codes and dates
+            if (key === 'PREBOOKING_COUPON' || key === 'PREBOOKING_DATE') {
+                acc[key] = value; // Keep coupon code and date as string
+            } else {
+                acc[key] = parseFloat(value); // Parse numeric values as float
+            }
+            return acc;
+        }, {});
+
+        return result;
+    };
+
+    // Fetch system configuration
+    const systemConfig = await getDiscountAndCommission();
+    const COMMISSION_PERCENT = systemConfig.commission_percent;
+    const ONLINE_PAYMENT_DISCOUNT_PERCENT = systemConfig.online_payment_discount_percent;
+    const PREBOOKING_DISCOUNT_PERCENT = systemConfig.PREBOOKING_DISCOUNT_PERCENT;
+    const PREBOOKING_COUPON = systemConfig.PREBOOKING_COUPON;
+    const PREBOOKING_DATE = systemConfig.PREBOOKING_DATE;
+    const CONVENIENCE_FEE_PERCENT = systemConfig.CONVENIENCE_FEE_PERCENT;
+
+    console.log("System config:", {
+        COMMISSION_PERCENT,
+        ONLINE_PAYMENT_DISCOUNT_PERCENT,
+        PREBOOKING_DISCOUNT_PERCENT,
+        PREBOOKING_COUPON,
+        PREBOOKING_DATE,
+        CONVENIENCE_FEE_PERCENT
+    });
+
+    // 2) Get cart data
     const { data, error } = await supabase
         .schema("onlyclick")
         .from("users")
         .select("cart")
-        .single()
+        .single();
+
+    console.log("Cart data from DB:", data);
 
     if (error) {
+        console.error("Error fetching cart:", error);
         return { arr: [], error };
     }
 
     if (!data || !data.cart || !data.cart.items) {
         return { arr: [], error: null };
     }
-        
-    console.log(data.cart);
-    
+
+    console.log("Cart items:", data.cart);
+
     // Extract service IDs from cart
     const serviceIds = data.cart.items.map(item => item.service_id);
-    
-    // Fetch current service data from services table
+
+    // Fetch current service data from services table to get latest prices
     const { data: service_data, error: service_error } = await supabase
         .schema("onlyclick")
         .from("services")
-        .select("service_id, price, service_fee_percent, total_tax")
+        .select("service_id, price")
         .in('service_id', serviceIds);
 
     if (service_error) {
+        console.error("Error fetching service data:", service_error);
         return { arr: [], error: service_error };
     }
 
-    // Create a map for quick lookup of service data
+    // Create a map for quick lookup of current service prices
     const serviceDataMap = {};
     service_data.forEach(service => {
         serviceDataMap[service.service_id] = service;
     });
 
-    // Merge cart items with current service data
-    const updatedCartItems = data.cart.items.map(cartItem => {
-        const currentServiceData = serviceDataMap[cartItem.service_id];
+    // 3) Process cart items with new pricing system
+    const processedCartItems = data.cart.items.map(cartItem => {
+        const qty = cartItem.count_in_cart || 0;
+        if (qty === 0) return cartItem; // Skip items with zero quantity
+
+        // Get latest price from backend or fallback to cart price
+        const originalPrice = serviceDataMap[cartItem.service_id]?.price || cartItem.price;
+        
+        // 4) Apply prebooking discount if coupon is applied
+        let servicePrice = originalPrice;
+        let prebookingDiscountAmount = 0;
+        
+        if (couponApplied) {
+            prebookingDiscountAmount = (originalPrice * PREBOOKING_DISCOUNT_PERCENT / 100);
+            servicePrice = originalPrice - prebookingDiscountAmount;
+        }
+
+        // 5) Calculate TM share: (100-commission)% of the service price
+        const tmShare = (servicePrice * (100 - COMMISSION_PERCENT) / 100);
+
+        // 6) Add 5% convenience charge + platform fees for each service
+        const convenienceFee = (servicePrice * CONVENIENCE_FEE_PERCENT / 100);
+        const totalItemPrice = servicePrice + convenienceFee;
+
+        // 7) Calculate online payment discount (on original service price before convenience fee)
+        const onlineDiscountAmount = (servicePrice * ONLINE_PAYMENT_DISCOUNT_PERCENT / 100);
+
+        // 8) Company share calculation
+        let companyShare;
+        if (couponApplied) {
+            // Company gets: convenience fee + commission% of discounted service price
+            companyShare = convenienceFee + (servicePrice * COMMISSION_PERCENT / 100);
+        } else {
+            // Company gets: convenience fee + commission% of full service price
+            companyShare = convenienceFee + (servicePrice * COMMISSION_PERCENT / 100);
+        }
+
         return {
             ...cartItem,
-            // Override with current service data
-            price: currentServiceData?.price || cartItem.price,
-            service_fee_percent: currentServiceData?.service_fee_percent || cartItem.service_fee_percent,
-            total_tax: currentServiceData?.total_tax || cartItem.total_tax
+            original_price: originalPrice,
+            service_price: parseFloat(servicePrice.toFixed(2)), // Service price after prebooking discount
+            convenience_fee: parseFloat(convenienceFee.toFixed(2)),
+            total_price: parseFloat(totalItemPrice.toFixed(2)), // Service price + convenience fee
+            tm_share: parseFloat(tmShare.toFixed(2)),
+            company_share: parseFloat(companyShare.toFixed(2)),
+            online_discount_amount: parseFloat(onlineDiscountAmount.toFixed(2)),
+            prebooking_discount_amount: parseFloat(prebookingDiscountAmount.toFixed(2)),
+            prebooking_discount_applied: couponApplied,
+            prebooking_discount_percent: couponApplied ? PREBOOKING_DISCOUNT_PERCENT : 0
         };
     });
 
-    const updatedCartData = {
-        ...data.cart,
-        items: updatedCartItems
-    };
+    // Calculate totals
+    let subTotal = 0; // Sum of all service prices (after prebooking discount)
+    let totalConvenienceFee = 0;
+    let totalTMShare = 0;
+    let totalCompanyShare = 0;
+    let totalOnlineDiscount = 0;
+    let totalPrebookingDiscount = 0;
 
-    // Online payment discount percentage (configurable)
-    const ONLINE_PAYMENT_DISCOUNT_PERCENT = 2;   
+    processedCartItems.forEach(item => {
+        const qty = item.count_in_cart || 0;
+        if (qty > 0) {
+            subTotal += (item.service_price * qty);
+            totalConvenienceFee += (item.convenience_fee * qty);
+            totalTMShare += (item.tm_share * qty);
+            totalCompanyShare += (item.company_share * qty);
+            totalOnlineDiscount += (item.online_discount_amount * qty);
+            totalPrebookingDiscount += (item.prebooking_discount_amount * qty);
+        }
+    });
 
-    /**
-     * Calculate charges using paise-based arithmetic to avoid floating-point rounding errors
-     * All calculations are done in paise (1 rupee = 100 paise) and rounded only at display time
-     */
-    function calculateCharges(data) {
-        let totalServiceChargePaise = 0;
-        let subTotalPaise = 0;
+    const grandTotal = subTotal + totalConvenienceFee; // Total before any payment discounts
 
-        data.items.forEach(item => {
-            const qty = item.count_in_cart || 0;
-            if (qty > 0) {
-                // Convert to paise for precise calculations
-                const baseAmountPaise = item.price * qty * 100;
+    // Calculate final amounts based on payment method
+    const totalWithOnlineDiscount = grandTotal - totalOnlineDiscount;
 
-                subTotalPaise += baseAmountPaise;
-                totalServiceChargePaise += Math.round((baseAmountPaise * item.service_fee_percent) / 100);
-            }
-        });
+    // Transform data for UI display (grouped by category)
+    function transformCartData(items) {
+        if (!items || items.length === 0) return [];
 
-        // Calculate online payment discount (2% of subtotal) in paise
-        const onlinePaymentDiscountPaise = Math.round((subTotalPaise * ONLINE_PAYMENT_DISCOUNT_PERCENT) / 100);
-
-        return {
-            // Return values in rupees (divide by 100 and round for consistent amounts)
-            serviceCharge: Math.round(totalServiceChargePaise / 100),
-            subTotal: Math.round(subTotalPaise / 100),
-            onlinePaymentDiscount: Math.round(onlinePaymentDiscountPaise / 100),
-            totalAmount: Math.round((subTotalPaise + totalServiceChargePaise) / 100),
-            totalAmountWithOnlineDiscount: Math.round((subTotalPaise + totalServiceChargePaise - onlinePaymentDiscountPaise) / 100),
-            // Also provide paise values for precise calculations (but round them to whole paise)
-            totalAmountPaise: Math.round(subTotalPaise + totalServiceChargePaise),
-            totalAmountWithOnlineDiscountPaise: Math.round(subTotalPaise + totalServiceChargePaise - onlinePaymentDiscountPaise)
-        };
-    }
-
-    // Use updated cart data for calculations
-    const { serviceCharge, subTotal, onlinePaymentDiscount, totalAmount, totalAmountWithOnlineDiscount, totalAmountPaise, totalAmountWithOnlineDiscountPaise } = calculateCharges(updatedCartData)
-
-    function transformCartData(rawData) {
-        if (!rawData || !rawData.items) return [];
-
-        // Group by category
         const grouped = {};
 
-        rawData.items.forEach((item) => {
+        items.forEach((item) => {
             const category = item.category || "Uncategorized";
-            
+
             if (!grouped[category]) {
                 grouped[category] = {
                     category,
                     items: []
                 };
             }
-            
+
             grouped[category].items.push({
                 id: item.id,
                 name: item.title || "Unnamed Service",
-                price: item.price,
+                price: item.service_price, // Use discounted service price
                 quantity: item.count_in_cart || 0,
                 duration: item.duration || "N/A",
                 service_id: item.service_id
             });
         });
-        
+
         return Object.values(grouped);
     }
-    
-    const arr = transformCartData(updatedCartData);
-    
-    // Enhance raw cart data with pricing information and additional fields
-    const enhancedRawCartData = updatedCartData.items.map(item => {
-        const qty = item.count_in_cart || 0;
-        
-        // Convert to paise for precise calculations (1 rupee = 100 paise)
-        const baseAmountPaise = item.price * qty * 100;
-        const serviceFeeAmountPaise = Math.round((baseAmountPaise * item.service_fee_percent) / 100);
-        const taxAmountPaise = Math.round((baseAmountPaise * item.total_tax) / 100);
-        const totalItemAmountPaise = baseAmountPaise + serviceFeeAmountPaise + taxAmountPaise;
-        
-        // Company share calculation in paise: 15% of base price + service charge % of base price
-        const companyShareBasePaise = Math.round((baseAmountPaise * 15) / 100); // 15% of base price
-        const companyShareFromServiceFeePaise = serviceFeeAmountPaise; // service charge % of base price
-        const companyShareTotalPaise = companyShareBasePaise + companyShareFromServiceFeePaise;
-        
-        // TM share calculation in paise: (100 - 15)% = 85% of base price
-        const tmSharePaise = Math.round((baseAmountPaise * 85) / 100);
-        
-        // Online payment discount (2% of base amount) in paise - reduced from company share
-        const onlineDiscountAmountPaise = Math.round((baseAmountPaise * 2) / 100);
-        const companyShareAfterDiscountPaise = companyShareTotalPaise - onlineDiscountAmountPaise;
-        
-        return {
-            ...item,
-            // Add essential calculated pricing fields (converted back to rupees for display)
-            service_fee_amount: Math.round(serviceFeeAmountPaise / 100),
-            tax_amount: Math.round(taxAmountPaise / 100),
-            total_item_amount: Math.round(totalItemAmountPaise / 100),
-            
-            // Only essential share calculations for backend (converted back to rupees)
-            company_share: Math.round(companyShareTotalPaise / 100), // Full company share (before discount)
-            company_share_after_discount: Math.round(companyShareAfterDiscountPaise / 100), // Company share after online payment discount
-            tm_share: Math.round(tmSharePaise / 100), // 85% of base price
-            online_discount_amount: Math.round(onlineDiscountAmountPaise / 100), // 2% discount amount
-            
-            // Keep paise values for precise calculations in frontend components only
-            // These won't be sent to backend but used for UI calculations
-            _paise_values: {
-                base_amount_paise: baseAmountPaise,
-                service_fee_amount_paise: serviceFeeAmountPaise,
-                tax_amount_paise: taxAmountPaise,
-                company_share_paise: companyShareTotalPaise,
-                company_share_after_discount_paise: companyShareAfterDiscountPaise,
-                tm_share_paise: tmSharePaise,
-                online_discount_amount_paise: onlineDiscountAmountPaise,
-            }
-        };
+
+    const arr = transformCartData(processedCartItems);
+
+    console.log("Final calculations:", {
+        subTotal: parseFloat(subTotal.toFixed(2)),
+        totalConvenienceFee: parseFloat(totalConvenienceFee.toFixed(2)),
+        grandTotal: parseFloat(grandTotal.toFixed(2)),
+        totalTMShare: parseFloat(totalTMShare.toFixed(2)),
+        totalCompanyShare: parseFloat(totalCompanyShare.toFixed(2)),
+        totalOnlineDiscount: parseFloat(totalOnlineDiscount.toFixed(2)),
+        totalPrebookingDiscount: parseFloat(totalPrebookingDiscount.toFixed(2)),
+        totalWithOnlineDiscount: parseFloat(totalWithOnlineDiscount.toFixed(2))
     });
-    
-    return { 
-        arr, 
-        serviceCharge, 
-        subTotal,
-        onlinePaymentDiscount,
+
+    return {
+        arr,
+        subTotal: parseFloat(subTotal.toFixed(2)),
+        convenienceFee: parseFloat(totalConvenienceFee.toFixed(2)),
+        grandTotal: parseFloat(grandTotal.toFixed(2)),
+        totalTMShare: parseFloat(totalTMShare.toFixed(2)),
+        totalCompanyShare: parseFloat(totalCompanyShare.toFixed(2)),
+        onlinePaymentDiscount: parseFloat(totalOnlineDiscount.toFixed(2)),
         onlineDiscountPercent: ONLINE_PAYMENT_DISCOUNT_PERCENT,
-        totalAmount, 
-        totalAmountWithOnlineDiscount,
-        // Include paise values for precise calculations in components
-        totalAmountPaise,
-        totalAmountWithOnlineDiscountPaise,
-        rawCartData: enhancedRawCartData, 
-        error: null 
+        prebookingDiscount: parseFloat(totalPrebookingDiscount.toFixed(2)),
+        prebookingDiscountPercent: PREBOOKING_DISCOUNT_PERCENT,
+        isCouponApplied: couponApplied,
+        totalWithOnlineDiscount: parseFloat(totalWithOnlineDiscount.toFixed(2)),
+        rawCartData: processedCartItems,
+        error: null,
+        // System configuration for reference
+        systemConfig: {
+            COMMISSION_PERCENT,
+            ONLINE_PAYMENT_DISCOUNT_PERCENT,
+            PREBOOKING_DISCOUNT_PERCENT,
+            PREBOOKING_COUPON,
+            PREBOOKING_DATE,
+            CONVENIENCE_FEE_PERCENT
+        }
     };
 }

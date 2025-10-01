@@ -46,19 +46,19 @@ export default function Data() {
 
 
 
-  const [popularServices, setPopularServices] = useState([]);
-  useEffect(() => {
-    const fetchPopularService = async () => {
-      const { arr, error } = await getpopularServices();
-      if (error) {
-        return;
-      }
+  // const [popularServices, setPopularServices] = useState([]);
+  // useEffect(() => {
+  //   const fetchPopularService = async () => {
+  //     const { arr, error } = await getpopularServices();
+  //     if (error) {
+  //       return;
+  //     }
 
-      setPopularServices(arr); // set the state with formatted array
-    };
+  //     setPopularServices(arr); // set the state with formatted array
+  //   };
 
-    fetchPopularService();
-  }, []);
+  //   fetchPopularService();
+  // }, []);
 
   const [bookings, setbookings] = useState([]);
 
@@ -136,28 +136,28 @@ export default function Data() {
     );
   };
 
-  const renderPopularServiceItem = ({ item }) => (
-    <TouchableOpacity style={styles.serviceCard} onPress={() => {}}>
-      <View style={styles.serviceImageContainer}>
-        <Image src={item.image} style={styles.serviceImage} />
-        {item.discount && (
-          <View style={styles.discountBadge}>
-            <Text style={styles.discountText}>{`${item.discount}% off`}</Text>
-          </View>
-        )}
-      </View>
-      <View style={styles.serviceInfo}>
-        <Text style={styles.serviceTitle}>{item.title}</Text>
-        <View style={styles.ratingContainer}>
-          <Ionicons name="star" size={16} color="#FFD700" />
-          <Text style={styles.ratingText}>{item.rating}</Text>
-        </View>
-        <Text
-          style={styles.servicePrice}
-        >{`₹${item.price}`}</Text>
-      </View>
-    </TouchableOpacity>
-  );
+  // const renderPopularServiceItem = ({ item }) => (
+  //   <TouchableOpacity style={styles.serviceCard} onPress={() => {}}>
+  //     <View style={styles.serviceImageContainer}>
+  //       <Image src={item.image} style={styles.serviceImage} />
+  //       {item.discount && (
+  //         <View style={styles.discountBadge}>
+  //           <Text style={styles.discountText}>{`${item.discount}% off`}</Text>
+  //         </View>
+  //       )}
+  //     </View>
+  //     <View style={styles.serviceInfo}>
+  //       <Text style={styles.serviceTitle}>{item.title}</Text>
+  //       <View style={styles.ratingContainer}>
+  //         <Ionicons name="star" size={16} color="#FFD700" />
+  //         <Text style={styles.ratingText}>{item.rating}</Text>
+  //       </View>
+  //       <Text
+  //         style={styles.servicePrice}
+  //       >{`₹${item.price}`}</Text>
+  //     </View>
+  //   </TouchableOpacity>
+  // );
 
   const renderTestimonialItem = ({ item }) => (
     <View style={styles.testimonialCard}>
@@ -219,7 +219,7 @@ export default function Data() {
         </TouchableOpacity>
       </View>
 
-      {/* Popular Services Section */}
+      {/* Popular Services Section
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Popular Services</Text>
@@ -237,7 +237,7 @@ export default function Data() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.servicesContainer}
         />
-      </View>
+      </View> */}
 
       {/* Customer Testimonials Section */}
       {testimonials.length > 0 && (

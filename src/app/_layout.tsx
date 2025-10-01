@@ -112,7 +112,7 @@ export default function RootLayout() {
                           fontSize: 12,
                           fontFamily: 'Poppins_400Regular'
                         }}>
-                          Added to cart successfully
+                          {props.text2}
                         </Text>
                       </View>
                     </View>

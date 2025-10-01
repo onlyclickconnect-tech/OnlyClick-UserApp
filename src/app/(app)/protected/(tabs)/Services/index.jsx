@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -14,8 +14,10 @@ import {
 } from "react-native";
 import Toast from 'react-native-toast-message';
 import AppHeader from '../../../../../components/common/AppHeader';
+import CartAddedBottomBar from '../../../../../components/common/CartAddedBottomBar';
 import PressableScale from '../../../../../components/common/PressableScale';
 import Text from "../../../../../components/ui/Text";
+import { useModal } from '../../../../../context/ModalProvider';
 import fetchCart from '../../../../../data/getdata/getCart';
 import { allCategories, allServices, categoryImages } from "../../../../../data/servicesData";
 import { addToCart } from '../../../../api/cart';
@@ -26,6 +28,7 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 function ServicesPage() {
   const router = useRouter();
   const { selectedCategory: categoryParam, searchQuery: urlSearchQuery } = useLocalSearchParams();
+  const { setIsCartAddedBottomBarVisible, setCartItemCount, isCartAddedBottomBarVisible, cartItemCount } = useModal();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(categoryParam || "All");
   const [cartItems, setCartItems] = useState([]);
@@ -62,8 +65,20 @@ function ServicesPage() {
         total + category.items.reduce((catTotal, item) => catTotal + item.quantity, 0), 0
       );
       setCartItems(Array(totalItems).fill({})); // Create array with length equal to total items
+      
+      // Update global cart count for permanent bottom bar
+      setCartItemCount(totalItems);
+      
+      // Show/hide bottom bar based on cart items
+      if (totalItems > 0) {
+        setIsCartAddedBottomBarVisible(true);
+      } else {
+        setIsCartAddedBottomBarVisible(false);
+      }
     } catch (error) {
       setCartItems([]);
+      setCartItemCount(0);
+      setIsCartAddedBottomBarVisible(false);
     }
   };
 
@@ -101,9 +116,16 @@ function ServicesPage() {
     };
     fetchCategories();
 
-    // Fetch initial cart count
+    // Fetch initial cart count to show bottom bar if items exist
     updateCartCount();
   }, []);
+
+  // Update cart count every time the screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      updateCartCount();
+    }, [])
+  );
 
   // Filter categories to show only those with services available
   const categoriesWithCounts = (categories || []).map((cat) => ({
@@ -203,13 +225,15 @@ function ServicesPage() {
 
   const addToCartClickHandle = async (service) => {
     setOverlayLoading(true);
-     const cartPayload = { ...service };
-    delete cartPayload.count;
+    const cartPayload = { ...service };
     delete cartPayload.image_url;
     delete cartPayload.description;
     delete cartPayload.created_at;
     delete cartPayload.ratings;
-    const { error } = await addToCart(service)
+    delete cartPayload.service_fee_percent
+    delete cartPayload.total_tax
+    console.log("cart payload",cartPayload);
+    const { error } = await addToCart(cartPayload)
 
     // Show success feedback (you can customize this)
     setOverlayLoading(false) 
@@ -221,11 +245,18 @@ function ServicesPage() {
       });
     }
     else {
+      // Show success toast notification
       Toast.show({
         type: 'success',
-        text1: 'Success!',
-        text2: 'Added to cart successfully',
+        text1: 'Added to Cart!',
+        text2: `${service.title} has been added to your cart`,
+        position: 'bottom',
+        bottomOffset: 100,
       });
+      
+      // Show bottom bar notification
+      setIsCartAddedBottomBarVisible(true);
+      
       // Update cart count after successful addition
       await updateCartCount();
     }
@@ -300,7 +331,7 @@ function ServicesPage() {
                   style={styles.addToCartButton}
                   onPress={() => addToCartClickHandle(item)}
                 >
-                  <Ionicons name="cart-outline" size={16} color="#fff" />
+                  <Text style={styles.addToCartButtonText}>Add to Cart</Text>
                 </PressableScale>
               </View>
             </View>
@@ -448,6 +479,13 @@ function ServicesPage() {
               <ActivityIndicator size="large" color="#fff" />
             </View>
           )}
+
+      {/* Cart Added Bottom Bar - Only visible on Services page */}
+      <CartAddedBottomBar 
+        isVisible={isCartAddedBottomBarVisible}
+        onClose={() => setIsCartAddedBottomBarVisible(false)}
+        cartItemCount={cartItemCount}
+      />
     </View>
   );
 }
