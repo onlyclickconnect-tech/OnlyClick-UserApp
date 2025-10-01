@@ -298,8 +298,8 @@ export default function Bookings() {
                       )}
                     </View>
 
-                    {/* Show OTP on the right side for accepted bookings */}
-                    {group.status === 'Accepted' && group.otp && (
+                    {/* Show OTP on the right side for accepted and completed bookings */}
+                    {(group.status === 'Accepted' || group.status === 'Completed') && group.otp && (
                       <View style={styles.otpContainer}>
                         <View style={styles.otpBadge}>
                           <Text style={styles.otpNumber}>{group.otp}</Text>

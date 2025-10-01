@@ -653,7 +653,7 @@ Please process my cancellation request. Thank you!`;
         )}
 
         {/* OTP Display Section */}
-        {booking.status === 'Accepted' && (
+        {(booking.status === 'Accepted' || booking.status === 'Completed') && (
           <View style={styles.otpDisplayContainer}>
             <Text style={styles.sectionTitle}>Your OTP</Text>
             <Text style={styles.otpCode}>{booking.otp}</Text>

@@ -261,7 +261,7 @@ export default function GroupBookingDetails() {
             </View>
           )}
 
-          {group.status === 'Accepted' && group.otp && (
+          {(group.status === 'Accepted' || group.status === 'Completed') && group.otp && (
             <View style={styles.infoRow}>
               <Ionicons name="key-outline" size={20} color="#3898B3" />
               <View style={styles.infoContent}>
