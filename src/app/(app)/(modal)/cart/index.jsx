@@ -483,12 +483,6 @@ export default function Cart() {
     setIsApplyingCoupon(true);
     
     try {
-      // Check if prebooking date has passed
-      if (systemConfig.PREBOOKING_DATE && new Date() >= new Date(systemConfig.PREBOOKING_DATE)) {
-        setCouponError("Prebooking period has ended. This coupon is no longer valid.");
-        return;
-      }
-      
       if (couponCode.trim().toLowerCase() === systemConfig.PREBOOKING_COUPON?.toLowerCase()) {
         setIsCouponApplied(true);
         // fetchCartData will be called by useEffect automatically
@@ -510,18 +504,6 @@ export default function Cart() {
   const applyPrebookingCoupon = async () => {
     // Prevent double application or multiple clicks
     if (isCouponApplied || isApplyingCoupon) return;
-    
-    // Check if prebooking date has passed
-    if (systemConfig.PREBOOKING_DATE && new Date() >= new Date(systemConfig.PREBOOKING_DATE)) {
-      Toast.show({
-        type: 'error',
-        text1: 'Coupon Expired',
-        text2: 'Prebooking period has ended. This coupon is no longer valid.',
-        position: 'bottom',
-        bottomOffset: 100,
-      });
-      return;
-    }
     
     setIsApplyingCoupon(true);
     setCouponCode(systemConfig.PREBOOKING_COUPON);
@@ -1997,11 +1979,9 @@ export default function Cart() {
           </View>
         )}
 
-        {/* Coupon Code Section - Only show if prebooking discount is available, coupon code exists, and prebooking date hasn't passed */}
+        {/* Coupon Code Section - Only show if prebooking discount is available and coupon code exists */}
         {systemConfig.PREBOOKING_DISCOUNT_PERCENT > 0 && 
-         systemConfig.PREBOOKING_COUPON && 
-         systemConfig.PREBOOKING_DATE && 
-         new Date() < new Date(systemConfig.PREBOOKING_DATE) && (
+         systemConfig.PREBOOKING_COUPON && (
           <View style={styles.couponSection}>
             {!isCouponApplied ? (
               <View>
