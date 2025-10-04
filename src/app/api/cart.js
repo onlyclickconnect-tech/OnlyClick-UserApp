@@ -23,7 +23,8 @@ export const removeOneFromCart = async (service_id) => {
 
 export const addOneInCart = async (service_id) => {
   try {
-    const { data } = await api.post("/api/v1/addoneincart", { service_id });
+    const { data, error } = await api.post("/api/v1/addoneincart", { service_id });
+    if (error) throw error;
     return { data };
   } catch (error) {
     return { error };
@@ -32,7 +33,8 @@ export const addOneInCart = async (service_id) => {
 
 export const removeAllFromCart = async (service_id) => {
   try {
-    const { data } = await api.post("/api/v1/removeallfromcart", { service_id });
+    const { data, error } = await api.post("/api/v1/removeallfromcart", { service_id });
+    if (error) throw error;
     return { data };
   } catch (error) {
     return { error };

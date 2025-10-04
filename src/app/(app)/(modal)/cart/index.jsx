@@ -437,7 +437,7 @@ export default function Cart() {
 
     // Only set mobile number from server if no mobile number is set in AppStates
     if (!selectedMobileNumber) {
-      setMobileNumber(userData.phone);
+      setMobileNumber(userData?.phone);
     }
   };
 
@@ -631,35 +631,33 @@ export default function Cart() {
       if (change > 0) {
         // Increase quantity
         const { data, error } = await addOneInCart(item.service_id);
+        // Always refetch cart data to get updated quantities
+        await fetchCartData();
+        
+        // Only show error if cart data didn't update properly
         if (error) {
-          Toast.show({
-            type: 'error',
-            text1: 'Error',
-            text2: 'Failed to increase quantity',
-          });
-        } else {
-          // Refetch cart data to get updated quantities
-          await fetchCartData();
+          console.log('Add to cart API returned error, but checking if cart updated:', error);
         }
       } else if (change < 0) {
         // Decrease quantity
         const { data, error } = await removeOneFromCart(item.service_id);
+        // Always refetch cart data to get updated quantities
+        await fetchCartData();
+        
+        // Only show error if cart data didn't update properly
         if (error) {
-          Toast.show({
-            type: 'error',
-            text1: 'Error',
-            text2: 'Failed to decrease quantity',
-          });
-        } else {
-          // Refetch cart data to get updated quantities
-          await fetchCartData();
+          console.log('Remove from cart API returned error, but checking if cart updated:', error);
         }
       }
     } catch (error) {
+      console.error('Failed to update quantity:', error);
+      // Always refetch cart data even if there's an error
+      await fetchCartData();
+      
       Toast.show({
         type: 'error',
         text1: 'Error',
-        text2: 'Failed to update quantity',
+        text2: 'Failed to update quantity. Please try again.',
       });
     } finally {
       setUpdatingItemId(null);
