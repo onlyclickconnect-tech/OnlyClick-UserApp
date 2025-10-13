@@ -1,11 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Animated,
   Dimensions,
   FlatList,
   Image,
+  Modal,
+  PanResponder,
+  ScrollView,
   StatusBar,
   StyleSheet,
   TextInput,
@@ -38,6 +42,78 @@ function ServicesPage() {
   const [categoriesLoading, setCategoriesLoading] = useState(true); 
   const [overlayLoading, setOverlayLoading] = useState(false);
   const [cartNavigationLoading, setCartNavigationLoading] = useState(false);
+  const [selectedService, setSelectedService] = useState(null);
+  const [showServiceModal, setShowServiceModal] = useState(false);
+
+  // Gesture handling for modal
+  const modalY = useRef(new Animated.Value(0)).current;
+  const modalOpacity = useRef(new Animated.Value(1)).current;
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: (evt, gestureState) => {
+        return Math.abs(gestureState.dy) > 5 && gestureState.y0 < 100;
+      },
+      onMoveShouldSetPanResponder: (evt, gestureState) => {
+        return Math.abs(gestureState.dy) > Math.abs(gestureState.dx) && 
+               Math.abs(gestureState.dy) > 10;
+      },
+      onPanResponderMove: (evt, gestureState) => {
+        if (gestureState.dy > 0) {
+          modalY.setValue(gestureState.dy);
+          modalOpacity.setValue(1 - gestureState.dy / 300);
+        }
+      },
+      onPanResponderRelease: (evt, gestureState) => {
+        if (gestureState.dy > 100 || gestureState.vy > 0.5) {
+          Animated.parallel([
+            Animated.timing(modalY, {
+              toValue: screenHeight,
+              duration: 300,
+              useNativeDriver: true,
+            }),
+            Animated.timing(modalOpacity, {
+              toValue: 0,
+              duration: 300,
+              useNativeDriver: true,
+            }),
+          ]).start(() => {
+            setShowServiceModal(false);
+            setSelectedService(null);
+            modalY.setValue(0);
+            modalOpacity.setValue(1);
+          });
+        } else {
+          Animated.parallel([
+            Animated.timing(modalY, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+            Animated.timing(modalOpacity, {
+              toValue: 1,
+              duration: 200,
+              useNativeDriver: true,
+            }),
+          ]).start();
+        }
+      },
+      onPanResponderTerminate: (evt, gestureState) => {
+        Animated.parallel([
+          Animated.timing(modalY, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+          Animated.timing(modalOpacity, {
+            toValue: 1,
+            duration: 200,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      },
+    })
+  ).current;
 
   // Function to handle cart navigation with loading state
   const handleCartNavigation = async () => {
@@ -87,6 +163,7 @@ function ServicesPage() {
       try {
         setLoading(true);
         const data = await allServices();
+        console.log(data);
         setServices(data || []);
       } catch (error) {
       } finally {
@@ -282,14 +359,18 @@ function ServicesPage() {
     </TouchableOpacity>
   );
 
+  // Function to handle service detail view
+  const handleServicePress = (service) => {
+    setSelectedService(service);
+    setShowServiceModal(true);
+  };
+
   // Memoized service card for performance
   const ServiceCard = React.memo(function ServiceCard({ item }) {
     return (
       <PressableScale
         style={styles.serviceCard}
-        onPress={() => {
-          /* open details if needed */
-        }}
+        onPress={() => handleServicePress(item)}
       >
         <View style={styles.cardContentHorizontal}>
           <View style={styles.serviceDetailsLeft}>
@@ -363,6 +444,135 @@ function ServicesPage() {
 
 
   const renderItem = ({ item }) => <ServiceCard item={item} />;
+
+  // Service Detail Modal Component
+  const ServiceDetailModal = () => {
+    if (!selectedService) return null;
+
+    return (
+      <Modal visible={showServiceModal} transparent animationType="none">
+        <Animated.View style={[styles.modalOverlay, { opacity: modalOpacity }]}>
+          <Animated.View 
+            style={[styles.modalContent, { transform: [{ translateY: modalY }] }]}
+            {...panResponder.panHandlers}
+          >
+            {/* Gesture Indicator Bar */}
+            <TouchableOpacity 
+              style={styles.gestureIndicator}
+              activeOpacity={1}
+              onPress={() => {}}
+            >
+              <View style={styles.indicatorBar} />
+            </TouchableOpacity>
+            
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Service Details</Text>
+              <TouchableOpacity onPress={() => {
+                setShowServiceModal(false);
+                setSelectedService(null);
+              }}>
+                <Ionicons name="close" size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
+            
+            <ScrollView 
+              style={styles.modalScrollView}
+              showsVerticalScrollIndicator={false}
+              bounces={false}
+            >
+              {/* Service Image */}
+              <View style={styles.modalImageContainer}>
+                <Image
+                  source={
+                    selectedService.image_url 
+                      ? { uri: selectedService.image_url } 
+                      : selectedService.image 
+                        ? selectedService.image 
+                        : {
+                            uri: "https://res.cloudinary.com/dfdryre0n/image/upload/v1759349542/ljihy20jybbtrxmpbk9r.png",
+                          }
+                  }
+                  style={styles.modalImage}
+                  resizeMode="cover"
+                />
+              </View>
+
+              {/* Service Title & Category */}
+              <View style={styles.modalInfoSection}>
+                <Text style={styles.modalServiceTitle}>{selectedService.title}</Text>
+                
+                <View style={styles.modalCategoryRow}>
+                  <View style={styles.modalCategoryBadge}>
+                    <Ionicons name="file-tray-outline" size={14} color="#3898B3" />
+                    <Text style={styles.modalCategoryText}>{selectedService.category}</Text>
+                  </View>
+                  {selectedService.sub_category && (
+                    <View style={styles.modalSubCategoryBadge}>
+                      <Text style={styles.modalSubCategoryText}>{selectedService.sub_category}</Text>
+                    </View>
+                  )}
+                </View>
+
+                {/* Price & Rating Row */}
+                <View style={styles.modalPriceRatingRow}>
+                  <View style={styles.modalPriceContainer}>
+                    <Text style={styles.modalPrice}>₹{selectedService.price}</Text>
+                    {selectedService.originalPrice && (
+                      <Text style={styles.modalOriginalPrice}>₹{selectedService.originalPrice}</Text>
+                    )}
+                  </View>
+                  {selectedService.ratings && (
+                    <View style={styles.modalRatingContainer}>
+                      <Ionicons name="star" size={16} color="#FFD700" />
+                      <Text style={styles.modalRatingText}>{selectedService.ratings}</Text>
+                    </View>
+                  )}
+                </View>
+
+                {/* Duration */}
+                {selectedService.duration && (
+                  <View style={styles.modalDurationRow}>
+                    <Ionicons name="time-outline" size={18} color="#666" />
+                    <Text style={styles.modalDurationText}>{selectedService.duration}</Text>
+                  </View>
+                )}
+              </View>
+
+              {/* Description */}
+              {selectedService.description && (
+                <View style={styles.modalDescriptionSection}>
+                  <Text style={styles.modalSectionTitle}>Description</Text>
+                  <Text style={styles.modalDescription}>{selectedService.description}</Text>
+                </View>
+              )}
+
+              {/* Add some bottom padding */}
+              <View style={{ height: 100 }} />
+            </ScrollView>
+
+            {/* Fixed Bottom Button */}
+            <View style={styles.modalBottomSection}>
+              <View style={styles.modalPriceBottomContainer}>
+                <Text style={styles.modalBottomPriceLabel}>Total Price</Text>
+                <Text style={styles.modalBottomPrice}>₹{selectedService.price}</Text>
+              </View>
+              <PressableScale
+                style={styles.modalAddToCartButton}
+                onPress={() => {
+                  setShowServiceModal(false);
+                  setSelectedService(null);
+                  addToCartClickHandle(selectedService);
+                }}
+              >
+                <Ionicons name="cart" size={20} color="#fff" style={{ marginRight: 8 }} />
+                <Text style={styles.modalAddToCartText}>Add to Cart</Text>
+              </PressableScale>
+            </View>
+          </Animated.View>
+        </Animated.View>
+      </Modal>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -485,6 +695,9 @@ function ServicesPage() {
         onClose={() => setIsCartAddedBottomBarVisible(false)}
         cartItemCount={cartItemCount}
       />
+
+      {/* Service Detail Modal */}
+      <ServiceDetailModal />
     </View>
   );
 }
@@ -912,5 +1125,213 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 999, // ensure it’s on top
+  },
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 25,
+    borderTopRightRadius: 25,
+    maxHeight: '90%',
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+  },
+  gestureIndicator: {
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+  },
+  indicatorBar: {
+    width: 50,
+    height: 5,
+    backgroundColor: '#ddd',
+    borderRadius: 3,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1A1A1A',
+  },
+  modalScrollView: {
+    maxHeight: screenHeight * 0.65,
+  },
+  modalImageContainer: {
+    width: '100%',
+    height: 250,
+    backgroundColor: '#F5F5F5',
+  },
+  modalImage: {
+    width: '100%',
+    height: '100%',
+  },
+  modalInfoSection: {
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  modalServiceTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#1A1A1A',
+    marginBottom: 12,
+    lineHeight: 32,
+  },
+  modalCategoryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    marginBottom: 16,
+    gap: 8,
+  },
+  modalCategoryBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E6F5F8',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 6,
+  },
+  modalCategoryText: {
+    fontSize: 13,
+    color: '#3898B3',
+    fontWeight: '600',
+    textTransform: 'capitalize',
+  },
+  modalSubCategoryBadge: {
+    backgroundColor: '#F5F5F5',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  modalSubCategoryText: {
+    fontSize: 13,
+    color: '#666',
+    fontWeight: '500',
+    textTransform: 'capitalize',
+  },
+  modalPriceRatingRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  modalPriceContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  modalPrice: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#3898B3',
+  },
+  modalOriginalPrice: {
+    fontSize: 18,
+    color: '#999',
+    textDecorationLine: 'line-through',
+  },
+  modalRatingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF9E6',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 4,
+  },
+  modalRatingText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+  },
+  modalDurationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  modalDurationText: {
+    fontSize: 15,
+    color: '#666',
+    fontWeight: '500',
+  },
+  modalDescriptionSection: {
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  modalSectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1A1A1A',
+    marginBottom: 12,
+  },
+  modalDescription: {
+    fontSize: 15,
+    color: '#666',
+    lineHeight: 24,
+  },
+  modalBottomSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  modalPriceBottomContainer: {
+    flex: 1,
+  },
+  modalBottomPriceLabel: {
+    fontSize: 13,
+    color: '#666',
+    marginBottom: 2,
+  },
+  modalBottomPrice: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#3898B3',
+  },
+  modalAddToCartButton: {
+    backgroundColor: '#3898B3',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 12,
+    marginLeft: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+  },
+  modalAddToCartText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

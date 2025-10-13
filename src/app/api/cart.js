@@ -7,7 +7,7 @@ export const addToCart = async (new_item) => {
     
     return data; 
   } catch (error) {
-
+    console.log(error);
     return {error};
   }
 };
