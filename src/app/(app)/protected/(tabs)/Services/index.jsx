@@ -163,7 +163,6 @@ function ServicesPage() {
       try {
         setLoading(true);
         const data = await allServices();
-        console.log(data);
         setServices(data || []);
       } catch (error) {
       } finally {

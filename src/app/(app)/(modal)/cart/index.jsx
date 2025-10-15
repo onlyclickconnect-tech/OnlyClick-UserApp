@@ -618,7 +618,7 @@ export default function Cart() {
         
         // Only show error if cart data didn't update properly
         if (error) {
-          console.log('Add to cart API returned error, but checking if cart updated:', error);
+          throw error;
         }
       } else if (change < 0) {
         // Decrease quantity
@@ -628,7 +628,7 @@ export default function Cart() {
         
         // Only show error if cart data didn't update properly
         if (error) {
-          console.log('Remove from cart API returned error, but checking if cart updated:', error);
+          throw error;
         }
       }
     } catch (error) {
