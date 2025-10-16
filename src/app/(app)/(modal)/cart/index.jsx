@@ -10,6 +10,7 @@ import {
   ScrollView,
   StatusBar,
   StyleSheet,
+  TextInput,
   TouchableOpacity,
   View
 } from 'react-native';
@@ -95,8 +96,9 @@ export default function Cart() {
   // Coupon related state
   const [couponCode, setCouponCode] = useState("");
   const [isCouponApplied, setIsCouponApplied] = useState(false);
-  const [prebookingDiscount, setPrebookingDiscount] = useState(0);
-  const [prebookingDiscountPercent, setPrebookingDiscountPercent] = useState(0);
+  const [couponDiscount, setCouponDiscount] = useState(0);
+  const [couponDiscountPercent, setCouponDiscountPercent] = useState(0);
+  const [availableCoupons, setAvailableCoupons] = useState([]);
   const [showCouponInput, setShowCouponInput] = useState(false);
   const [couponError, setCouponError] = useState("");
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
@@ -405,7 +407,7 @@ export default function Cart() {
     
     
     try {
-      const cartResponse = await fetchCart(isCouponApplied);
+      const cartResponse = await fetchCart(isCouponApplied, isCouponApplied ? couponCode : null);
       
       if (cartResponse.error) {
         console.error("Error fetching cart:", cartResponse.error);
@@ -421,8 +423,9 @@ export default function Cart() {
       setOnlinePaymentDiscount(cartResponse.onlinePaymentDiscount);
       setOnlineDiscountPercent(cartResponse.onlineDiscountPercent);
       setTotalWithOnlineDiscount(cartResponse.totalWithOnlineDiscount);
-      setPrebookingDiscount(cartResponse.prebookingDiscount || 0);
-      setPrebookingDiscountPercent(cartResponse.prebookingDiscountPercent || 0);
+      setCouponDiscount(cartResponse.couponDiscount || 0);
+      setCouponDiscountPercent(cartResponse.couponDiscountPercent || 0);
+      setAvailableCoupons(cartResponse.availableCoupons || []);
       setSystemConfig(cartResponse.systemConfig || {});
       
       // Update cart display data and raw cart data
@@ -483,13 +486,23 @@ export default function Cart() {
     setIsApplyingCoupon(true);
     
     try {
-      if (couponCode.trim().toLowerCase() === systemConfig.PREBOOKING_COUPON?.toLowerCase()) {
+      console.log('Applying coupon:', couponCode);
+      console.log('Available coupons:', availableCoupons);
+      
+      // Check if the entered coupon code matches any available coupon
+      const matchedCoupon = availableCoupons.find(
+        coupon => coupon.code.toLowerCase() === couponCode.trim().toLowerCase()
+      );
+      
+      console.log('Matched coupon:', matchedCoupon);
+      
+      if (matchedCoupon) {
         setIsCouponApplied(true);
         // fetchCartData will be called by useEffect automatically
         Toast.show({
           type: 'success',
           text1: 'Coupon Applied!',
-          text2: `${systemConfig.PREBOOKING_DISCOUNT_PERCENT}% prebooking discount applied successfully`,
+          text2: `${matchedCoupon.discountPercent}% discount applied successfully`,
           position: 'bottom',
           bottomOffset: 100,
         });
@@ -501,31 +514,10 @@ export default function Cart() {
     }
   };
 
-  const applyPrebookingCoupon = async () => {
-    // Prevent double application or multiple clicks
-    if (isCouponApplied || isApplyingCoupon) return;
-    
-    setIsApplyingCoupon(true);
-    setCouponCode(systemConfig.PREBOOKING_COUPON);
-    setCouponError(""); // Clear previous errors
-    setIsCouponApplied(true);
-    
-    // fetchCartData will be called by useEffect automatically
-    setTimeout(() => {
-      setIsApplyingCoupon(false);
-      Toast.show({
-        type: 'success',
-        text1: 'Coupon Applied!',
-        text2: `${systemConfig.PREBOOKING_DISCOUNT_PERCENT}% prebooking discount applied successfully`,
-        position: 'bottom',
-        bottomOffset: 100,
-      });
-    }, 500); // Small delay to ensure cart data is updated
-  };
-
   const removeCoupon = async () => {
     setIsCouponApplied(false);
     setCouponCode("");
+    setCouponError("");
     // fetchCartData will be called by useEffect automatically
   };
 
@@ -814,15 +806,15 @@ export default function Cart() {
         total_tm_share: totalTMShare,
         total_company_share: totalCompanyShare,
         online_payment_discount: onlinePaymentDiscount,
-        prebooking_discount: prebookingDiscount,
+        coupon_discount: couponDiscount,
         total_with_online_discount: totalWithOnlineDiscount,
         amount_paid_online: getPayableAmount(),
         amount_to_pay_provider: selectedPaymentMethod === 'Pay on Service' ? totalTMShare : 0
       },
       // Coupon information
       coupon_applied: isCouponApplied,
-      coupon_code: isCouponApplied ? (systemConfig.PREBOOKING_COUPON || couponCode) : null,
-      prebooking_discount_percent: isCouponApplied ? prebookingDiscountPercent : 0,
+      coupon_code: isCouponApplied ? couponCode : null,
+      coupon_discount_percent: isCouponApplied ? couponDiscountPercent : 0,
       // System configuration used
       system_config: {
         commission_percent: systemConfig.COMMISSION_PERCENT,
@@ -1523,16 +1515,16 @@ export default function Cart() {
                     )}
                   </View>
 
-                  {/* Prebooking Discount Display */}
-                  {isCouponApplied && prebookingDiscount > 0 && (
+                  {/* Coupon Discount Display */}
+                  {isCouponApplied && couponDiscount > 0 && (
                     <View style={styles.billRow}>
                       <View style={styles.billLabelWithIcon}>
-                        <Text style={styles.billLabel}>Prebooking Discount ({prebookingDiscountPercent}%)</Text>
+                        <Text style={styles.billLabel}>Coupon Discount ({couponDiscountPercent}%)</Text>
                         <View style={styles.discountBadge}>
                           <Text style={styles.discountBadgeText}>SAVE</Text>
                         </View>
                       </View>
-                      <Text style={[styles.billAmount, styles.discountAmount]}>-₹{prebookingDiscount.toFixed(2)}</Text>
+                      <Text style={[styles.billAmount, styles.discountAmount]}>-₹{couponDiscount.toFixed(2)}</Text>
                     </View>
                   )}
 
@@ -1979,51 +1971,65 @@ export default function Cart() {
           </View>
         )}
 
-        {/* Coupon Code Section - Only show if prebooking discount is available and coupon code exists */}
-        {systemConfig.PREBOOKING_DISCOUNT_PERCENT > 0 && 
-         systemConfig.PREBOOKING_COUPON && (
-          <View style={styles.couponSection}>
-            {!isCouponApplied ? (
-              <View>
-                {/* Suggested coupon */}
-                <View style={styles.suggestedCouponContainer}>
-                  <Text style={styles.suggestedCouponLabel}>Available Coupon:</Text>
+        {/* Coupon Code Section - Text input to apply available coupons from backend */}
+        <View style={styles.couponSection}>
+          {!isCouponApplied ? (
+              <View style={styles.couponInputContainer}>
+                <View style={styles.couponInputWrapper}>
+                  <Ionicons name="pricetag-outline" size={20} color="#3898B3" style={styles.couponIcon} />
+                  <TextInput
+                    style={styles.couponTextInput}
+                    placeholder="Enter coupon code"
+                    placeholderTextColor="#999"
+                    value={couponCode}
+                    onChangeText={(text) => {
+                      setCouponCode(text.toUpperCase());
+                      setCouponError("");
+                    }}
+                    autoCapitalize="characters"
+                    maxLength={20}
+                    editable={!isApplyingCoupon}
+                  />
                   <TouchableOpacity 
-                    style={[
-                      styles.suggestedCouponButton,
-                      isApplyingCoupon && styles.suggestedCouponButtonDisabled
-                    ]}
-                    onPress={applyPrebookingCoupon}
-                    disabled={isApplyingCoupon}
+                    style={styles.applyButton}
+                    onPress={applyCoupon}
                   >
-                    <View style={styles.suggestedCouponContent}>
-                      <Text style={styles.suggestedCouponCode}>{systemConfig.PREBOOKING_COUPON}</Text>
-                      <Text style={styles.suggestedCouponDiscount}>{systemConfig.PREBOOKING_DISCOUNT_PERCENT}% OFF</Text>
-                    </View>
-                    <Text style={styles.suggestedCouponApplyText}>
-                      {isApplyingCoupon ? 'Applying...' : 'Apply'}
-                    </Text>
+                    {isApplyingCoupon ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                      <Text style={styles.applyButtonText}>Apply</Text>
+                    )}
                   </TouchableOpacity>
                 </View>
+                {couponError ? (
+                  <View style={styles.couponErrorContainer}>
+                    <Ionicons name="close-circle" size={14} color="#F44336" />
+                    <Text style={styles.couponErrorText}>{couponError}</Text>
+                  </View>
+                ) : null}
               </View>
             ) : (
               <View style={styles.couponAppliedContainer}>
                 <View style={styles.couponAppliedRow}>
                   <View style={styles.couponAppliedInfo}>
-                    <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
-                    <Text style={styles.couponAppliedText}>{systemConfig.PREBOOKING_COUPON} applied</Text>
+                    <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
+                    <View style={styles.couponAppliedTextContainer}>
+                      <Text style={styles.couponAppliedCode}>{couponCode}</Text>
+                      <Text style={styles.couponAppliedDiscount}>
+                        {couponDiscountPercent}% discount applied • You saved ₹{couponDiscount.toFixed(2)}
+                      </Text>
+                    </View>
                   </View>
                   <TouchableOpacity 
                     style={styles.removeCouponButton}
                     onPress={removeCoupon}
                   >
-                    <Text style={styles.removeCouponText}>Remove</Text>
+                    <Ionicons name="close" size={18} color="#666" />
                   </TouchableOpacity>
                 </View>
               </View>
             )}
-          </View>
-        )}
+        </View>
 
         {/* Promotional Message for Discount */}
         
@@ -2063,13 +2069,13 @@ export default function Cart() {
               <Text style={styles.summaryAmount}>₹{convenienceFee.toFixed(2)}</Text>
             </View>
 
-            {/* Show prebooking discount if applied */}
-            {isCouponApplied && prebookingDiscount > 0 && (
+            {/* Show coupon discount if applied */}
+            {isCouponApplied && couponDiscount > 0 && (
               <View style={styles.summaryRow}>
                 <Text style={[styles.summaryLabel, { color: '#4CAF50' }]}>
-                  Prebooking Discount ({prebookingDiscountPercent}%)
+                  Coupon Discount ({couponDiscountPercent}%)
                 </Text>
-                <Text style={[styles.summaryAmount, { color: '#4CAF50' }]}>-₹{prebookingDiscount.toFixed(2)}</Text>
+                <Text style={[styles.summaryAmount, { color: '#4CAF50' }]}>-₹{couponDiscount.toFixed(2)}</Text>
               </View>
             )}
 
@@ -4201,152 +4207,93 @@ const styles = StyleSheet.create({
   couponSection: {
     marginVertical: 8,
   },
-  applyCouponButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#3898B3',
-    borderStyle: 'dashed',
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: '#F8FFFE',
-  },
-  applyCouponText: {
-    color: '#3898B3',
-    fontSize: 14,
-    fontWeight: '500',
-    marginLeft: 8,
-  },
   couponInputContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 15,
+  },
+  couponInputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#E0E0E0',
-    borderRadius: 8,
+    borderRadius: 10,
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: '#fff',
+    backgroundColor: '#F8F9FA',
+    height: 48,
   },
-  couponInput: {
+  couponIcon: {
+    marginRight: 10,
+  },
+  couponTextInput: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 15,
     color: '#333',
-    paddingVertical: 4,
+    paddingVertical: 0,
+    height: '100%',
   },
   applyButton: {
     backgroundColor: '#3898B3',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 6,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
     marginLeft: 8,
+    minWidth: 70,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   applyButtonText: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '600',
   },
-  cancelButton: {
-    padding: 8,
-    marginLeft: 4,
-  },
-  // New coupon section styles
-  couponInputSection: {
+  couponErrorContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: '#fff',
-    marginBottom: 8,
+    marginTop: 8,
+    paddingHorizontal: 4,
   },
   couponErrorText: {
     color: '#F44336',
     fontSize: 12,
-    marginBottom: 8,
-    marginLeft: 4,
-  },
-  suggestedCouponContainer: {
-    marginTop: 8,
-  },
-  suggestedCouponLabel: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 8,
-  },
-  suggestedCouponButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#FFF3E0',
-    borderRadius: 8,
-    padding: 12,
-    borderLeftWidth: 3,
-    borderLeftColor: '#FF6B35',
-  },
-  suggestedCouponButtonDisabled: {
-    opacity: 0.6,
-    backgroundColor: '#F5F5F5',
-  },
-  suggestedCouponContent: {
+    marginLeft: 6,
     flex: 1,
-  },
-  suggestedCouponCode: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#FF6B35',
-    marginBottom: 2,
-  },
-  suggestedCouponDiscount: {
-    fontSize: 12,
-    color: '#2E7D32',
-    fontWeight: '600',
-  },
-  suggestedCouponApplyText: {
-    color: '#3898B3',
-    fontSize: 14,
-    fontWeight: '600',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: '#fff',
-    borderRadius: 6,
   },
   couponAppliedContainer: {
     backgroundColor: '#E8F5E8',
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderLeftWidth: 3,
+    borderRadius: 12,
+    padding: 15,
+    borderLeftWidth: 4,
     borderLeftColor: '#4CAF50',
   },
   couponAppliedRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
   couponAppliedInfo: {
+    flex: 1,
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
-  couponAppliedText: {
+  couponAppliedTextContainer: {
+    flex: 1,
+    marginLeft: 10,
+  },
+  couponAppliedCode: {
+    fontSize: 16,
+    fontWeight: 'bold',
     color: '#2E7D32',
-    fontSize: 14,
-    fontWeight: '600',
-    marginLeft: 8,
+    marginBottom: 4,
+  },
+  couponAppliedDiscount: {
+    fontSize: 13,
+    color: '#1B5E20',
+    lineHeight: 18,
   },
   removeCouponButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
-  },
-  removeCouponText: {
-    color: '#666',
-    fontSize: 12,
-    fontWeight: '500',
+    padding: 4,
+    marginLeft: 8,
   },
   // Promo message styles
   promoContainer: {
