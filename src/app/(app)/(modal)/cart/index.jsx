@@ -15,12 +15,11 @@ import {
   View
 } from 'react-native';
 import RazorpayCheckout from 'react-native-razorpay';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Toast from 'react-native-toast-message';
 
 import Constants from 'expo-constants';
-import CartPageBottomBar from '../../../../components/common/CartPageBottomBar';
 import Text from "../../../../components/ui/Text.jsx";
 import { useAppStates } from '../../../../context/AppStates';
 import { useAuth } from '../../../../context/AuthProvider.jsx';
@@ -36,6 +35,7 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 export default function Cart() {
   const router = useRouter();
   const {userData} = useAuth()
+  const insets = useSafeAreaInsets();
 
   const { selectedLocation, updateSelectedLocation, selectedMobileNumber, updateSelectedMobileNumber, selectedLocationObject, updateSelectedLocationObject } = useAppStates();
 
@@ -410,7 +410,6 @@ export default function Cart() {
       const cartResponse = await fetchCart(isCouponApplied, isCouponApplied ? couponCode : null);
       
       if (cartResponse.error) {
-        console.error("Error fetching cart:", cartResponse.error);
         return;
       }
 
@@ -432,7 +431,6 @@ export default function Cart() {
       setCartData(cartResponse.arr);
       setRawcart(cartResponse.rawCartData);
     } catch (error) {
-      console.error("Error in fetchCartData:", error);
     } finally {
       setIsInitialLoading(false);
       setIsCartLoading(false);
@@ -486,15 +484,12 @@ export default function Cart() {
     setIsApplyingCoupon(true);
     
     try {
-      console.log('Applying coupon:', couponCode);
-      console.log('Available coupons:', availableCoupons);
       
       // Check if the entered coupon code matches any available coupon
       const matchedCoupon = availableCoupons.find(
         coupon => coupon.code.toLowerCase() === couponCode.trim().toLowerCase()
       );
       
-      console.log('Matched coupon:', matchedCoupon);
       
       if (matchedCoupon) {
         setIsCouponApplied(true);
@@ -624,7 +619,6 @@ export default function Cart() {
         }
       }
     } catch (error) {
-      console.error('Failed to update quantity:', error);
       // Always refetch cart data even if there's an error
       await fetchCartData();
       
@@ -869,7 +863,6 @@ export default function Cart() {
         );
       }
     } catch (bookingError) {
-      console.error("Booking error:", bookingError);
       setIsConfirmingPayment(false);
       showCustomAlert(
         'Booking Error',
@@ -973,7 +966,6 @@ export default function Cart() {
             ], 'error');
           });
       } catch (err) {
-        console.error("Online payment error:", err);
         setIsPaymentLoading(false);
       }
     } else {
@@ -1029,7 +1021,6 @@ export default function Cart() {
             ], 'error');
           });
       } catch (err) {
-        console.error("Pay on service error:", err);
         setIsPaymentLoading(false);
       }
     }
@@ -1892,7 +1883,7 @@ export default function Cart() {
         ) : (
           <ScrollView
             style={styles.scrollContainer}
-            contentContainerStyle={styles.scrollContent}
+            contentContainerStyle={[styles.scrollContent, { paddingBottom: 100 + Math.max(insets.bottom, 0) }]}
           showsVerticalScrollIndicator={false}
           bounces={true}
         >
@@ -2101,7 +2092,7 @@ export default function Cart() {
       )}
 
       {/* Fixed Bottom Section */}
-      <View style={styles.bottomSection}>
+      <View style={[styles.bottomSection, { paddingBottom: Math.max(insets.bottom, 15) }]}>
         <View style={styles.totalContainer}>
           <Text style={styles.bottomTotalLabel}>Total</Text>
           <Text style={styles.bottomTotalAmount}>₹{grandTotal.toFixed(2)}</Text>
@@ -2134,13 +2125,6 @@ export default function Cart() {
       <PaymentModal />
       <DeleteConfirmationModal />
       <CustomAlert />
-      
-      {/* Cart Bottom Bar - shows when cart has items */}
-      <CartPageBottomBar 
-        cartItemCount={cartData.reduce((total, cat) => total + cat.items.length, 0)} 
-        isVisible={cartData.length > 0 && !isCartEmptyOrZero()}
-        onProceed={handleProceedNow}
-      />
 
       {/* Overlay Loading for Cart */}
       {(isCartLoading && !isInitialLoading) && (

@@ -8,7 +8,6 @@ export default async function fetchCart(couponApplied = false, appliedCouponCode
             .schema('onlyclick')
             .from('general_data')
             .select('key, value');
-        console.log('[getCart] Raw data from general_data:', data);
         if (error) {
             console.error("[getCart] Error fetching general_data:", error);
             return {};
@@ -26,7 +25,6 @@ export default async function fetchCart(couponApplied = false, appliedCouponCode
             return acc;
         }, {});
 
-        console.log('[getCart] Processed systemConfig:', result);
         return result;
     };
 
@@ -56,8 +54,6 @@ export default async function fetchCart(couponApplied = false, appliedCouponCode
         }
     });
 
-    console.log('[getCart] Available coupons:', availableCoupons);
-    console.log('[getCart] Coupon applied?', couponApplied, 'Applied coupon code:', appliedCouponCode);
 
     // Determine which discount to apply
     let activeCouponDiscount = 0;
@@ -66,7 +62,6 @@ export default async function fetchCart(couponApplied = false, appliedCouponCode
     if (couponApplied && appliedCouponCode && availableCoupons[appliedCouponCode]) {
         activeCouponInfo = availableCoupons[appliedCouponCode];
         activeCouponDiscount = activeCouponInfo.discountPercent;
-        console.log('[getCart] Active coupon:', activeCouponInfo);
     } else if (couponApplied && appliedCouponCode) {
         console.warn('[getCart] Coupon code not found in available coupons:', appliedCouponCode);
     }
@@ -127,7 +122,6 @@ export default async function fetchCart(couponApplied = false, appliedCouponCode
         if (couponApplied && activeCouponDiscount > 0) {
             couponDiscountAmount = (originalPrice * activeCouponDiscount / 100);
             servicePrice = originalPrice - couponDiscountAmount;
-            console.log(`[getCart] Item ${cartItem.service_id}: Original ₹${originalPrice}, Discount ${activeCouponDiscount}%, Final ₹${servicePrice}`);
         }
 
         // 5) Calculate TM share: (100-commission)% of the service price
@@ -191,14 +185,6 @@ export default async function fetchCart(couponApplied = false, appliedCouponCode
     // Calculate final amounts based on payment method
     const totalWithOnlineDiscount = grandTotal - totalOnlineDiscount;
 
-    console.log('[getCart] Totals:', {
-        subTotal,
-        totalConvenienceFee,
-        grandTotal,
-        totalCouponDiscount,
-        totalOnlineDiscount,
-        totalWithOnlineDiscount
-    });
 
     // Transform data for UI display (grouped by category)
     function transformCartData(items) {
@@ -257,6 +243,5 @@ export default async function fetchCart(couponApplied = false, appliedCouponCode
         availableCoupons: Object.values(availableCoupons) // Return available coupons for UI
     };
 
-    console.log('[getCart] Final return data:', returnData);
     return returnData;
 }
