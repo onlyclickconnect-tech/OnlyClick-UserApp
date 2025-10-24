@@ -64,10 +64,10 @@ export default {
       eas: {
         projectId: "ae7a880b-bb8e-4d86-a99c-f0bde28eeede"
       },
-      expoPublicSupabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
-      expoPublicSupabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
-      expoPublicRazorPayKeyId: process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID,
-      expoPublicApiUrl: process.env.EXPO_PUBLIC_API_URL,
+      expoPublicSupabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
+      expoPublicSupabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      expoPublicRazorPayKeyId: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+      expoPublicApiUrl: process.env.NEXT_PUBLIC_API_URL,
     },
   },
 };
