@@ -4,7 +4,7 @@ export default {
   expo: {
     name: "Only Click",
     slug: "only-click-user",
-    version: "1.0.0",
+    version: "1.0.1",
     orientation: "portrait",
     icon: "./assets/images/mainicon.png",
     scheme: "onlyclick",
