@@ -33,7 +33,7 @@ function Header() {
   const [cartNavigationLoading, setCartNavigationLoading] = useState(false);
   const [isSavingLocation, setIsSavingLocation] = useState(false);
   const { userAddress } = useCurrentUserDetails();
-  const { selectedLocation, updateSelectedLocation } = useAppStates();
+  const { selectedLocation, updateSelectedLocation, currentAddress } = useAppStates();
   const router = useRouter();
   const styles = headerStyle();
   const [modal, setModal] = useState({ visible: false, title: null, message: null });
@@ -95,11 +95,13 @@ function Header() {
   };
   
   useEffect(() => {
-    if (userAddress && (!selectedLocation || selectedLocation === "Tap to set location")) {
+    if (currentAddress) {
+      updateSelectedLocation(currentAddress);
+    } else if (userAddress && (!selectedLocation || selectedLocation === "Tap to set location")) {
       updateSelectedLocation(userAddress);
     }
     setManualLocation(selectedLocation || "");
-  }, [userAddress, selectedLocation]);
+  }, [userAddress, selectedLocation, currentAddress]);
   
   // Location functions  
   const { updateProfile } = useUpdateProfile();

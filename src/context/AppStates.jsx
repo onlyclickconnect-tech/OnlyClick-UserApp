@@ -9,6 +9,8 @@ export const AppStatesProvider = ({ children }) => {
   const [selectedLocation, setSelectedLocation] = useState("Tap to set location");
   const [selectedLocationObject, setSelectedLocationObject] = useState({});
   const [selectedMobileNumber, setSelectedMobileNumber] = useState("");
+  const [currentAddress, setCurrentAddress] = useState(null);
+  const [currentCoordinates, setCurrentCoordinates] = useState(null);
 
   useEffect(() => {
     const getAppFirstOpenState = async () => {
@@ -57,6 +59,24 @@ export const AppStatesProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
+    const loadCurrentLocation = async () => {
+      const savedCoords = await AsyncStorage.getItem('currentCoordinates');
+      const savedAddress = await AsyncStorage.getItem('currentAddress');
+      if (savedCoords) {
+        try {
+          setCurrentCoordinates(JSON.parse(savedCoords));
+        } catch (_) {
+          setCurrentCoordinates(null);
+        }
+      }
+      if (savedAddress) {
+        setCurrentAddress(savedAddress);
+      }
+    };
+    loadCurrentLocation();
+  }, []);
+
+  useEffect(() => {
     if (isAppOpenedFirstTime === false) {
       const setAppFirstOpenState = async () => {
         await AsyncStorage.setItem("appFirstOpenState", "false");
@@ -83,6 +103,23 @@ export const AppStatesProvider = ({ children }) => {
   const updateSelectedLocationObject = async (locationObj) => {
     setSelectedLocationObject(locationObj);
     await AsyncStorage.setItem("selectedLocationObject", JSON.stringify(locationObj));
+  };
+
+  const updateCurrentLocation = async ({ address, coordinates }) => {
+    if (address) {
+      setCurrentAddress(address);
+      await AsyncStorage.setItem('currentAddress', address);
+    }
+    if (coordinates) {
+      setCurrentCoordinates(coordinates);
+      await AsyncStorage.setItem('currentCoordinates', JSON.stringify(coordinates));
+    }
+  };
+
+  const clearCurrentLocation = async () => {
+    setCurrentAddress(null);
+    setCurrentCoordinates(null);
+    await AsyncStorage.multiRemove(['currentAddress', 'currentCoordinates']);
   };
 
   const updateSelectedMobileNumber = async (mobileNumber) => {
@@ -117,6 +154,10 @@ export const AppStatesProvider = ({ children }) => {
         selectedMobileNumber,
         setSelectedMobileNumber,
         updateSelectedMobileNumber,
+        currentAddress,
+        currentCoordinates,
+        updateCurrentLocation,
+        clearCurrentLocation,
         resetAppStatesForLogout
       }}
     >
