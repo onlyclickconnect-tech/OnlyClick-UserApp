@@ -57,6 +57,14 @@ export default {
             "The app accesses your camera to let you take photos of your service requests.",
         },
       ],
+      [
+        "expo-build-properties",
+        {
+          android: {
+            enable16KbPageSize: true,
+          },
+        },
+      ],
     ],
     experiments: {
       typedRoutes: true,

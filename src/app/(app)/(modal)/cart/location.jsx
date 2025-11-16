@@ -38,7 +38,7 @@ export default function LocationScreen() {
     currentCoordinates,
   } = useAppStates();
   const { isLoggedIn } = useAuth();
-
+  
   // Location form fields
   const [houseNumber, setHouseNumber] = useState("");
   const [district, setDistrict] = useState("");
