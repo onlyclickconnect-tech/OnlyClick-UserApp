@@ -1,10 +1,12 @@
 import * as NavigationBar from "expo-navigation-bar/src/NavigationBar.android";
 import { usePathname, useRouter } from "expo-router";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 import Text from "../components/ui/Text";
+import UpdateModal from "../components/common/UpdateModal";
 import { useAppStates } from "../context/AppStates";
 import { useAuth } from "../context/AuthProvider";
+import { checkAppUpdate } from "../services/appVersionService";
 
 export default function Index() {
   const { isAppOpenedFirstTime, markAppOpened } = useAppStates();
@@ -17,6 +19,8 @@ export default function Index() {
   } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [latestVersion, setLatestVersion] = useState(null);
   
   const a = useCallback(async () => {
     await NavigationBar.setVisibilityAsync("hidden");
@@ -25,6 +29,25 @@ export default function Index() {
   
   useEffect(() => {
     a();
+  }, []);
+
+  // Check for app updates on app launch
+  useEffect(() => {
+    const checkUpdate = async () => {
+      try {
+        const updateInfo = await checkAppUpdate();
+        if (updateInfo.needsUpdate) {
+          setLatestVersion(updateInfo.latestVersion);
+          setShowUpdateModal(true);
+        }
+      } catch (error) {
+        console.warn('[Index] Failed to check app update:', error instanceof Error ? error.message : String(error));
+      }
+    };
+
+    // Check for updates after a short delay to avoid blocking initial load
+    const timeoutId = setTimeout(checkUpdate, 2000);
+    return () => clearTimeout(timeoutId);
   }, []);
 
   useEffect(() => {
@@ -87,16 +110,23 @@ export default function Index() {
 
   // Show loading while checking app state
   return (
-    <View style={{
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      backgroundColor: '#fff'
-    }}>
-      <ActivityIndicator size="large" color="#3898b3" />
-      <Text style={{ marginTop: 20, color: '#666' }}>
-        {isLoading ? "Loading OnlyClick..." : "Loading..."}
-      </Text>
-    </View>
+    <>
+      <View style={{
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#fff'
+      }}>
+        <ActivityIndicator size="large" color="#3898b3" />
+        <Text style={{ marginTop: 20, color: '#666' }}>
+          {isLoading ? "Loading OnlyClick..." : "Loading..."}
+        </Text>
+      </View>
+      <UpdateModal
+        visible={showUpdateModal}
+        latestVersion={latestVersion}
+        onClose={() => setShowUpdateModal(false)}
+      />
+    </>
   );
 }

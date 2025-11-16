@@ -296,28 +296,34 @@ export default function Cart() {
     let intervalId;
     const fetchSlots = async () => {
       try {
-    if (!selectedDate) {
+        if (!selectedDate) {
           setTimeSlots([]);
           return;
-    }
+        }
         const y = selectedDate.getFullYear();
         const m = String(selectedDate.getMonth() + 1).padStart(2, '0');
         const d = String(selectedDate.getDate()).padStart(2, '0');
         const dateISO = `${y}-${m}-${d}`;
         const { data, error } = await getAvailableSlots(dateISO);
         if (!error && data?.data?.slots) {
+          // Show all slots but mark unavailable ones visually (disabled state)
           setTimeSlots(data.data.slots);
+        } else if (error) {
+          console.warn('[Cart] Failed to fetch slots:', error);
+          // Keep previous slots on error
         }
-      } catch (_e) {
-        // noop: keep previous slots
+      } catch (err) {
+        console.warn('[Cart] Error fetching slots:', err?.message || err);
+        // Keep previous slots on error
       }
     };
 
     fetchSlots();
+    // Poll every 60 seconds for real-time updates
     intervalId = setInterval(fetchSlots, 60000);
     return () => {
       if (intervalId) clearInterval(intervalId);
-  };
+    };
   }, [selectedDate]);
 
   const handleKindnessClick = () => {
