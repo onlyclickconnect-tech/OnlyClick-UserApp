@@ -58,9 +58,9 @@ export default function HeaderStyle() {
       paddingRight: 8,
     },
     iconButton: {
-  padding: 8,
-  borderRadius: 10,
-  backgroundColor: 'rgba(255,255,255,0.06)'
+      padding: 8,
+      borderRadius: 10,
+      backgroundColor: 'rgba(255,255,255,0.06)'
     },
     location: {
       flexDirection: "column",
@@ -91,13 +91,13 @@ export default function HeaderStyle() {
       flex: 1,
       flexDirection: 'row',
       alignItems: 'center',
-  backgroundColor: '#ffffff',
-  borderRadius: 12,
-  paddingVertical: 8,
-  paddingHorizontal: 12,
-  minHeight: 40,
-  borderWidth: 1,
-  borderColor: '#E6EEF0',
+      backgroundColor: '#ffffff',
+      borderRadius: 12,
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+      minHeight: 50,
+      borderWidth: 1,
+      borderColor: '#E6EEF0',
       marginRight: 12,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },

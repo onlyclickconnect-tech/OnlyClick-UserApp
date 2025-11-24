@@ -1,6 +1,6 @@
 import axios from "axios";
-import { Platform } from 'react-native';
 import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 import supabase from "../../data/supabaseClient.js";
 
 const fallbackBaseURL = Platform.OS === 'android'
@@ -11,8 +11,8 @@ const baseURL = process.env.NEXT_PUBLIC_API_URL
   || Constants.expoConfig?.extra?.expoPublicApiUrl
   || fallbackBaseURL;
 
-console.log('[API] Base URL:', baseURL);
-console.log('[API] Platform:', Platform.OS);
+// console.log('[API] Base URL:', baseURL);
+// console.log('[API] Platform:', Platform.OS);
 
 const api = axios.create({
   baseURL,

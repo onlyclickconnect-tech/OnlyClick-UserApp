@@ -1,4 +1,5 @@
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -13,8 +14,11 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import RazorpayCheckout from 'react-native-razorpay';
 import Toast from 'react-native-toast-message';
 import { addOneInCart, removeAllFromCart, removeOneFromCart } from '../../app/api/cart';
+import confirmBookings from '../../app/api/confirmbookings';
+import { createRazorpayOrder } from '../../app/api/razoroay';
 import { useAuth } from '../../context/AuthProvider';
 import fetchCart from '../../data/getdata/getCart';
 import ConfirmModal from '../common/ConfirmModal';
@@ -27,25 +31,25 @@ export default function Cart() {
   const [showCancellationPolicy, setShowCancellationPolicy] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState('Home - 123 Main Street, City');
   const [confirmModal, setConfirmModal] = useState({ visible: false, title: null, message: null, buttons: null });
-  
+
   // Real cart data state
   const [cartData, setCartData] = useState([]);
   const [rawcart, setRawcart] = useState([]);
   const [subTotal, setSubTotal] = useState(0);
   const [serviceCharge, setServiceCharge] = useState(0);
   const [totalAmount, setTotalAmount] = useState(0);
-  
+
   // Coupon related state
   const [couponCode, setCouponCode] = useState("");
   const [isCouponApplied, setIsCouponApplied] = useState(false);
   const [prebookingDiscount, setPrebookingDiscount] = useState(0);
   const [prebookingDiscountPercent, setPrebookingDiscountPercent] = useState(0);
   const [showCouponInput, setShowCouponInput] = useState(false);
-  
+
   // Gesture handling for modal
   const modalY = useRef(new Animated.Value(0)).current;
   const modalOpacity = useRef(new Animated.Value(1)).current;
-  
+
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: (evt, gestureState) => {
@@ -54,8 +58,8 @@ export default function Cart() {
       },
       onMoveShouldSetPanResponder: (evt, gestureState) => {
         // Only respond to vertical gestures
-        return Math.abs(gestureState.dy) > Math.abs(gestureState.dx) && 
-               Math.abs(gestureState.dy) > 10;
+        return Math.abs(gestureState.dy) > Math.abs(gestureState.dx) &&
+          Math.abs(gestureState.dy) > 10;
       },
       onPanResponderMove: (evt, gestureState) => {
         if (gestureState.dy > 0) {
@@ -223,27 +227,29 @@ export default function Cart() {
       message: `Are you sure you want to remove ${item.name} from cart?`,
       buttons: [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Remove', style: 'destructive', onPress: async () => {
-          try {
-            await removeAllFromCart(item.service_id);
-            await fetchCartData(); // Refresh cart after removal
-            Toast.show({
-              type: 'success',
-              text1: 'Item Removed',
-              text2: `${item.name} has been removed from cart`,
-              position: 'bottom',
-              bottomOffset: 100,
-            });
-          } catch (error) {
-            Toast.show({
-              type: 'error',
-              text1: 'Error',
-              text2: 'Failed to remove item',
-              position: 'bottom',
-              bottomOffset: 100,
-            });
+        {
+          text: 'Remove', style: 'destructive', onPress: async () => {
+            try {
+              await removeAllFromCart(item.service_id);
+              await fetchCartData(); // Refresh cart after removal
+              Toast.show({
+                type: 'success',
+                text1: 'Item Removed',
+                text2: `${item.name} has been removed from cart`,
+                position: 'bottom',
+                bottomOffset: 100,
+              });
+            } catch (error) {
+              Toast.show({
+                type: 'error',
+                text1: 'Error',
+                text2: 'Failed to remove item',
+                position: 'bottom',
+                bottomOffset: 100,
+              });
+            }
           }
-        }}
+        }
       ]
     });
   };
@@ -255,10 +261,111 @@ export default function Cart() {
       message: 'Are you sure you want to remove all items from cart?',
       buttons: [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Clear All', style: 'destructive', onPress: () => {
-        }}
+        {
+          text: 'Clear All', style: 'destructive', onPress: () => {
+          }
+        }
       ]
     });
+  };
+
+  const handlePayment = async () => {
+    if (!selectedLocation || selectedLocation === 'Tap to set location') {
+      Toast.show({
+        type: 'error',
+        text1: 'Location Required',
+        text2: 'Please select a service location',
+        position: 'bottom',
+        bottomOffset: 100,
+      });
+      return;
+    }
+
+    try {
+      // 1. Create Order
+      const order = await createRazorpayOrder(rawcart, totalAmount);
+      if (order.error) {
+        Toast.show({
+          type: 'error',
+          text1: 'Order Creation Failed',
+          text2: 'Could not initiate payment',
+          position: 'bottom',
+          bottomOffset: 100,
+        });
+        return;
+      }
+
+      // 2. Open Razorpay
+      const options = {
+        description: 'Service Payment',
+        image: 'https://onlyclick.in/logo.png', // Placeholder
+        currency: 'INR',
+        key: Constants.expoConfig.extra.expoPublicRazorPayKeyId,
+        amount: order.amount,
+        name: 'Only Click',
+        order_id: order.id,
+        prefill: {
+          email: userData?.email || 'user@example.com',
+          contact: userData?.phone || '',
+          name: userData?.name || ''
+        },
+        theme: { color: '#3898B3' }
+      };
+
+      RazorpayCheckout.open(options).then(async (data) => {
+        // 3. Confirm Booking
+        const bookingPayload = {
+          payment_id: data.razorpay_payment_id,
+          order_id: data.razorpay_order_id,
+          signature: data.razorpay_signature,
+          cart: rawcart,
+          address: selectedLocation,
+          amount: totalAmount,
+          coupon: isCouponApplied ? couponCode : null,
+          discount: prebookingDiscount
+        };
+
+        const res = await confirmBookings(bookingPayload);
+
+        if (res.error) {
+          Toast.show({
+            type: 'error',
+            text1: 'Booking Failed',
+            text2: res.error,
+            position: 'bottom',
+            bottomOffset: 100,
+          });
+        } else {
+          Toast.show({
+            type: 'success',
+            text1: 'Booking Confirmed!',
+            text2: 'Your service has been booked successfully',
+            position: 'bottom',
+            bottomOffset: 100,
+          });
+          // Navigate to bookings or success page
+          router.replace('/(app)/protected/(tabs)/Bookings');
+        }
+      }).catch((error) => {
+        Toast.show({
+          type: 'error',
+          text1: 'Payment Failed',
+          text2: error.description || 'Payment was cancelled',
+          position: 'bottom',
+          bottomOffset: 100,
+        });
+      });
+
+    } catch (err) {
+      console.error(err);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Something went wrong',
+        position: 'bottom',
+        bottomOffset: 100,
+      });
+    }
   };
 
   const renderCartItem = (item, categoryIndex, itemIndex) => (
@@ -268,25 +375,25 @@ export default function Cart() {
         <Text style={styles.itemDuration}>{item.duration}</Text>
         <Text style={styles.itemPrice}>₹{item.price}</Text>
       </View>
-      
+
       <View style={styles.itemActions}>
         <View style={styles.quantityContainer}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.quantityButton}
             onPress={() => handleQuantityChange(categoryIndex, itemIndex, -1)}
           >
             <Ionicons name="remove" size={16} color="#3898B3" />
           </TouchableOpacity>
           <Text style={styles.quantityText}>{item.quantity}</Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.quantityButton}
             onPress={() => handleQuantityChange(categoryIndex, itemIndex, 1)}
           >
             <Ionicons name="add" size={16} color="#3898B3" />
           </TouchableOpacity>
         </View>
-        
-        <TouchableOpacity 
+
+        <TouchableOpacity
           style={styles.removeButton}
           onPress={() => handleRemoveItem(categoryIndex, itemIndex)}
         >
@@ -334,7 +441,7 @@ export default function Cart() {
 
       {/* Items List */}
       <View style={styles.itemsList}>
-        {categoryData.items.map((item, itemIndex) => 
+        {categoryData.items.map((item, itemIndex) =>
           renderCartItem(item, categoryIndex, itemIndex)
         )}
       </View>
@@ -344,36 +451,36 @@ export default function Cart() {
   const LocationModal = () => (
     <Modal visible={showLocationModal} transparent animationType="none">
       <Animated.View style={[styles.modalOverlay, { opacity: modalOpacity }]}>
-        <Animated.View 
+        <Animated.View
           style={[styles.modalContent, { transform: [{ translateY: modalY }] }]}
           {...panResponder.panHandlers}
         >
           {/* Gesture Indicator Bar */}
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.gestureIndicator}
             activeOpacity={1}
-            onPress={() => {}} // Empty onPress to ensure touch area
+            onPress={() => { }} // Empty onPress to ensure touch area
           >
             <View style={styles.indicatorBar} />
           </TouchableOpacity>
-          
+
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Confirm Location</Text>
             <TouchableOpacity onPress={() => setShowLocationModal(false)}>
               <Ionicons name="close" size={24} color="#333" />
             </TouchableOpacity>
           </View>
-          
+
           <View style={styles.locationOption}>
             <Ionicons name="location" size={20} color="#3898B3" />
             <Text style={styles.locationText}>{selectedLocation}</Text>
           </View>
-          
+
           <TouchableOpacity style={styles.changeLocationButton}>
             <Text style={styles.changeLocationText}>Change Location</Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             style={styles.confirmButton}
             onPress={() => setShowLocationModal(false)}
           >
@@ -387,31 +494,31 @@ export default function Cart() {
   const CancellationPolicyModal = () => (
     <Modal visible={showCancellationPolicy} transparent animationType="none">
       <Animated.View style={[styles.modalOverlay, { opacity: modalOpacity }]}>
-        <Animated.View 
+        <Animated.View
           style={[styles.modalContent, { transform: [{ translateY: modalY }] }]}
           {...panResponder.panHandlers}
         >
           {/* Gesture Indicator Bar */}
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.gestureIndicator}
             activeOpacity={1}
-            onPress={() => {}} // Empty onPress to ensure touch area
+            onPress={() => { }} // Empty onPress to ensure touch area
           >
             <View style={styles.indicatorBar} />
           </TouchableOpacity>
-          
+
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Cancellation Policy</Text>
             <TouchableOpacity onPress={() => setShowCancellationPolicy(false)}>
               <Ionicons name="close" size={24} color="#333" />
             </TouchableOpacity>
           </View>
-          
+
           <ScrollView style={styles.policyContent}>
             <Text style={styles.policyIntro}>
               At Only Click, we strive to provide seamless and professional service at all times. However, we understand that sometimes cancellations are necessary. Our cancellation policy is designed to be fair to both our valued customers and our service providers.
             </Text>
-            
+
             <Text style={styles.sectionTitle}>1. Cancellation by Customer</Text>
             <View style={styles.policyItem}>
               <Text style={styles.bulletPoint}>•</Text>
@@ -437,7 +544,7 @@ export default function Cart() {
                 <Text style={styles.boldText}>Emergency Situations:</Text> In case of an emergency or unforeseen event (e.g., hospitalization, urgent personal matters), please inform us as soon as possible. We will assess each case on an individual basis and make necessary accommodations.
               </Text>
             </View>
-            
+
             <Text style={styles.sectionTitle}>2. Cancellation by Only Click or Service Provider</Text>
             <View style={styles.policyItem}>
               <Text style={styles.bulletPoint}>•</Text>
@@ -456,7 +563,7 @@ export default function Cart() {
                 <Text style={styles.boldText}>Refunds:</Text> In case the service is canceled by us or the service provider, full refunds will be issued to the customer within 7 working days.
               </Text>
             </View>
-            
+
             <Text style={styles.sectionTitle}>3. How to Cancel</Text>
             <Text style={styles.policyText}>
               You can cancel your appointment via the Only Click app, or by calling our customer support team at <Text style={styles.contactText}>+91-9121377419</Text> or emailing <Text style={styles.contactText}>onlyclick.connect@gmail.com</Text>.
@@ -464,7 +571,7 @@ export default function Cart() {
             <Text style={styles.policyText}>
               For cancellations made via customer support, please provide your booking details, including the service type, provider name, and scheduled time.
             </Text>
-            
+
             <Text style={styles.sectionTitle}>4. Refunds</Text>
             <View style={styles.policyItem}>
               <Text style={styles.bulletPoint}>•</Text>
@@ -474,7 +581,7 @@ export default function Cart() {
               <Text style={styles.bulletPoint}>•</Text>
               <Text style={styles.policyText}>For late cancellations or no-shows, refunds will not be applicable, and the cancellation fee will be charged.</Text>
             </View>
-            
+
             <Text style={styles.sectionTitle}>5. Special Cases</Text>
             <View style={styles.policyItem}>
               <Text style={styles.bulletPoint}>•</Text>
@@ -488,18 +595,18 @@ export default function Cart() {
                 <Text style={styles.boldText}>Holiday/Peak Time Bookings:</Text> During high-demand periods (holidays, special events, etc.), a higher cancellation fee may be applicable due to increased demand and scheduling complexity.
               </Text>
             </View>
-            
+
             <Text style={styles.sectionTitle}>6. Customer Support</Text>
             <Text style={styles.policyText}>
               For any questions or concerns about the cancellation policy or if you require assistance with rescheduling, please contact our customer support team via the app or at <Text style={styles.contactText}>+91-9121377419</Text>.
             </Text>
-            
+
             <Text style={styles.policyFooter}>
               By placing a booking, you agree to adhere to this cancellation policy. We appreciate your understanding and cooperation.
             </Text>
           </ScrollView>
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             style={styles.confirmButton}
             onPress={() => setShowCancellationPolicy(false)}
           >
@@ -514,19 +621,19 @@ export default function Cart() {
     <View style={styles.container}>
       <ConfirmModal visible={confirmModal.visible} title={confirmModal.title} message={confirmModal.message} buttons={confirmModal.buttons} onRequestClose={() => setConfirmModal({ visible: false })} />
       <StatusBar hidden={true} />
-      
+
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerContent}>
           <View style={styles.headerTop}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.backButton}
               onPress={() => router.back()}
             >
               <Ionicons name="arrow-back" size={24} color="#fff" />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>My Cart</Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.clearButton}
               onPress={handleClearCart}
             >
@@ -537,14 +644,14 @@ export default function Cart() {
         </View>
       </View>
 
-      <ScrollView 
-        style={styles.scrollContainer} 
+      <ScrollView
+        style={styles.scrollContainer}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         bounces={true}
       >
         {/* Location Confirmation */}
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.locationCard}
           onPress={() => setShowLocationModal(true)}
         >
@@ -557,24 +664,24 @@ export default function Cart() {
         </TouchableOpacity>
 
         {/* Cart Categories */}
-        {cartData.map((categoryData, index) => 
+        {cartData.map((categoryData, index) =>
           renderCategorySection(categoryData, index)
         )}
 
         {/* Payment Summary */}
         <View style={styles.summaryCard}>
           <Text style={styles.summaryTitle}>Payment Summary</Text>
-          
+
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Subtotal</Text>
             <Text style={styles.summaryAmount}>₹{subTotal}</Text>
           </View>
-          
+
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Service Fee</Text>
             <Text style={styles.summaryAmount}>₹{serviceCharge}</Text>
           </View>
-          
+
           {/* Prebooking Discount Display */}
           {isCouponApplied && prebookingDiscount > 0 && (
             <View style={styles.summaryRow}>
@@ -587,7 +694,7 @@ export default function Cart() {
               <Text style={[styles.summaryAmount, styles.discountAmount]}>-₹{prebookingDiscount}</Text>
             </View>
           )}
-          
+
           <View style={styles.summaryDivider} />
           <View style={styles.summaryRow}>
             <Text style={styles.totalLabel}>Total Amount</Text>
@@ -598,7 +705,7 @@ export default function Cart() {
         {/* Coupon Code Section */}
         <View style={styles.couponCard}>
           <Text style={styles.couponTitle}>Have a Coupon Code?</Text>
-          
+
           {/* Promotional Message */}
           <View style={styles.promoContainer}>
             <View style={styles.promoIconContainer}>
@@ -606,16 +713,16 @@ export default function Cart() {
             </View>
             <View style={styles.promoTextContainer}>
               <Text style={styles.promoText}>
-                Apply coupon code <Text style={styles.promoCode}>PREBOOKING30</Text> to get 
+                Apply coupon code <Text style={styles.promoCode}>PREBOOKING30</Text> to get
                 <Text style={styles.promoDiscount}> 30% discount</Text> on payment
               </Text>
             </View>
           </View>
-          
+
           {!isCouponApplied ? (
             <View>
               {!showCouponInput ? (
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.applyCouponButton}
                   onPress={() => setShowCouponInput(true)}
                 >
@@ -631,13 +738,13 @@ export default function Cart() {
                     onChangeText={setCouponCode}
                     autoCapitalize="characters"
                   />
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.applyButton}
                     onPress={applyCoupon}
                   >
                     <Text style={styles.applyButtonText}>Apply</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={styles.cancelButton}
                     onPress={() => {
                       setShowCouponInput(false);
@@ -656,7 +763,7 @@ export default function Cart() {
                   <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
                   <Text style={styles.couponAppliedText}>PREBOOKING30 applied</Text>
                 </View>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.removeCouponButton}
                   onPress={removeCoupon}
                 >
@@ -668,7 +775,7 @@ export default function Cart() {
         </View>
 
         {/* Cancellation Policy */}
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.policyCard}
           onPress={() => setShowCancellationPolicy(true)}
         >
@@ -684,7 +791,7 @@ export default function Cart() {
           <Text style={styles.bottomTotalLabel}>Total</Text>
           <Text style={styles.bottomTotalAmount}>₹{totalAmount}</Text>
         </View>
-        <TouchableOpacity style={styles.proceedButton}>
+        <TouchableOpacity style={styles.proceedButton} onPress={handlePayment}>
           <Text style={styles.proceedButtonText}>Proceed to Payment</Text>
         </TouchableOpacity>
       </View>
