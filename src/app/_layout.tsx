@@ -4,6 +4,7 @@ import { Stack } from "expo-router";
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { View } from "react-native";
+import { AppEventsLogger, Settings } from 'react-native-fbsdk-next';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import Text from "../components/ui/Text";
@@ -17,11 +18,20 @@ export default function RootLayout() {
   
 
   useEffect(() => {
-    
     async function prepare() {
       await SplashScreen.preventAutoHideAsync();
     }
     prepare();
+
+    // Initialize Facebook SDK early (measuring installs & app events)
+    try {
+      Settings.initializeSDK();
+      // log activation event - helps with install measurement and activation tracking
+      AppEventsLogger.logEvent('fb_mobile_activate_app');
+    } catch (err) {
+      // ignore initialization errors in JS runtime; native may not be ready until prebuild
+      // console.warn('FB SDK init error', err);
+    }
   }, []);
 
   useEffect(() => {

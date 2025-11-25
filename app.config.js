@@ -41,6 +41,15 @@ export default {
     },
     plugins: [
       "expo-router",
+      // Facebook App Events plugin (react-native-fbsdk-next)
+      [
+        "react-native-fbsdk-next",
+        {
+          "appID": "YOUR_FACEBOOK_APP_ID",
+          "clientToken": "YOUR_FACEBOOK_CLIENT_TOKEN",
+          "displayName": "YOUR_FACEBOOK_APP_DISPLAY_NAME"
+        }
+      ],
       [
         "expo-location",
         {
